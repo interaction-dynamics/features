@@ -7,7 +7,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import type { Feature } from "@/models/feature";
-import { formatFeatureName } from "@/utils/format-feature-name";
+import { formatFeatureName } from "@/lib/format-feature-name";
 import { Fragment } from "react";
 
 interface FeatureBreadcrumbProps {

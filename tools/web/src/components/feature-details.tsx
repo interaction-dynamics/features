@@ -1,5 +1,5 @@
 import type { Feature } from "@/models/feature";
-import { formatFeatureName } from "@/utils/format-feature-name";
+import { formatFeatureName } from "@/lib/format-feature-name";
 
 interface FeatureDetailsProps {
 	feature: Feature;

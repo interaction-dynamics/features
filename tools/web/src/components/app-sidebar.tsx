@@ -16,7 +16,7 @@ import {
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import type { Feature } from "@/models/feature";
-import { formatFeatureName } from "@/utils/format-feature-name";
+import { formatFeatureName } from "@/lib/format-feature-name";
 
 
 interface FeatureItemProps {
