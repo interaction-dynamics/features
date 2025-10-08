@@ -19,6 +19,7 @@ import {
 import type { Feature } from "@/models/feature";
 import { formatFeatureName } from "@/lib/format-feature-name";
 import { ModeToggle } from "./mode-toggle";
+import { NavFeatures } from "./nav-features";
 
 
 interface FeatureItemProps {
@@ -100,9 +101,7 @@ export function AppSidebar({ activeFeature, onFeatureClick, ...props }:AppSideba
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarMenu>
-						{features.map((feature) => (
-							<FeatureItem key={feature.path} feature={feature} onFeatureClick={onFeatureClick} activeFeature={activeFeature} />
-						))}
+					  <NavFeatures items={features} onFeatureClick={onFeatureClick} activeFeature={activeFeature} />
 					</SidebarMenu>
 				</SidebarGroup>
 			</SidebarContent>
