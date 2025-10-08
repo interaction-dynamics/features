@@ -9,12 +9,11 @@ import {
 import { FeaturesProvider } from "./components/features-provider";
 import { useState } from "react";
 import type { Feature } from "./models/feature";
+import { FeatureDetails } from "./components/feature-details";
 
 export default function Dashboard() {
 
   const [currentFeature, setCurrentFeature] = useState<Feature|null>(null);
-
-  console.log('currentFeature', currentFeature)
 
 	return (
 		<FeaturesProvider>
@@ -29,12 +28,7 @@ export default function Dashboard() {
 						</div>
 					</header>
 					<div className="flex flex-1 flex-col gap-4 p-4">
-						<div className="grid auto-rows-min gap-4 md:grid-cols-3">
-							<div className="bg-muted/50 aspect-video rounded-xl" />
-							<div className="bg-muted/50 aspect-video rounded-xl" />
-							<div className="bg-muted/50 aspect-video rounded-xl" />
-						</div>
-						<div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+            {currentFeature && <FeatureDetails feature={currentFeature} />}
 					</div>
 				</SidebarInset>
 			</SidebarProvider>
