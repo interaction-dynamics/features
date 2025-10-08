@@ -27,15 +27,11 @@ const fetcher = async (url: string): Promise<Feature[]> => {
 };
 
 export function FeaturesProvider({ children }: { children: React.ReactNode }) {
-	const { data: features, error } = useSWR<Feature[]>(
+	const { data: features } = useSWR<Feature[]>(
 		"/features.json",
 		fetcher,
 		{ suspense: true }
 	);
-
-	if (error) {
-		return <div>Error loading features</div>;
-	}
 
 	return (
 		<FeaturesContext.Provider value={features ?? []}>

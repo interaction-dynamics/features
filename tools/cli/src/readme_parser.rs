@@ -20,18 +20,14 @@ pub fn read_readme_info(
     readme_path: &Path,
 ) -> Result<(String, String, HashMap<String, serde_json::Value>)> {
     if !readme_path.exists() {
-        return Ok((
-            "Unknown".to_string(),
-            "No description available".to_string(),
-            HashMap::new(),
-        ));
+        return Ok(("Unknown".to_string(), "".to_string(), HashMap::new()));
     }
 
     let content = fs::read_to_string(readme_path)
         .with_context(|| format!("could not read README.md at `{}`", readme_path.display()))?;
 
     let mut owner = "Unknown".to_string();
-    let mut description = "No description available".to_string();
+    let mut description = "".to_string();
     let mut meta: HashMap<String, serde_json::Value> = HashMap::new();
 
     // Check if content starts with YAML front matter (---)
