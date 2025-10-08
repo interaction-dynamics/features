@@ -10,15 +10,17 @@ import { FeaturesProvider } from "./components/features-provider";
 import { useState } from "react";
 import type { Feature } from "./models/feature";
 import { FeatureDetails } from "./components/feature-details";
+import { ThemeProvider } from "@/components/theme-provider"
 
 export default function Dashboard() {
 
   const [currentFeature, setCurrentFeature] = useState<Feature|null>(null);
 
 	return (
+	  <ThemeProvider>
 		<FeaturesProvider>
 			<SidebarProvider>
-				<AppSidebar onFeatureClick={setCurrentFeature} />
+				<AppSidebar activeFeature={currentFeature} onFeatureClick={setCurrentFeature} />
 				<SidebarInset>
 					<header className="flex h-16 shrink-0 items-center gap-2 border-b">
 						<div className="flex items-center gap-2 px-3">
@@ -39,5 +41,6 @@ export default function Dashboard() {
 				</SidebarInset>
 			</SidebarProvider>
 		</FeaturesProvider>
+	</ThemeProvider>
 	);
 }

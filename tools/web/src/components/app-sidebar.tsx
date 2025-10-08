@@ -5,6 +5,7 @@ import { FeaturesContext } from "@/components/features-provider";
 import {
 	Sidebar,
 	SidebarContent,
+	SidebarFooter,
 	SidebarGroup,
 	SidebarHeader,
 	SidebarMenu,
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import type { Feature } from "@/models/feature";
 import { formatFeatureName } from "@/lib/format-feature-name";
+import { ModeToggle } from "./mode-toggle";
 
 
 interface FeatureItemProps {
@@ -104,6 +106,9 @@ export function AppSidebar({ activeFeature, onFeatureClick, ...props }:AppSideba
 					</SidebarMenu>
 				</SidebarGroup>
 			</SidebarContent>
+			<SidebarFooter>
+			  <ModeToggle />
+      </SidebarFooter>
 			<SidebarRail />
 		</Sidebar>
 	);
