@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+
 import type { Feature } from "@/models/feature";
 import { formatFeatureName } from "@/lib/format-feature-name";
 
@@ -32,7 +34,10 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 						<span className="text-sm font-semibold text-muted-foreground">
 							Description:
 						</span>
-						<p className="text-sm">{feature.description}</p>
+						<p className="text-sm"><div className="**:list-disc **:[ul]:ms-4 **:[p]:py-2 **:[h1]:scroll-m-20 **:[h1]:text-4xl **:[h1]:font-extrabold **:[h1]:tracking-tight **:[h1]:text-balance **:[h2]:scroll-m-20 **:[h2]:pb-2 **:[h2]:text-3xl **:[h2]:font-semibold **:[h2]:tracking-tight first:mt-0 ">
+						  <ReactMarkdown >{feature.description}</ReactMarkdown>
+						</div>
+						</p>
 					</div>
 				)}
 

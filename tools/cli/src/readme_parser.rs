@@ -4,16 +4,26 @@ use std::fs;
 use std::path::Path;
 
 fn read_readme_content(content: &String) -> String {
-    let mut description = String::new();
+    let mut found_first_title = false;
+    let mut lines_after_title: Vec<&str> = Vec::new();
+
     for line in content.lines() {
         let trimmed = line.trim();
-        if !trimmed.is_empty() && !trimmed.starts_with('#') {
-            description = trimmed.to_string();
-            break;
+
+        // Check if we found the first title (starting with #)
+        if !found_first_title && trimmed.starts_with('#') {
+            found_first_title = true;
+            continue;
+        }
+
+        // Collect all lines after the first title
+        if found_first_title {
+            lines_after_title.push(line);
         }
     }
 
-    return description;
+    // Join all lines after the first title
+    return lines_after_title.join("\n").trim().to_string();
 }
 
 pub fn read_readme_info(
