@@ -28,7 +28,13 @@ export default function Dashboard() {
 						</div>
 					</header>
 					<div className="flex flex-1 flex-col gap-4 p-4">
-            {currentFeature && <FeatureDetails feature={currentFeature} />}
+						{currentFeature === null ? (
+							<div className="flex flex-1 items-center justify-center">
+								<p className="text-muted-foreground text-lg">Select a feature</p>
+							</div>
+						) : (
+							<FeatureDetails feature={currentFeature} />
+						)}
 					</div>
 				</SidebarInset>
 			</SidebarProvider>
