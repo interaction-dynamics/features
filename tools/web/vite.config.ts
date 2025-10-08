@@ -11,4 +11,12 @@ export default defineConfig({
 			"@": path.resolve(__dirname, "./src"),
 		},
 	},
+	build: {
+		rolldownOptions: {
+		  // it seems this property doesn't work yet
+  		external: [
+    		'**/features.json'
+  		]
+		},
+	},
 });

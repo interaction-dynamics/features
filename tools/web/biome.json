@@ -6,11 +6,12 @@
 		"useIgnoreFile": false
 	},
 	"files": {
+ "includes": ["tools/**/*", "examples/**/*"],
 		"ignoreUnknown": false
 	},
 	"formatter": {
 		"enabled": true,
-		"indentStyle": "tab"
+    "indentStyle": "space"
 	},
 	"linter": {
 		"enabled": true,
@@ -20,13 +21,16 @@
 	},
 	"javascript": {
 		"formatter": {
-			"quoteStyle": "double"
+		  "semicolons": "asNeeded",
+      "quoteStyle": "single",
+      "lineEnding": "lf"
 		}
 	},
 	"assist": {
 		"enabled": true,
 		"actions": {
 			"source": {
+        "recommended": true,
 				"organizeImports": "on"
 			}
 		}
