@@ -35,10 +35,12 @@ It also have clear benefits in multiple ways:
 - you can easily find the code related to the feature
 - you can easily find the documentation related to the feature
 
-## CLI
+## Tools
+
+### Command line Interface
 
 In progress
 
-## Dashboard
+### Dashboard
 
 In progress
