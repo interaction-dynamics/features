@@ -9,10 +9,12 @@ pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
     let entries = fs::read_dir(dir)
         .with_context(|| format!("could not read directory `{}`", dir.display()))?;
 
+    let mut entries: Vec<_> = entries.collect::<Result<_, _>>()?;
+    entries.sort_by_key(|entry| entry.path());
+
     let mut features: Vec<Feature> = Vec::new();
 
     for entry in entries {
-        let entry = entry?;
         let path = entry.path();
         let name = path.file_name().unwrap().to_string_lossy();
 

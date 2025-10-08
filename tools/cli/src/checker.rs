@@ -16,19 +16,19 @@ pub fn run_checks(features: &[Feature]) -> Result<()> {
     Ok(())
 }
 
+fn collect_features(features: &[Feature], name_to_paths: &mut HashMap<String, Vec<String>>) {
+    for feature in features {
+        name_to_paths
+            .entry(feature.name.clone())
+            .or_insert_with(Vec::new)
+            .push(feature.path.clone());
+
+        collect_features(&feature.features, name_to_paths);
+    }
+}
+
 fn check_duplicate_names(features: &[Feature]) -> usize {
     let mut name_to_paths: HashMap<String, Vec<String>> = HashMap::new();
-
-    fn collect_features(features: &[Feature], name_to_paths: &mut HashMap<String, Vec<String>>) {
-        for feature in features {
-            name_to_paths
-                .entry(feature.name.clone())
-                .or_insert_with(Vec::new)
-                .push(feature.path.clone());
-
-            collect_features(&feature.features, name_to_paths);
-        }
-    }
 
     collect_features(features, &mut name_to_paths);
 
