@@ -19,6 +19,8 @@ By following specific guidelines and conventions, it becomes easier to add tooli
 5. **[SHOULD]**  add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` and the name of the team who has ownership of this feature
 6. **[MAY]**     add [MADR files](https://adr.github.io/madr/) into `features/feature-1/__docs__/decisions`
 
+> You can find examples in the [examples](./examples) folder.
+
 ## CLI
 
 In progress
