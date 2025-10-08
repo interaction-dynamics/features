@@ -16,25 +16,27 @@ import {
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import type { Feature } from "@/models/feature";
+import { formatFeatureName } from "@/utils/format-feature-name";
 
 
 interface FeatureItemProps {
+  activeFeature: Feature | null;
   feature: Feature;
   onFeatureClick: (feature: Feature) => void;
 }
 
-function FeatureItem({ feature, onFeatureClick }: FeatureItemProps) {
+function FeatureItem({ feature, activeFeature, onFeatureClick }: FeatureItemProps) {
 	return (
-		<SidebarMenuItem key={feature.path}>
-			<SidebarMenuButton asChild>
+		<SidebarMenuItem key={feature.path} >
+			<SidebarMenuButton asChild isActive={feature.path === activeFeature?.path}>
 				<a href={`#${feature.path}`} className="font-medium" onClick={() => onFeatureClick(feature)}>
-					{feature.name}
+					{formatFeatureName(feature.name)}
 				</a>
 			</SidebarMenuButton>
 			{feature.features && feature.features.length > 0 ? (
 				<SidebarMenuSub>
 					{feature.features.map((subFeature) => (
-						<FeatureSubItem key={subFeature.path} feature={subFeature} onFeatureClick={onFeatureClick} />
+						<FeatureSubItem key={subFeature.path} feature={subFeature} activeFeature={activeFeature} onFeatureClick={onFeatureClick} />
 					))}
 				</SidebarMenuSub>
 			) : null}
@@ -43,20 +45,21 @@ function FeatureItem({ feature, onFeatureClick }: FeatureItemProps) {
 }
 
 interface FeatureItemProps {
+  activeFeature: Feature | null;
   feature: Feature;
   onFeatureClick: (feature: Feature) => void;
 }
 
-function FeatureSubItem({ feature, onFeatureClick }: FeatureItemProps) {
+function FeatureSubItem({ feature, activeFeature, onFeatureClick }: FeatureItemProps) {
 	return (
 		<SidebarMenuSubItem key={feature.path}>
-			<SidebarMenuSubButton asChild>
-				<a href={`#${feature.path}`} onClick={() => onFeatureClick(feature)}>{feature.name}</a>
+			<SidebarMenuSubButton asChild isActive={feature.path === activeFeature?.path}>
+				<a href={`#${feature.path}`} onClick={() => onFeatureClick(feature)}>{formatFeatureName(feature.name)}</a>
 			</SidebarMenuSubButton>
 			{feature.features && feature.features.length > 0 ? (
 				<SidebarMenuSub>
 					{feature.features.map((subFeature) => (
-						<FeatureSubItem key={subFeature.path} feature={subFeature} onFeatureClick={onFeatureClick} />
+						<FeatureSubItem key={subFeature.path} feature={subFeature} activeFeature={activeFeature} onFeatureClick={onFeatureClick} />
 					))}
 				</SidebarMenuSub>
 			) : null}
@@ -65,11 +68,12 @@ function FeatureSubItem({ feature, onFeatureClick }: FeatureItemProps) {
 }
 
 interface AppSidebarProps extends  React.ComponentProps<typeof Sidebar>  {
+  activeFeature: Feature | null;
   onFeatureClick: (feature: Feature) => void;
 
 }
 
-export function AppSidebar({ onFeatureClick, ...props }:AppSidebarProps) {
+export function AppSidebar({ activeFeature, onFeatureClick, ...props }:AppSidebarProps) {
 	const features = useContext(FeaturesContext);
 
 	return (
@@ -95,7 +99,7 @@ export function AppSidebar({ onFeatureClick, ...props }:AppSidebarProps) {
 				<SidebarGroup>
 					<SidebarMenu>
 						{features.map((feature) => (
-							<FeatureItem key={feature.path} feature={feature} onFeatureClick={onFeatureClick} />
+							<FeatureItem key={feature.path} feature={feature} onFeatureClick={onFeatureClick} activeFeature={activeFeature} />
 						))}
 					</SidebarMenu>
 				</SidebarGroup>

@@ -1,4 +1,5 @@
 import type { Feature } from "@/models/feature";
+import { formatFeatureName } from "@/utils/format-feature-name";
 
 interface FeatureDetailsProps {
 	feature: Feature;
@@ -8,7 +9,7 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			<div>
-				<h1 className="text-3xl font-bold">{feature.name}</h1>
+				<h1 className="text-3xl font-bold">{formatFeatureName(feature.name)}</h1>
 			</div>
 
 			<div className="flex flex-col gap-2">

@@ -30,20 +30,15 @@ export function FeaturesProvider({ children }: { children: React.ReactNode }) {
 	const { data: features, error } = useSWR<Feature[]>(
 		"/features.json",
 		fetcher,
+		{ suspense: true }
 	);
 
 	if (error) {
 		return <div>Error loading features</div>;
 	}
 
-	if (!features) {
-		return <div>Loading...</div>;
-	}
-
-	console.log("features", features);
-
 	return (
-		<FeaturesContext.Provider value={features}>
+		<FeaturesContext.Provider value={features ?? []}>
 			{children}
 		</FeaturesContext.Provider>
 	);

@@ -7,6 +7,8 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import type { Feature } from "@/models/feature";
+import { formatFeatureName } from "@/utils/format-feature-name";
+import { Fragment } from "react";
 
 interface FeatureBreadcrumbProps {
 	feature: Feature | null;
@@ -37,18 +39,18 @@ export function FeatureBreadcrumb({ feature, onFeatureClick }: FeatureBreadcrumb
 				{breadcrumbPath.map((item, index) => {
 					const isLast = index === breadcrumbPath.length - 1;
 					return (
-						<>
-							<BreadcrumbItem key={item.path} className="hidden md:block">
+						<Fragment key={item.path}>
+							<BreadcrumbItem  className="hidden md:block">
 								{isLast ? (
-									<BreadcrumbPage>{item.name}</BreadcrumbPage>
+									<BreadcrumbPage>{formatFeatureName(item.name)}</BreadcrumbPage>
 								) : (
 									<BreadcrumbLink href={`#${item.path}`} onClick={() => onFeatureClick(item)}>
-										{item.name}
+										{formatFeatureName(item.name)}
 									</BreadcrumbLink>
 								)}
 							</BreadcrumbItem>
 							{!isLast && <BreadcrumbSeparator className="hidden md:block" />}
-						</>
+						</Fragment>
 					);
 				})}
 			</BreadcrumbList>
