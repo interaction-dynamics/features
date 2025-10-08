@@ -6,7 +6,7 @@ This approach is not meant to replace other architecture design like hexagonal a
 
 This approach is technology agnostic and can be used with any programming language or framework.
 
-> This approach is not innovative but lacks documentation online so this repository is a good starting point.
+> This documentation is not innovative but feature-based architecture lacks documentation online so this repository is a good starting point.
 
 ## Guidelines
 
@@ -21,6 +21,19 @@ By following specific guidelines and conventions, it becomes easier to add tooli
 7. **[MAY]**     add [MADR files](https://adr.github.io/madr/) into `features/feature-1/__docs__/decisions`
 
 > You can find examples in the [examples](./examples) folder.
+
+## Use cases
+
+This architecture brings a clear separation of concerns and makes it easier to understand and maintain the codebase.
+
+It also have clear benefits in multiple ways:
+
+- you can list all the features in a project
+- you can find the 'owner' of a feature
+- you can get the history of a feature
+- you can share the list of features with product managers and stakeholders
+- you can easily find the code related to the feature
+- you can easily find the documentation related to the feature
 
 ## CLI
 
