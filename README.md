@@ -16,8 +16,9 @@ By following specific guidelines and conventions, it becomes easier to add tooli
 2. **[MUST]**    create your feature folder like `feature-1`
 3. **[MUST]**    add the code related to this feature inside `features/feature-1`
 4. **[SHOULD]**  add a README.md file into `features/feature-1`
-5. **[SHOULD]**  add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` and the name of the team who has ownership of this feature
-6. **[MAY]**     add [MADR files](https://adr.github.io/madr/) into `features/feature-1/__docs__/decisions`
+5. **[SHOULD]** add a line of text describing the feature after the title in the README.md file
+6. **[SHOULD]**  add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` and the name of the team who has ownership of this feature
+7. **[MAY]**     add [MADR files](https://adr.github.io/madr/) into `features/feature-1/__docs__/decisions`
 
 > You can find examples in the [examples](./examples) folder.
 
