@@ -11,6 +11,20 @@ interface FeatureDetailsProps {
 }
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
+	// Recursively find owner by traversing parent chain
+	const resolveOwner = (currentFeature: Feature): string => {
+		if (currentFeature.owner !== "Unknown") {
+			return currentFeature.owner;
+		}
+		if (currentFeature.parent) {
+			return resolveOwner(currentFeature.parent);
+		}
+		return "Unknown";
+	};
+
+	const resolvedOwner = resolveOwner(feature);
+	const isInheritedOwner = resolvedOwner !== feature.owner;
+
 	return (
 		<div className="flex flex-col gap-4">
 			<div>
@@ -32,9 +46,18 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 					<User className="h-4 w-4 text-muted-foreground mt-0.5" />
 					<div className="flex-1">
 						<p className="text-sm font-medium text-foreground mb-1">Owner</p>
-						<p className="text-xs font-mono text-muted-foreground">
-							{feature.owner}
-						</p>
+						<div className="text-xs font-mono text-muted-foreground">
+							{isInheritedOwner ? (
+								<div className="flex items-center gap-2">
+									<span>{resolvedOwner}</span>
+									<span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 rounded text-[10px] font-medium">
+										inherited
+									</span>
+								</div>
+							) : (
+								<span>{resolvedOwner}</span>
+							)}
+						</div>
 					</div>
 				</div>
 				{feature.meta && Object.keys(feature.meta).length > 0 && (
