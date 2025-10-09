@@ -11,72 +11,22 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarMenuSub,
-	SidebarMenuSubButton,
-	SidebarMenuSubItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import type { Feature } from "@/models/feature";
-import { formatFeatureName } from "@/lib/format-feature-name";
 import { ModeToggle } from "./mode-toggle";
 import { NavFeatures } from "./nav-features";
 
-
-interface FeatureItemProps {
-  activeFeature: Feature | null;
-  feature: Feature;
-  onFeatureClick: (feature: Feature) => void;
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+	activeFeature: Feature | null;
+	onFeatureClick: (feature: Feature) => void;
 }
 
-function FeatureItem({ feature, activeFeature, onFeatureClick }: FeatureItemProps) {
-	return (
-		<SidebarMenuItem key={feature.path} >
-			<SidebarMenuButton asChild isActive={feature.path === activeFeature?.path}>
-				<a href={`#${feature.path}`} className="font-medium" onClick={() => onFeatureClick(feature)}>
-					{formatFeatureName(feature.name)}
-				</a>
-			</SidebarMenuButton>
-			{feature.features && feature.features.length > 0 ? (
-				<SidebarMenuSub>
-					{feature.features.map((subFeature) => (
-						<FeatureSubItem key={subFeature.path} feature={subFeature} activeFeature={activeFeature} onFeatureClick={onFeatureClick} />
-					))}
-				</SidebarMenuSub>
-			) : null}
-		</SidebarMenuItem>
-	);
-}
-
-interface FeatureItemProps {
-  activeFeature: Feature | null;
-  feature: Feature;
-  onFeatureClick: (feature: Feature) => void;
-}
-
-function FeatureSubItem({ feature, activeFeature, onFeatureClick }: FeatureItemProps) {
-	return (
-		<SidebarMenuSubItem key={feature.path}>
-			<SidebarMenuSubButton asChild isActive={feature.path === activeFeature?.path}>
-				<a href={`#${feature.path}`} onClick={() => onFeatureClick(feature)}>{formatFeatureName(feature.name)}</a>
-			</SidebarMenuSubButton>
-			{feature.features && feature.features.length > 0 ? (
-				<SidebarMenuSub>
-					{feature.features.map((subFeature) => (
-						<FeatureSubItem key={subFeature.path} feature={subFeature} activeFeature={activeFeature} onFeatureClick={onFeatureClick} />
-					))}
-				</SidebarMenuSub>
-			) : null}
-		</SidebarMenuSubItem>
-	);
-}
-
-interface AppSidebarProps extends  React.ComponentProps<typeof Sidebar>  {
-  activeFeature: Feature | null;
-  onFeatureClick: (feature: Feature) => void;
-
-}
-
-export function AppSidebar({ activeFeature, onFeatureClick, ...props }:AppSidebarProps) {
+export function AppSidebar({
+	activeFeature,
+	onFeatureClick,
+	...props
+}: AppSidebarProps) {
 	const features = useContext(FeaturesContext);
 
 	return (
@@ -101,13 +51,17 @@ export function AppSidebar({ activeFeature, onFeatureClick, ...props }:AppSideba
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarMenu>
-					  <NavFeatures items={features} onFeatureClick={onFeatureClick} activeFeature={activeFeature} />
+						<NavFeatures
+							items={features}
+							onFeatureClick={onFeatureClick}
+							activeFeature={activeFeature}
+						/>
 					</SidebarMenu>
 				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter>
-			  <ModeToggle />
-      </SidebarFooter>
+				<ModeToggle />
+			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>
 	);

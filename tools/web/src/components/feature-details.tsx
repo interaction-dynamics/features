@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatFeatureName } from "@/lib/format-feature-name";
 import type { Feature } from "@/models/feature";
+import { FeatureChanges } from "./feature-changes";
 import { FeatureDescription } from "./feature-description";
 
 interface FeatureDetailsProps {
@@ -62,21 +63,15 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 			<Tabs defaultValue="description" className="mt-4">
 				<TabsList>
 					<TabsTrigger value="description">Description</TabsTrigger>
+					<TabsTrigger value="changes">Changes</TabsTrigger>
 					<TabsTrigger value="files">Files</TabsTrigger>
 					<TabsTrigger value="dependencies">Dependencies</TabsTrigger>
 				</TabsList>
 				<TabsContent value="description" className="mt-1">
-					<Card>
-						<CardContent>
-							{feature.description ? (
-								<FeatureDescription description={feature.description} />
-							) : (
-								<p className="text-sm text-muted-foreground">
-									No description available
-								</p>
-							)}
-						</CardContent>
-					</Card>
+					<FeatureDescription description={feature.description} />
+				</TabsContent>
+				<TabsContent value="changes" className="mt-1">
+					<FeatureChanges changes={feature.changes} />
 				</TabsContent>
 				<TabsContent value="files" className="mt-1">
 					<p className="text-sm text-muted-foreground">

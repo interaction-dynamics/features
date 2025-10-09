@@ -4,12 +4,13 @@ use std::collections::HashSet;
 
 mod checker;
 mod file_scanner;
+mod git_helper;
 mod models;
 mod printer;
 mod readme_parser;
 
 use checker::run_checks;
-use file_scanner::list_files_recursive;
+use file_scanner::{list_files_recursive, list_files_recursive_with_changes};
 use models::Feature;
 use printer::print_features;
 
@@ -52,6 +53,7 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
             path: feature.path.clone(),
             features: Vec::new(), // Empty for flat structure
             meta: feature.meta.clone(),
+            changes: Vec::new(),
         };
 
         flat_features.push(flat_feature);
@@ -84,7 +86,11 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
 fn main() -> Result<()> {
     let args = Cli::parse();
 
-    let features = list_files_recursive(&args.path)?;
+    let features = if args.json {
+        list_files_recursive_with_changes(&args.path)?
+    } else {
+        list_files_recursive(&args.path)?
+    };
 
     if args.check {
         run_checks(&features)?;

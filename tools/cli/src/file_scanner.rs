@@ -2,10 +2,19 @@ use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
 
+use crate::git_helper::get_commits_for_path;
 use crate::models::Feature;
 use crate::readme_parser::read_readme_info;
 
 pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
+    list_files_recursive_impl(dir, false)
+}
+
+pub fn list_files_recursive_with_changes(dir: &Path) -> Result<Vec<Feature>> {
+    list_files_recursive_impl(dir, true)
+}
+
+fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Feature>> {
     let entries = fs::read_dir(dir)
         .with_context(|| format!("could not read directory `{}`", dir.display()))?;
 
@@ -23,7 +32,13 @@ pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
                 let readme_path = path.join("README.md");
                 let (owner, description, meta) = read_readme_info(&readme_path)?;
 
-                let new_features = list_files_recursive(&path);
+                let new_features = list_files_recursive_impl(&path, include_changes);
+
+                let changes = if include_changes {
+                    get_commits_for_path(&path, &path.to_string_lossy()).unwrap_or_default()
+                } else {
+                    Vec::new()
+                };
 
                 features.push(Feature {
                     name: name.to_string(),
@@ -32,9 +47,10 @@ pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
                     path: path.to_string_lossy().to_string(),
                     features: new_features?,
                     meta,
+                    changes,
                 });
             } else {
-                let new_features = list_files_recursive(&path);
+                let new_features = list_files_recursive_impl(&path, include_changes);
                 features.extend(new_features?);
             }
         }
