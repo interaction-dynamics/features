@@ -14,6 +14,48 @@ pub fn list_files_recursive_with_changes(dir: &Path) -> Result<Vec<Feature>> {
     list_files_recursive_impl(dir, true)
 }
 
+fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
+    let mut decisions = Vec::new();
+
+    // Check both "decision" and "decisions" folder names
+    let decision_paths = [
+        feature_path.join(".docs").join("decisions"),
+        feature_path.join("__docs__").join("decisions"),
+    ];
+
+    for decisions_dir in &decision_paths {
+        if decisions_dir.exists() && decisions_dir.is_dir() {
+            let entries = fs::read_dir(decisions_dir).with_context(|| {
+                format!(
+                    "could not read decisions directory `{}`",
+                    decisions_dir.display()
+                )
+            })?;
+
+            for entry in entries {
+                let entry = entry?;
+                let path = entry.path();
+
+                // Skip README.md files and only process .md files
+                if path.is_file() {
+                    if let Some(file_name) = path.file_name() {
+                        let file_name_str = file_name.to_string_lossy();
+                        if file_name_str.ends_with(".md") && file_name_str != "README.md" {
+                            let content = fs::read_to_string(&path).with_context(|| {
+                                format!("could not read decision file `{}`", path.display())
+                            })?;
+                            decisions.push(content);
+                        }
+                    }
+                }
+            }
+            break; // If we found one of the directories, don't check the other
+        }
+    }
+
+    Ok(decisions)
+}
+
 fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Feature>> {
     let entries = fs::read_dir(dir)
         .with_context(|| format!("could not read directory `{}`", dir.display()))?;
@@ -40,6 +82,12 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
                     Vec::new()
                 };
 
+                let decisions = if include_changes {
+                    read_decision_files(&path).unwrap_or_default()
+                } else {
+                    Vec::new()
+                };
+
                 features.push(Feature {
                     name: name.to_string(),
                     description,
@@ -48,6 +96,7 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
                     features: new_features?,
                     meta,
                     changes,
+                    decisions,
                 });
             } else {
                 let new_features = list_files_recursive_impl(&path, include_changes);

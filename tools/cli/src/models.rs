@@ -19,4 +19,5 @@ pub struct Feature {
     pub features: Vec<Feature>,
     pub meta: HashMap<String, serde_json::Value>,
     pub changes: Vec<Change>,
+    pub decisions: Vec<String>,
 }
