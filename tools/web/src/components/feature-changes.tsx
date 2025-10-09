@@ -1,5 +1,5 @@
-import { Calendar, GitCommit, Hash, User } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar, GitCommit, User } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Change } from "@/models/feature";
 
 interface FeatureChangesProps {

@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatFeatureName } from "@/lib/format-feature-name";
 import type { Feature } from "@/models/feature";
 import { FeatureChanges } from "./feature-changes";
+import { FeatureDecisions } from "./feature-decisions";
 import { FeatureDescription } from "./feature-description";
 
 interface FeatureDetailsProps {
@@ -63,12 +64,16 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 				<TabsList>
 					<TabsTrigger value="description">Description</TabsTrigger>
 					<TabsTrigger value="changes">Changes</TabsTrigger>
+					<TabsTrigger value="decisions">Decisions</TabsTrigger>
 				</TabsList>
 				<TabsContent value="description" className="mt-1">
 					<FeatureDescription description={feature.description} />
 				</TabsContent>
 				<TabsContent value="changes" className="mt-1">
 					<FeatureChanges changes={feature.changes} />
+				</TabsContent>
+				<TabsContent value="decisions" className="mt-1">
+					<FeatureDecisions decisions={feature.decisions} />
 				</TabsContent>
 			</Tabs>
 		</div>

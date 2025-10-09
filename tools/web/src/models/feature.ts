@@ -18,6 +18,7 @@ export type Feature = {
 	meta?: Record<string, unknown>;
 	parent?: Feature;
 	changes: Change[];
+	decisions: string[];
 };
 
 export const ChangeSchema: z.ZodType<Change> = z.object({
@@ -39,5 +40,6 @@ export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
 		meta: z.record(z.string(), z.unknown()).optional(),
 		parent: FeatureSchema.optional(),
 		changes: z.array(ChangeSchema),
+		decisions: z.array(z.string()),
 	}),
 );
