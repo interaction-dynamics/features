@@ -5,6 +5,7 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { MarkdownRenderer } from "./markown-renderer";
 
 interface FeatureDecisionsProps {
 	decisions: string[];
@@ -23,16 +24,24 @@ export function FeatureDecisions({ decisions }: FeatureDecisionsProps) {
 		);
 	}
 
-	const getPreviewText = (decision: string, maxLength: number = 120) => {
-		// Remove extra whitespace and newlines for preview
-		const cleanText = decision.replace(/\s+/g, " ").trim();
-		if (cleanText.length <= maxLength) {
-			return cleanText;
+	const getPreviewText = (decision: string) => {
+		// Extract the first line as the title
+		const lines = decision.split("\n");
+		const firstLine = lines[0].trim();
+
+		if (!firstLine) {
+			return "Untitled Decision";
 		}
-		// Find the last space before maxLength to avoid cutting words
-		const lastSpace = cleanText.lastIndexOf(" ", maxLength);
-		const cutPoint = lastSpace > maxLength * 0.8 ? lastSpace : maxLength;
-		return `${cleanText.substring(0, cutPoint).trim()}...`;
+
+		// Remove markdown formatting
+		return firstLine
+			.replace(/^#+\s*/, "") // Remove heading markers (# ## ###)
+			.replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold **text**
+			.replace(/\*(.*?)\*/g, "$1") // Remove italic *text*
+			.replace(/`(.*?)`/g, "$1") // Remove inline code `text`
+			.replace(/\[(.*?)\]\(.*?\)/g, "$1") // Remove links [text](url)
+			.replace(/~~(.*?)~~/g, "$1") // Remove strikethrough ~~text~~
+			.trim();
 	};
 
 	return (
@@ -54,15 +63,8 @@ export function FeatureDecisions({ decisions }: FeatureDecisionsProps) {
 							</CardContent>
 						</CollapsibleTrigger>
 						<CollapsibleContent>
-							<CardContent className="pt-0 pb-6">
-								<div className="flex items-start gap-3 mt-4">
-									<div className="w-5 flex-shrink-0" />
-									<div className="flex-1">
-										<p className="text-sm whitespace-pre-wrap leading-relaxed">
-											{decision}
-										</p>
-									</div>
-								</div>
+							<CardContent className="pt-3 pb-1">
+								<MarkdownRenderer markdown={decision} />
 							</CardContent>
 						</CollapsibleContent>
 					</Collapsible>
