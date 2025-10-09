@@ -1,5 +1,4 @@
 import { FolderTree, Info, User } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatFeatureName } from "@/lib/format-feature-name";
 import type { Feature } from "@/models/feature";
@@ -64,24 +63,12 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 				<TabsList>
 					<TabsTrigger value="description">Description</TabsTrigger>
 					<TabsTrigger value="changes">Changes</TabsTrigger>
-					<TabsTrigger value="files">Files</TabsTrigger>
-					<TabsTrigger value="dependencies">Dependencies</TabsTrigger>
 				</TabsList>
 				<TabsContent value="description" className="mt-1">
 					<FeatureDescription description={feature.description} />
 				</TabsContent>
 				<TabsContent value="changes" className="mt-1">
 					<FeatureChanges changes={feature.changes} />
-				</TabsContent>
-				<TabsContent value="files" className="mt-1">
-					<p className="text-sm text-muted-foreground">
-						Files list coming soon...
-					</p>
-				</TabsContent>
-				<TabsContent value="dependencies" className="mt-1">
-					<p className="text-sm text-muted-foreground">
-						Dependencies coming soon...
-					</p>
 				</TabsContent>
 			</Tabs>
 		</div>
