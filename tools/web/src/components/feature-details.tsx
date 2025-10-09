@@ -1,7 +1,8 @@
-import ReactMarkdown from 'react-markdown';
-
 import type { Feature } from "@/models/feature";
 import { formatFeatureName } from "@/lib/format-feature-name";
+import { FeatureDescription } from "./feature-description";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface FeatureDetailsProps {
 	feature: Feature;
@@ -29,18 +30,6 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 					<p className="text-sm">{feature.owner}</p>
 				</div>
 
-				{feature.description && (
-					<div>
-						<span className="text-sm font-semibold text-muted-foreground">
-							Description:
-						</span>
-						<p className="text-sm"><div className="**:list-disc **:[ul]:ms-4 **:[p]:py-2 **:[h1]:scroll-m-20 **:[h1]:text-4xl **:[h1]:font-extrabold **:[h1]:tracking-tight **:[h1]:text-balance **:[h2]:scroll-m-20 **:[h2]:pb-2 **:[h2]:text-3xl **:[h2]:font-semibold **:[h2]:tracking-tight first:mt-0 ">
-						  <ReactMarkdown >{feature.description}</ReactMarkdown>
-						</div>
-						</p>
-					</div>
-				)}
-
 				{feature.meta && Object.keys(feature.meta).length > 0 && (
 					<div>
 						<span className="text-sm font-semibold text-muted-foreground">
@@ -62,6 +51,31 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 					</div>
 				)}
 			</div>
+
+			<Tabs defaultValue="description" className="mt-4">
+				<TabsList>
+					<TabsTrigger value="description">Description</TabsTrigger>
+					<TabsTrigger value="files">Files</TabsTrigger>
+					<TabsTrigger value="dependencies">Dependencies</TabsTrigger>
+				</TabsList>
+				<TabsContent value="description" className="mt-1">
+					<Card>
+						<CardContent>
+							{feature.description ? (
+								<FeatureDescription description={feature.description} />
+							) : (
+								<p className="text-sm text-muted-foreground">No description available</p>
+							)}
+						</CardContent>
+					</Card>
+				</TabsContent>
+				<TabsContent value="files" className="mt-1">
+					<p className="text-sm text-muted-foreground">Files list coming soon...</p>
+				</TabsContent>
+				<TabsContent value="dependencies" className="mt-1">
+					<p className="text-sm text-muted-foreground">Dependencies coming soon...</p>
+				</TabsContent>
+			</Tabs>
 		</div>
 	);
 }
