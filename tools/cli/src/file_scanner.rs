@@ -53,7 +53,7 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
         }
     }
 
-    Ok(decisions)
+    return Ok(decisions);
 }
 
 fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Feature>> {
@@ -105,5 +105,5 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
         }
     }
 
-    return Ok(features);
+    Ok(features)
 }
