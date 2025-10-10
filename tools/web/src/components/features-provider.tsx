@@ -1,8 +1,6 @@
-import { createContext } from 'react'
 import useSWR from 'swr'
+import { FeaturesContext } from '@/lib/features-context'
 import type { Feature } from '@/models/feature'
-
-export const FeaturesContext = createContext<Feature[]>([])
 
 const addParentReferences = (
   features: Feature[],
@@ -27,7 +25,7 @@ const fetcher = async (url: string): Promise<Feature[]> => {
 }
 
 export function FeaturesProvider({ children }: { children: React.ReactNode }) {
-  const { data: features } = useSWR<Feature[]>('/features.json', fetcher, {
+  const { data: features } = useSWR<Feature[]>('./features.json', fetcher, {
     suspense: true,
   })
 

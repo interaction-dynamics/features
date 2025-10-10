@@ -1,7 +1,6 @@
 import { GalleryVerticalEnd } from 'lucide-react'
 import type * as React from 'react'
 import { useContext } from 'react'
-import { FeaturesContext } from '@/components/features-provider'
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { FeaturesContext } from '@/lib/features-context'
 import type { Feature } from '@/models/feature'
 import { ModeToggle } from './mode-toggle'
 import { NavFeatures } from './nav-features'
