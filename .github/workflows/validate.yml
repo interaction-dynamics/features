@@ -47,6 +47,35 @@ jobs:
       # - name: Unit Tests ✔️
       #   run: pnpm test:ci
 
+  validate-cli:
+    name: Validate CLI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./tools/cli
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check Formatting 👕
+        run: cargo fmt --all -- --check
+      - name: Clippy 🔍
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Build 🔧
+        run: cargo build --verbose
+      - name: Test ✔️
+        run: cargo test --verbose
+
   # e2e_tests:
   #   name: End-to-end Tests
   #   runs-on: ubuntu-latest
