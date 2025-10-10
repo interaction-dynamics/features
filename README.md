@@ -52,8 +52,8 @@ examples/rust-basic/src/
 | **MUST** | Create your feature folder like `feature-1` | `features/user-authentication/` |
 | **MUST** | Add the code related to this feature inside the feature folder | `features/user-authentication/login.js` |
 | **SHOULD** | Add a README.md file into the feature folder | `features/user-authentication/README.md` |
-| **SHOULD** | Add a line of text describing the feature after the title in the README.md file | `# User Authentication\nHandles user login and logout functionality` |
-| **SHOULD** | Add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` | `---\nowner: backend-team\n---` |
+| **SHOULD** | Add a line of text describing the feature after the title in the README.md file | `Handles user login and logout functionality` |
+| **SHOULD** | Add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` | <pre>---<br/>owner: backend-team<br/>---</pre> |
 | **MAY** | Add [MADR files](https://adr.github.io/madr/) into the feature's decisions folder | `features/user-authentication/__docs__/decisions/001-use-jwt-tokens.md` |
 
 ## Tools
