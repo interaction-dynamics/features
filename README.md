@@ -25,17 +25,39 @@ You can also easier:
 
 ## Guidelines
 
-By following specific guidelines and conventions, it becomes easier to add toolings around this approach and automatize the use cases above:
+By following specific guidelines and conventions, it becomes easier to add toolings around this approach and automatize the use cases above.
 
-1. **[MUST]**    create a folder `features`
-2. **[MUST]**    create your feature folder like `feature-1`
-3. **[MUST]**    add the code related to this feature inside `features/feature-1`
-4. **[SHOULD]**  add a README.md file into `features/feature-1`
-5. **[SHOULD]**  add a line of text describing the feature after the title in the README.md file
-6. **[SHOULD]**  add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` and the name of the team who has ownership of this feature
-7. **[MAY]**     add [MADR files](https://adr.github.io/madr/) into `features/feature-1/__docs__/decisions`
+### Folder structure
 
-> You can find examples in the [examples](./examples) folder.
+The minimum folder structure is as follows:
+
+```bash
+examples/rust-basic/
+├── Cargo.lock
+├── Cargo.toml
+└── src
+    ├── features
+    │   ├── feature-1
+    │   │   ├── file.rs
+    │   │   └── README.md
+    │   └── feature-2
+    │       └── file.rs
+    └── main.rs
+```
+
+> You can find more sophisticated examples in the [examples](./examples) folder.
+
+### Details
+
+| Requirement | Description | Example |
+|-------------|-------------|---------|
+| **MUST** | Create a folder `features` | `features/` |
+| **MUST** | Create your feature folder like `feature-1` | `features/user-authentication/` |
+| **MUST** | Add the code related to this feature inside the feature folder | `features/user-authentication/login.js` |
+| **SHOULD** | Add a README.md file into the feature folder | `features/user-authentication/README.md` |
+| **SHOULD** | Add a line of text describing the feature after the title in the README.md file | `# User Authentication\nHandles user login and logout functionality` |
+| **SHOULD** | Add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` | `---\nowner: backend-team\n---` |
+| **MAY** | Add [MADR files](https://adr.github.io/madr/) into the feature's decisions folder | `features/user-authentication/__docs__/decisions/001-use-jwt-tokens.md` |
 
 ## Tools
 
