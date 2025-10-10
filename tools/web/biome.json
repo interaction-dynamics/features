@@ -6,12 +6,12 @@
 		"useIgnoreFile": false
 	},
 	"files": {
- "includes": ["tools/**/*", "examples/**/*"],
+		"includes": ["tools/**/*", "examples/**/*"],
 		"ignoreUnknown": false
 	},
 	"formatter": {
 		"enabled": true,
-    "indentStyle": "space"
+		"indentStyle": "space"
 	},
 	"linter": {
 		"enabled": true,
@@ -21,16 +21,16 @@
 	},
 	"javascript": {
 		"formatter": {
-		  "semicolons": "asNeeded",
-      "quoteStyle": "single",
-      "lineEnding": "lf"
+			"semicolons": "asNeeded",
+			"quoteStyle": "single",
+			"lineEnding": "lf"
 		}
 	},
 	"assist": {
 		"enabled": true,
 		"actions": {
 			"source": {
-        "recommended": true,
+				"recommended": true,
 				"organizeImports": "on"
 			}
 		}
