@@ -1,0 +1,81 @@
+name: Valide Code
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  validate-web:
+    name: Validate UI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./tools/web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4.2.0
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Install 🔧
+        run: pnpm install
+      - name: Build 🔧
+        run: pnpm build
+      - name: Format 👕
+        run: |
+          pnpm format
+          pnpm lint
+      # - name: Unit Tests ✔️
+      #   run: pnpm test:ci
+
+  # e2e_tests:
+  #   name: End-to-end Tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18
+  #     - uses: pnpm/action-setup@v2
+  #       name: Install pnpm
+  #       with:
+  #         version: 8
+  #         run_install: false
+  #     - name: Get pnpm store directory
+  #       shell: bash
+  #       run: |
+  #         echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+  #     - uses: actions/cache@v3
+  #       name: Setup pnpm cache
+  #       with:
+  #         path: ${{ env.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-pnpm-store-
+  #     - name: Install 🔧
+  #       run: pnpm install
+  #     - name: Build 🔧
+  #       run: pnpm build
+  #     - name: End-to-end Tests ✔️
+  #       run: |
+  #         npx playwright install --with-deps
+  #         pnpm test:e2e
