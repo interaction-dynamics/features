@@ -36,6 +36,7 @@
 	--sidebar-ring: oklch(0.708 0 0);
 }
 
+/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @theme inline {
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
@@ -110,9 +111,11 @@
 
 @layer base {
 	* {
+		/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 		@apply border-border outline-ring/50;
 	}
 	body {
+		/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 		@apply bg-background text-foreground;
 	}
 }

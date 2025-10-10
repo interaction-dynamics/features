@@ -6,7 +6,7 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"includes": ["tools/**/*", "examples/**/*"],
+		"includes": ["**/*", "!dist", "!node_modules", "!src/components/ui"],
 		"ignoreUnknown": false
 	},
 	"formatter": {
