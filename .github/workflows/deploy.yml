@@ -104,6 +104,8 @@ jobs:
       # Build web application
       - name: Build web application 🏗️
         working-directory: ./tools/web
+        env:
+          BASE_URL: "/features"
         run: |
           pnpm build
           if [ ! -d "dist" ]; then
