@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && rm -rf dist/features.json",
+    "build": "tsc -b && vite build",
     "lint": "biome lint .",
     "format": "biome format .",
     "preview": "vite preview"
