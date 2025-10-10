@@ -68,3 +68,7 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ## Contributing
 
 We welcome contributions to this project! If you have any ideas or suggestions, please feel free to open an issue or submit a pull request.
+
+## Roadmap
+
+Check [here](https://github.com/orgs/interaction-dynamics/projects/18/views/4).
