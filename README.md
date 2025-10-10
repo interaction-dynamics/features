@@ -32,17 +32,14 @@ By following specific guidelines and conventions, it becomes easier to add tooli
 The minimum folder structure is as follows:
 
 ```bash
-examples/rust-basic/
-├── Cargo.lock
-├── Cargo.toml
-└── src
-    ├── features
-    │   ├── feature-1
-    │   │   ├── file.rs
-    │   │   └── README.md
-    │   └── feature-2
-    │       └── file.rs
-    └── main.rs
+examples/rust-basic/src/
+├── features
+│   ├── feature-1
+│   │   ├── file.rs # rust or any other language source code file
+│   │   └── README.md
+│   └── feature-2
+│      └── file.rs
+└── ... # other source code
 ```
 
 > You can find more sophisticated examples in the [examples](./examples) folder.
