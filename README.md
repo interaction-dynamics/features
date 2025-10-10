@@ -1,14 +1,12 @@
 # Feature-based architecture
 
-A demo is available at [interaction-dynamics.io/features/](interaction-dynamics.io/features/).
-
 Feature-based architecture organizes the codebase by features rather than technical layers (like components, services, or utils). Each feature lives in its own self-contained folder with everything it needs — making the code more modular, discoverable, and maintainable as the project grows.
 
 This approach is not meant to replace other architecture design like hexagonal architecture but rather complement it. It is an approach easier to understand for beginners. It also has the benefits to be shareable with product managers, designers and stakeholders.
 
 This approach is technology agnostic and can be used with any programming language or framework.
 
-> This documentation is not innovative but feature-based architecture lacks documentation online so this repository is a good starting point.
+This repository includes guidelines and examples of feature-based architecture and tools to boost your productivity with feature-based architecture.
 
 ## The benefits
 
