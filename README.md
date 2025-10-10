@@ -6,7 +6,8 @@ This approach is not meant to replace other architecture design like hexagonal a
 
 This approach is technology agnostic and can be used with any programming language or framework.
 
-This repository includes guidelines and examples of feature-based architecture and tools to boost your productivity with feature-based architecture.
+This repository includes guidelines and examples of feature-based architecture and tools to boost your productivity with feature-based architecture. Explore a live [demo](http://interaction-dynamics.io/features/) of the dashboard built with these tools.
+
 
 ## The benefits
 
