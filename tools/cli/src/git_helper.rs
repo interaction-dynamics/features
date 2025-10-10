@@ -80,15 +80,15 @@ fn commit_affects_path(repo: &Repository, commit: &git2::Commit, path: &str) -> 
     let mut affects_path = false;
     diff.foreach(
         &mut |delta, _| {
-            if let Some(path_str) = delta.new_file().path() {
-                if path_str.starts_with(path) {
-                    affects_path = true;
-                }
+            if let Some(path_str) = delta.new_file().path()
+                && path_str.starts_with(path)
+            {
+                affects_path = true;
             }
-            if let Some(path_str) = delta.old_file().path() {
-                if path_str.starts_with(path) {
-                    affects_path = true;
-                }
+            if let Some(path_str) = delta.old_file().path()
+                && path_str.starts_with(path)
+            {
+                affects_path = true;
             }
             true
         },

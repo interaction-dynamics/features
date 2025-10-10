@@ -37,15 +37,15 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
                 let path = entry.path();
 
                 // Skip README.md files and only process .md files
-                if path.is_file() {
-                    if let Some(file_name) = path.file_name() {
-                        let file_name_str = file_name.to_string_lossy();
-                        if file_name_str.ends_with(".md") && file_name_str != "README.md" {
-                            let content = fs::read_to_string(&path).with_context(|| {
-                                format!("could not read decision file `{}`", path.display())
-                            })?;
-                            decisions.push(content);
-                        }
+                if path.is_file()
+                    && let Some(file_name) = path.file_name()
+                {
+                    let file_name_str = file_name.to_string_lossy();
+                    if file_name_str.ends_with(".md") && file_name_str != "README.md" {
+                        let content = fs::read_to_string(&path).with_context(|| {
+                            format!("could not read decision file `{}`", path.display())
+                        })?;
+                        decisions.push(content);
                     }
                 }
             }
@@ -53,7 +53,7 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
         }
     }
 
-    return Ok(decisions);
+    Ok(decisions)
 }
 
 fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Feature>> {

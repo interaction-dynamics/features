@@ -20,7 +20,7 @@ fn collect_features(features: &[Feature], name_to_paths: &mut HashMap<String, Ve
     for feature in features {
         name_to_paths
             .entry(feature.name.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(feature.path.clone());
 
         collect_features(&feature.features, name_to_paths);
