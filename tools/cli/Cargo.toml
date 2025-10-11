@@ -1,10 +1,9 @@
 [package]
 name = "features-cli"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2024"
 description = "A CLI tool for discovering the features in a folder"
 license = "MIT"
-repository = "https://github.com/interaction-dynamics/features/tree/master/tools/cli"
 homepage = "https://github.com/interaction-dynamics/features"
 include = ["src", "public", "!public/features.json"]
 [[bin]]
