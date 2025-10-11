@@ -5,12 +5,14 @@ use std::collections::HashSet;
 mod checker;
 mod file_scanner;
 mod git_helper;
+mod http_server;
 mod models;
 mod printer;
 mod readme_parser;
 
 use checker::run_checks;
 use file_scanner::{list_files_recursive, list_files_recursive_with_changes};
+use http_server::serve_features;
 use models::Feature;
 use printer::print_features;
 
@@ -39,6 +41,14 @@ struct Cli {
     /// Run checks on features (e.g., duplicate names)
     #[arg(long)]
     check: bool,
+
+    /// Start an HTTP server to serve the features
+    #[arg(long)]
+    serve: bool,
+
+    /// Port for the HTTP server (default: 3000)
+    #[arg(long, default_value = "3000")]
+    port: u16,
 }
 
 fn flatten_features(features: &[Feature]) -> Vec<Feature> {
@@ -84,16 +94,19 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
     owners
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = Cli::parse();
 
-    let features = if args.json {
+    let features = if args.json || args.serve {
         list_files_recursive_with_changes(&args.path)?
     } else {
         list_files_recursive(&args.path)?
     };
 
-    if args.check {
+    if args.serve {
+        serve_features(&features, args.port).await?;
+    } else if args.check {
         run_checks(&features)?;
     } else if args.list_owners {
         let unique_owners = extract_unique_owners(&features);

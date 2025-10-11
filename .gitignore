@@ -21,3 +21,5 @@ target
 #.idea/
 
 node_modules/
+
+tools/cli/public
