@@ -1,4 +1,4 @@
-import { FolderTree, User } from 'lucide-react'
+import { FolderTree, HelpCircle, User } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
@@ -54,9 +54,41 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
                   <span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 rounded text-[10px] font-medium">
                     inherited
                   </span>
+                  {resolvedOwner === 'Unknown' && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.open(
+                          'https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-an-owner',
+                          '_blank',
+                        )
+                      }
+                      className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                      title="Learn how to add an owner"
+                    >
+                      <HelpCircle className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
               ) : (
-                <span>{resolvedOwner}</span>
+                <div className="flex items-center gap-2">
+                  <span>{resolvedOwner}</span>
+                  {resolvedOwner === 'Unknown' && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.open(
+                          'https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-an-owner',
+                          '_blank',
+                        )
+                      }
+                      className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                      title="Learn how to add an owner"
+                    >
+                      <HelpCircle className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
