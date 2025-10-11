@@ -79,6 +79,20 @@ The server provides:
 - Static files from the `public/` directory
 - Default index.html if no public/index.html exists
 
+#### File Watching
+
+When using `--serve`, the server automatically watches the specified directory for changes and recomputes features in real-time. The file watcher will:
+
+- Monitor all `README.md` files for changes
+- Detect when directories are created or removed
+- Automatically update the features data served at `/features.json`
+- Provide console feedback with status indicators:
+  - 🔄 When changes are detected and recomputation starts
+  - ✅ When features are successfully updated
+  - ❌ When an error occurs during recomputation
+
+This makes it perfect for development workflows where you're actively editing feature documentation and want to see changes immediately in connected dashboards or applications.
+
 ## Examples
 
 ### Analyze JavaScript Basic Example

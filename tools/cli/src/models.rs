@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct Change {
     pub title: String,
     pub author_name: String,
@@ -10,7 +10,7 @@ pub struct Change {
     pub hash: String,
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct Feature {
     pub name: String,
     pub description: String,

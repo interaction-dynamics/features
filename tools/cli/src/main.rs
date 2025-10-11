@@ -14,7 +14,7 @@ mod readme_parser;
 use build::{BuildConfig, create_build};
 use checker::run_checks;
 use file_scanner::{list_files_recursive, list_files_recursive_with_changes};
-use http_server::serve_features;
+use http_server::serve_features_with_watching;
 use models::Feature;
 use printer::print_features;
 
@@ -115,7 +115,7 @@ async fn main() -> Result<()> {
     };
 
     if args.serve {
-        serve_features(&features, args.port).await?;
+        serve_features_with_watching(&features, args.port, args.path.clone()).await?;
     } else if args.build {
         let build_config = BuildConfig::new(args.build_dir);
         create_build(&features, build_config).await?;

@@ -10,9 +10,15 @@
 
 use anyhow::Result;
 use include_dir::{Dir, include_dir};
-use std::path::Path;
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::RwLock;
+use tokio::time::sleep;
 use warp::{Filter, Reply};
 
+use crate::file_scanner::list_files_recursive_with_changes;
 use crate::models::Feature;
 
 // Embed the public directory at compile time
@@ -53,63 +59,82 @@ impl ServerConfig {
     }
 }
 
-/// Starts an HTTP server to serve features data and embedded static files.
+/// Starts an HTTP server with file watching for a specific directory.
 ///
 /// # Arguments
 ///
-/// * `features` - Slice of Feature objects to serve as JSON
+/// * `features` - Initial Feature objects to serve as JSON
 /// * `port` - Port number to run the server on
+/// * `watch_path` - Path to watch for file changes
 ///
 /// # Returns
 ///
 /// * `Result<()>` - Ok if server starts successfully, Err otherwise
-///
-/// # Server Routes
-///
-/// * `GET /` - Serves embedded index.html or default HTML page
-/// * `GET /features.json` - Serves features data as JSON
-/// * `GET /*` - Serves embedded static files
-///
-/// # Example
-///
-/// ```rust,no_run
-/// use your_crate::http_server::serve_features;
-/// use your_crate::models::Feature;
-///
-/// #[tokio::main]
-/// async fn main() -> anyhow::Result<()> {
-///     let features = vec![]; // Your features data
-///     serve_features(&features, 3000).await
-/// }
-/// ```
-pub async fn serve_features(features: &[Feature], port: u16) -> Result<()> {
+pub async fn serve_features_with_watching(
+    features: &[Feature],
+    port: u16,
+    watch_path: PathBuf,
+) -> Result<()> {
     let config = ServerConfig::new(port);
-    serve_features_with_config(features, config).await
+    serve_features_with_config_and_watching(features, config, Some(watch_path)).await
 }
 
-/// Starts an HTTP server with custom configuration.
+/// Starts an HTTP server with custom configuration and optional file watching.
 ///
 /// # Arguments
 ///
 /// * `features` - Slice of Feature objects to serve as JSON
 /// * `config` - Server configuration
+/// * `watch_path` - Optional path to watch for file changes
 ///
 /// # Returns
 ///
 /// * `Result<()>` - Ok if server starts successfully, Err otherwise
-pub async fn serve_features_with_config(features: &[Feature], config: ServerConfig) -> Result<()> {
-    let features_json = serde_json::to_string_pretty(features)
-        .map_err(|e| anyhow::anyhow!("Failed to serialize features to JSON: {}", e))?;
+pub async fn serve_features_with_config_and_watching(
+    features: &[Feature],
+    config: ServerConfig,
+    watch_path: Option<PathBuf>,
+) -> Result<()> {
+    // Create shared state for features
+    let features_data = Arc::new(RwLock::new(features.to_vec()));
 
-    // Route for features.json
-    let features_json_clone = features_json.clone();
-    let features_route = warp::path("features.json").and(warp::get()).map(move || {
-        warp::reply::with_header(
-            features_json_clone.clone(),
-            "content-type",
-            "application/json",
-        )
-    });
+    // Set up file watching if watch_path is provided
+    if let Some(ref path) = watch_path {
+        let features_data_clone = Arc::clone(&features_data);
+        let watch_path_clone = path.clone();
+
+        tokio::spawn(async move {
+            if let Err(e) = setup_file_watcher(features_data_clone, watch_path_clone).await {
+                eprintln!("File watcher error: {}", e);
+            }
+        });
+
+        println!("📁 Watching directory: {}", path.display());
+    }
+
+    // Route for features.json with shared state
+    let features_data_clone = Arc::clone(&features_data);
+    let features_route = warp::path("features.json")
+        .and(warp::get())
+        .and_then(move || {
+            let features_data = Arc::clone(&features_data_clone);
+            async move {
+                let features = features_data.read().await;
+                let features_json = match serde_json::to_string_pretty(&*features) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        eprintln!("Failed to serialize features: {}", e);
+                        return Err(warp::reject::custom(SerializationError));
+                    }
+                };
+
+                Ok::<_, warp::Rejection>(warp::reply::with_header(
+                    features_json,
+                    "content-type",
+                    "application/json",
+                ))
+            }
+        });
 
     // Route for root path to serve index.html
     let index_route = warp::path::end().and(warp::get()).and_then(serve_index);
@@ -135,12 +160,76 @@ pub async fn serve_features_with_config(features: &[Feature], config: ServerConf
             .join("."),
         config.port
     );
-    println!("Serving embedded static files from build-time public directory");
-
     warp::serve(routes).run((config.host, config.port)).await;
 
     Ok(())
 }
+
+/// Sets up file system watching for the specified path.
+async fn setup_file_watcher(
+    features_data: Arc<RwLock<Vec<Feature>>>,
+    watch_path: PathBuf,
+) -> Result<()> {
+    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+
+    // Set up the file watcher in a blocking task
+    let watch_path_clone = watch_path.clone();
+    let _watcher = tokio::task::spawn_blocking(move || -> Result<RecommendedWatcher> {
+        let mut watcher = RecommendedWatcher::new(
+            move |res: notify::Result<Event>| {
+                match res {
+                    Ok(event) => {
+                        // Send event through channel
+                        if let Err(e) = tx.blocking_send(event) {
+                            eprintln!("Failed to send file system event: {}", e);
+                        }
+                    }
+                    Err(e) => eprintln!("File watcher error: {:?}", e),
+                }
+            },
+            Config::default(),
+        )?;
+
+        watcher.watch(&watch_path_clone, RecursiveMode::Recursive)?;
+        Ok(watcher)
+    })
+    .await??;
+
+    // Process file system events
+    while let Some(event) = rx.recv().await {
+        // Check if this is a file we care about (README.md files or directory changes)
+        let should_recompute = event.paths.iter().any(|path| {
+            path.file_name()
+                .map(|name| name == "README.md")
+                .unwrap_or(false)
+                || event.kind.is_create()
+                || event.kind.is_remove()
+        });
+
+        if should_recompute {
+            // Add a small delay to avoid excessive recomputation during rapid changes
+            sleep(Duration::from_millis(500)).await;
+
+            match list_files_recursive_with_changes(&watch_path) {
+                Ok(new_features) => {
+                    let mut features = features_data.write().await;
+                    *features = new_features;
+                    println!("✅ Features updated successfully");
+                }
+                Err(e) => {
+                    eprintln!("❌ Failed to recompute features: {}", e);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Custom error type for serialization failures
+#[derive(Debug)]
+struct SerializationError;
+impl warp::reject::Reject for SerializationError {}
 
 /// Serves the index page for the root path.
 ///
