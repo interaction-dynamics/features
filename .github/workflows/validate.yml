@@ -69,6 +69,9 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Check Formatting 👕
         run: cargo fmt --all -- --check
+      - name: Prepare public folder
+        run: |
+          mkdir -p public
       - name: Clippy 🔍
         run: cargo clippy --all-targets --all-features -- -D warnings
       - name: Build 🔧
