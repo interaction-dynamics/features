@@ -29,8 +29,8 @@ if (fs.existsSync(cargoDir)) {
     
 const features = process.env.npm_config_features ? `--features ${process.env.npm_config_features.replace(",", " ")}` : ""; 
 
-console.log(`Installing and compiling features-cli 0.3.0 ${features} ...`);
-exec(`cargo install features-cli --vers 0.3.0 ${features}`, (error, stdout, stderr) => {
+console.log(`Installing and compiling features-cli 0.4.0 ${features} ...`);
+exec(`cargo install features-cli --vers 0.4.0 ${features}`, (error, stdout, stderr) => {
   console.log(stdout);
   if (error || stderr) {
     console.log(error || stderr);

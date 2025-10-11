@@ -1,0 +1,154 @@
+[
+  {
+    "name": "feature-1",
+    "description": "This is a Feature that does something useful.",
+    "owner": "team1",
+    "path": "../../examples/javascript-basic/src/features/feature-1",
+    "features": [
+      {
+        "name": "feature-2",
+        "description": "This is a very long description of the feature 2 duplicated.\n\n## Reason of the feature\n\nThis Feature is duplicated because it is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Implementation Details\n\nThis feature is implemented using the following technologies:\n\n- JavaScript\n- HTML\n- CSS\n\n## Conclusion\n\nThis feature is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Future Improvements\n\n- Add more features to the feature\n- Improve the user interface",
+        "owner": "Unknown",
+        "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-2",
+        "features": [],
+        "meta": {},
+        "changes": [
+          {
+            "title": "feat: web interface",
+            "author_name": "Thibault Friedrich",
+            "author_email": "thibault.friedrich@interaction-dynamics.io",
+            "description": "",
+            "date": "2025-10-08 13:30:08",
+            "hash": "2ee99f72d940ff1c2ce53753ecbdcc69e8b7b86e"
+          },
+          {
+            "title": "feat: add more examples",
+            "author_name": "Thibault Friedrich",
+            "author_email": "thibault.friedrich@interaction-dynamics.io",
+            "description": "",
+            "date": "2025-10-08 11:43:11",
+            "hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
+          }
+        ],
+        "decisions": []
+      },
+      {
+        "name": "feature-3",
+        "description": "",
+        "owner": "Unknown",
+        "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-3",
+        "features": [],
+        "meta": {},
+        "changes": [
+          {
+            "title": "feat: add more examples",
+            "author_name": "Thibault Friedrich",
+            "author_email": "thibault.friedrich@interaction-dynamics.io",
+            "description": "",
+            "date": "2025-10-08 11:43:11",
+            "hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
+          }
+        ],
+        "decisions": []
+      },
+      {
+        "name": "feature-4",
+        "description": "",
+        "owner": "team2",
+        "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-4",
+        "features": [],
+        "meta": {
+          "figma": "https://www.figma.com/make/OScZLCeO83Z2nPTQkOuC3j/Glass-Material-Editor?fullscreen=1",
+          "deprecated": true
+        },
+        "changes": [
+          {
+            "title": "feat: render link as button",
+            "author_name": "Thibault Friedrich",
+            "author_email": "thibault.friedrich@interaction-dynamics.io",
+            "description": "",
+            "date": "2025-10-10 00:18:07",
+            "hash": "6e073a44493092e80f5bc334512b2f264b200560"
+          },
+          {
+            "title": "feat: add more examples",
+            "author_name": "Thibault Friedrich",
+            "author_email": "thibault.friedrich@interaction-dynamics.io",
+            "description": "",
+            "date": "2025-10-08 11:43:11",
+            "hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
+          }
+        ],
+        "decisions": []
+      }
+    ],
+    "meta": {},
+    "changes": [
+      {
+        "title": "feat: render link as button",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-10-10 00:18:07",
+        "hash": "6e073a44493092e80f5bc334512b2f264b200560"
+      },
+      {
+        "title": "feat: web interface",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-10-08 13:30:08",
+        "hash": "2ee99f72d940ff1c2ce53753ecbdcc69e8b7b86e"
+      },
+      {
+        "title": "feat: add more examples",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-10-08 11:43:11",
+        "hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
+      }
+    ],
+    "decisions": [
+      "# Use Technology 1\n\n## Decision\n\n### Reasoning\n\nThis decision was made to use technology 1 because it provides the best performance and reliability for our application.\n\n### Implementation\n"
+    ]
+  },
+  {
+    "name": "feature-2",
+    "description": "This is a feature that does something very interesting.",
+    "owner": "Unknown",
+    "path": "../../examples/javascript-basic/src/features/feature-2",
+    "features": [],
+    "meta": {},
+    "changes": [
+      {
+        "title": "feat: add watch mode",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-10-11 13:24:45",
+        "hash": "a9a9aca3ad20a61d0a79bec779fed849f7a7fcde"
+      },
+      {
+        "title": "feat: add decisions files",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-10-09 02:44:46",
+        "hash": "1858eb40b79c89d35ec6c7d83dabd0ddc5ab9100"
+      },
+      {
+        "title": "feat: add more examples",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-10-08 11:43:11",
+        "hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
+      }
+    ],
+    "decisions": [
+      "# Database Choice for Feature 2\n\n## Context\n\nFeature 2 requires persistent data storage for user preferences and application state. We need to choose an appropriate database solution that fits our JavaScript application architecture.\n\n## Decision\n\nWe will use IndexedDB as the primary client-side storage solution, with localStorage as a fallback for critical settings.\n\n## Status\n\nAccepted\n\n## Rationale\n\n### Why IndexedDB?\n- Native browser support without external dependencies\n- Asynchronous operations that don't block the UI\n- Supports complex data types and large storage capacity\n- Transaction support for data consistency\n- Better performance for complex queries compared to localStorage\n\n### Why localStorage as fallback?\n- Synchronous API for critical settings that need immediate access\n- Broader browser compatibility\n- Simpler API for basic key-value operations\n- Persistent across browser sessions\n\n## Consequences\n\n### Positive\n- No external database dependencies\n- Works offline by default\n- Fast local access to data\n- No network latency issues\n- Privacy-friendly (data stays on user's device)\n\n### Negative\n- Data is tied to specific browser/device\n- No server-side data synchronization\n- Storage limits imposed by browser\n- Requires data migration strategies for schema changes\n\n## Implementation Guidelines\n\n### IndexedDB Usage\n- Store user preferences and settings\n- Cache application data for offline use\n- Maintain transaction history\n- Store complex objects and relationships\n\n### localStorage Usage\n- Theme preferences\n- Language settings\n- Critical user preferences that need synchronous access\n- Temporary session data\n\n## Migration Strategy\n\nIf we need server-side storage in the future:\n1. Export data from IndexedDB to JSON format\n2. Implement sync mechanism with server\n3. Maintain hybrid approach for offline functionality\n4. Gradual migration of data to server storage",
+      "# Architecture Choice for Feature 2\n\n## Context\n\nWe need to decide on the architectural pattern for implementing feature 2 in our JavaScript application.\n\n## Decision\n\nWe will use the Model-View-Controller (MVC) pattern for feature 2.\n\n## Status\n\nAccepted\n\n## Consequences\n\n### Positive\n- Clear separation of concerns\n- Easier to test individual components\n- Better maintainability\n- Familiar pattern to most developers\n\n### Negative\n- Additional abstraction layer\n- Slightly more complex initial setup\n- Potential for over-engineering simple features\n\n## Implementation Notes\n\n- Controllers will handle user input and coordinate between models and views\n- Models will manage data and business logic\n- Views will be responsible for rendering the user interface\n- Event-driven communication between components"
+    ]
+  }
+]
