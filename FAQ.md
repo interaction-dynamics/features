@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [How can I add a feature?](#how-can-i-add-a-feature)
+- [How can I add a feature description?](#how-can-i-add-a-feature)
 - [How can I add a decision?](#how-can-i-add-a-decision)
 
 ## How can I add a feature?
@@ -12,6 +13,13 @@ To add a new feature to the system, follow these steps:
 1. Create a folder `features` where you want in your source code directory. It can be in a subdirectory.
 2. Inside the `features` directory, create a folder with the name of the first business feature like `business-feature-name`. It can use snake_case, camelCase, or kebab-case naming conventions.
 3. The feature will automatically be detected and displayed in the web interface
+
+## How can I add a feature description?
+
+To add a new feature description to the system, follow these steps:
+
+1. In the feature folder, create a new README.md file
+2. In this README.md file, provide a detailed description of the feature, including its purpose, functionality, and any relevant technical details.
 
 ## How can I add a decision?
 
