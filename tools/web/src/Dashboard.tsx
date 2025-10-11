@@ -1,16 +1,18 @@
+import { MessageSquare } from 'lucide-react'
+import { useState } from 'react'
 import { AppSidebar } from '@/components/app-sidebar'
 import { FeatureBreadcrumb } from '@/components/feature-breadcrumb'
+import { ThemeProvider } from '@/components/theme-provider'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { FeaturesProvider } from './components/features-provider'
-import { useState } from 'react'
-import type { Feature } from './models/feature'
 import { FeatureDetails } from './components/feature-details'
-import { ThemeProvider } from '@/components/theme-provider'
+import { FeaturesProvider } from './components/features-provider'
+import type { Feature } from './models/feature'
 
 export default function Dashboard() {
   const [currentFeature, setCurrentFeature] = useState<Feature | null>(null)
@@ -32,6 +34,22 @@ export default function Dashboard() {
                   feature={currentFeature}
                   onFeatureClick={setCurrentFeature}
                 />
+              </div>
+              <div className="ml-auto px-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    window.open(
+                      'https://github.com/interaction-dynamics/features/issues/new/choose',
+                      '_blank',
+                    )
+                  }
+                  className="gap-2"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Give Feedback
+                </Button>
               </div>
             </header>
             <div className="flex flex-1 flex-col gap-4 p-4">
