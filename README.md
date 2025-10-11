@@ -1,5 +1,5 @@
-<div style="text-align:center;display:flex;justify-content:center;">
-    <img width="100" src="./tools/web/public/feature-icon.svg"  alt="feature logo" />
+<div align="center">
+    <img width="100" src="./tools/web/public/feature-icon.svg" alt="feature logo" />
 </div>
 
 <h1 style="text-align:center;">Feature-based architecture</h1>
