@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, HelpCircle } from 'lucide-react'
 
 import {
   Collapsible,
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/sidebar'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
+import { HelpButton } from './help-button'
 
 interface NavFeaturesProps {
   items: Feature[]
@@ -156,6 +157,27 @@ export function NavFeatures({
   onFeatureClick,
   activeFeature,
 }: NavFeaturesProps) {
+  if (items.length === 0) {
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel>Features</SidebarGroupLabel>
+        <SidebarMenu>
+          <div className="px-2 py-4">
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm text-muted-foreground">
+                No features available
+              </p>
+              <HelpButton
+                title="How to add a feature"
+                url="https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-a-feature"
+              />
+            </div>
+          </div>
+        </SidebarMenu>
+      </SidebarGroup>
+    )
+  }
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Features</SidebarGroupLabel>

@@ -1,10 +1,11 @@
-import { ChevronRight, HelpCircle, Lightbulb } from 'lucide-react'
+import { ChevronRight, Lightbulb } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { HelpButton } from './help-button'
 import { MarkdownRenderer } from './markown-renderer'
 
 interface FeatureDecisionsProps {
@@ -20,20 +21,10 @@ export function FeatureDecisions({ decisions }: FeatureDecisionsProps) {
             <p className="text-sm text-muted-foreground">
               No decisions available
             </p>
-            <button
-              type="button"
-              onClick={() =>
-                window.open(
-                  'https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-a-decision',
-                  '_blank',
-                )
-              }
-              className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-              title="Learn how to add a decision"
-            >
-              <HelpCircle className="h-4 w-4" />
-              <span className="text-sm">help</span>
-            </button>
+            <HelpButton
+              title="How to add a decision"
+              url="https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-a-decision"
+            />
           </div>
         </CardContent>
       </Card>
