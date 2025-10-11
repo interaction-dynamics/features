@@ -4,9 +4,10 @@ A CLI tool for discovering and managing features in a feature-based architecture
 
 ## Getting Started
 
-
 ```bash
-npx features-cli /path/to/features # list all the features in the directory
+cargo binstall features-cli
+
+features /path/to/features # list all the features in the directory
 ```
 
 Commands and their descriptions are listed below:
@@ -22,12 +23,16 @@ Commands and their descriptions are listed below:
 | `--serve --port 8080` | Start an HTTP server on specified port |
 | `--build` | Build a static version of the web dashboard UI |
 
-
-
 ## Contributing
 
 From the CLI directory:
 
 ```bash
 cargo build --release
+```
+
+## Deploy
+
+```bash
+cargo publish --allow-dirty
 ```
