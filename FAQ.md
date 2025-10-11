@@ -2,7 +2,16 @@
 
 ## Table of Contents
 
+- [How can I add a feature?](#how-can-i-add-a-feature)
 - [How can I add a decision?](#how-can-i-add-a-decision)
+
+## How can I add a feature?
+
+To add a new feature to the system, follow these steps:
+
+1. Create a folder `features` where you want in your source code directory. It can be in a subdirectory.
+2. Inside the `features` directory, create a folder with the name of the first business feature like `business-feature-name`. It can use snake_case, camelCase, or kebab-case naming conventions.
+3. The feature will automatically be detected and displayed in the web interface
 
 ## How can I add a decision?
 
