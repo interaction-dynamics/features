@@ -2,19 +2,11 @@
 
 A CLI tool for discovering and managing features in a feature-based architecture project.
 
-## Installation
-
-From the CLI directory:
-
-```bash
-cargo build --release
-```
-
-## Usage
+## Getting Started
 
 
 ```bash
-cargo run -- /path/to/features # list all the features in the directory
+npx features-cli /path/to/features # list all the features in the directory
 ```
 
 Commands and their descriptions are listed below:
@@ -29,3 +21,13 @@ Commands and their descriptions are listed below:
 | `--serve` | Start an HTTP server to serve features and the web dashboard UI |
 | `--serve --port 8080` | Start an HTTP server on specified port |
 | `--build` | Build a static version of the web dashboard UI |
+
+
+
+## Contributing
+
+From the CLI directory:
+
+```bash
+cargo build --release
+```
