@@ -1,4 +1,3 @@
-import { GalleryVerticalEnd } from 'lucide-react'
 import type * as React from 'react'
 import { useContext } from 'react'
 import {
