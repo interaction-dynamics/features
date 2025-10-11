@@ -47,6 +47,8 @@ examples/rust-basic/src/
 
 ### Details
 
+> You can read the details guidelines below or just jump into trying the CLI with the `--serve` options. The UI will guide you through the methodology.
+
 | Requirement | Description | Example |
 |-------------|-------------|---------|
 | **MUST** | Create a folder `features` | `features/` |
@@ -59,8 +61,8 @@ examples/rust-basic/src/
 
 ## Tools
 
-- [Rust CLI](./tools/cli): to parse the code and find the features
-- [Web UI](./tools/web): to visualize the features in a dashboard
+- [Rust CLI](./tools/cli): to parse the code, find the features and serve the web dashboard ui
+- [Web UI](./tools/web): to visualize the features in a dashboard. Try the demo [here](http://interaction-dynamics.io/features/). It is included into the CLI.
 
 ## License
 
