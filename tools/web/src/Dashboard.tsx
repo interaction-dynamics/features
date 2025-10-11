@@ -1,4 +1,4 @@
-import { GithubIcon, MessageSquare } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import { AppSidebar } from '@/components/app-sidebar'
 import { FeatureBreadcrumb } from '@/components/feature-breadcrumb'

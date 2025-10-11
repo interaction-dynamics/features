@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, HelpCircle } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 import {
   Collapsible,
