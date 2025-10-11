@@ -27,7 +27,7 @@ export function AppSidebar({
   onFeatureClick,
   ...props
 }: AppSidebarProps) {
-  const features = useContext(FeaturesContext)
+  const { features } = useContext(FeaturesContext)
 
   return (
     <Sidebar {...props}>

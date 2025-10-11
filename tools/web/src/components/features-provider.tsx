@@ -1,5 +1,9 @@
+import { useMemo } from 'react'
 import useSWR from 'swr'
-import { FeaturesContext } from '@/lib/features-context'
+import {
+  FeaturesContext,
+  type FeaturesContextValue,
+} from '@/lib/features-context'
 import type { Feature } from '@/models/feature'
 
 const addParentReferences = (
@@ -25,13 +29,26 @@ const fetcher = async (url: string): Promise<Feature[]> => {
 }
 
 export function FeaturesProvider({ children }: { children: React.ReactNode }) {
-  const { data: features } = useSWR<Feature[]>('./features.json', fetcher, {
+  const {
+    data: features,
+    isLoading,
+    isValidating,
+  } = useSWR<Feature[]>('./features.json', fetcher, {
     suspense: true,
-    refreshInterval: 1000,
+    refreshInterval: import.meta.env.WATCH === 'on' ? 1000 : undefined,
   })
 
+  const contextValue: FeaturesContextValue = useMemo(
+    () => ({
+      features: features ?? [],
+      isLoading: isLoading ?? false,
+      isValidating: isValidating ?? false,
+    }),
+    [features, isLoading, isValidating],
+  )
+
   return (
-    <FeaturesContext.Provider value={features ?? []}>
+    <FeaturesContext.Provider value={contextValue}>
       {children}
     </FeaturesContext.Provider>
   )

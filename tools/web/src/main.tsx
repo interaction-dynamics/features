@@ -1,7 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import Dashboard from './Dashboard.tsx'
+import { FeaturesProvider } from './components/features-provider'
+import { ThemeProvider } from './components/theme-provider'
+import { Dashboard } from './Dashboard'
 
 const root = document.getElementById('root')
 
@@ -11,6 +13,10 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <Dashboard />
+    <ThemeProvider>
+      <FeaturesProvider>
+        <Dashboard />
+      </FeaturesProvider>
+    </ThemeProvider>
   </StrictMode>,
 )

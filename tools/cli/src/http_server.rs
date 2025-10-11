@@ -108,8 +108,6 @@ pub async fn serve_features_with_config_and_watching(
                 eprintln!("File watcher error: {}", e);
             }
         });
-
-        println!("📁 Watching directory: {}", path.display());
     }
 
     // Route for features.json with shared state
@@ -158,7 +156,7 @@ pub async fn serve_features_with_config_and_watching(
             .map(|&b| b.to_string())
             .collect::<Vec<_>>()
             .join("."),
-        config.port
+        config.port,
     );
     warp::serve(routes).run((config.host, config.port)).await;
 
