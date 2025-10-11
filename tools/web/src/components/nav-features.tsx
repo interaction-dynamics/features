@@ -160,7 +160,7 @@ export function NavFeatures({
   if (items.length === 0) {
     return (
       <SidebarGroup>
-        <SidebarGroupLabel>Features</SidebarGroupLabel>
+        <SidebarGroupLabel>All Features</SidebarGroupLabel>
         <SidebarMenu>
           <div className="px-2 py-4">
             <div className="flex flex-col items-start gap-2">
@@ -180,7 +180,7 @@ export function NavFeatures({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Features</SidebarGroupLabel>
+      <SidebarGroupLabel>All Features</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <FeatureMenuItem

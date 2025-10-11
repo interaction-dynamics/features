@@ -1,5 +1,9 @@
 # Feature-based architecture
 
+<div style="text-align:center;display:flex;justify-content:center;">
+    <img src="./tools/web/public/feature-icon.svg"  alt="feature logo" />
+</div>
+
 Feature-based architecture organizes the codebase by features rather than technical layers (like components, services, or utils). Each feature lives in its own self-contained folder with everything it needs — making the code more modular, discoverable, and maintainable as the project grows.
 
 This approach is not meant to replace other architecture design like hexagonal architecture but rather complement it. It is an approach easier to understand for beginners. It also has the benefits to be shareable with product managers, designers and stakeholders.

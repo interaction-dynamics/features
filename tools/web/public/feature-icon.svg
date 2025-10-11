@@ -1,0 +1,29 @@
+<svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Square Background with rounded corners, providing a deep, tech contrast -->
+<rect width="100" height="100" rx="15" fill="#1A202C"/>
+
+<!-- Flashy Gradient Definition: A vibrant blend of magenta, cyan, and yellow/green -->
+
+<defs>
+<linearGradient id="flashyGradient" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+<stop offset="0%" stop-color="#FF00FF"/> <!-- Magenta/Fuchsia -->
+<stop offset="50%" stop-color="#00FFFF"/> <!-- Cyan/Aqua -->
+<stop offset="100%" stop-color="#FFFF00"/> <!-- Neon Yellow -->
+</linearGradient>
+</defs>
+
+<!-- Stylized, bold capital 'F' constructed from three rectangles -->
+
+<!-- Vertical Bar -->
+
+<rect x="25" y="20" width="15" height="60" rx="4" fill="url(#flashyGradient)"/>
+
+<!-- Top Horizontal Bar -->
+
+<rect x="25" y="20" width="50" height="15" rx="4" fill="url(#flashyGradient)"/>
+
+<!-- Middle Horizontal Bar -->
+
+<rect x="25" y="45" width="35" height="15" rx="4" fill="url(#flashyGradient)"/>
+
+</svg>

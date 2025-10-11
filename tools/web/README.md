@@ -13,3 +13,10 @@ pnpm install
 
 pnpm dev
 ```
+
+## Build Static Version
+
+```bash
+
+pnpm build
+```
