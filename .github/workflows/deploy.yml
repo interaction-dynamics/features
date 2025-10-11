@@ -77,6 +77,7 @@ jobs:
         run: pnpm install
 
       - name: Prepare public folder
+        working-directory: ./tools/cli
         run: mkdir -p public
 
       # Build CLI
