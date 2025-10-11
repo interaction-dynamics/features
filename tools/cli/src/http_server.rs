@@ -1,26 +1,28 @@
-//! HTTP server module for serving features data and static files.
+//! HTTP server module for serving features data and embedded static files.
 //!
 //! This module provides functionality to start an HTTP server that serves:
 //! - Features data as JSON at `/features.json`
-//! - Static files from the `public/` directory
+//! - Embedded static files from the compiled binary
 //! - A default index page at the root path
 //!
 //! The server uses the `warp` web framework and supports CORS for cross-origin requests.
+//! Static files are embedded at compile time using the `include_dir` crate.
 
 use anyhow::Result;
-use std::path::PathBuf;
-use tokio::fs;
-use warp::Filter;
+use include_dir::{Dir, include_dir};
+use std::path::Path;
+use warp::{Filter, Reply};
 
 use crate::models::Feature;
+
+// Embed the public directory at compile time
+static STATIC_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/public");
 
 /// Configuration for the HTTP server
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
     /// Port to run the server on
     pub port: u16,
-    /// Directory to serve static files from
-    pub public_dir: PathBuf,
     /// Host address to bind to
     pub host: [u8; 4],
 }
@@ -29,7 +31,6 @@ impl Default for ServerConfig {
     fn default() -> Self {
         Self {
             port: 3000,
-            public_dir: PathBuf::from("public"),
             host: [127, 0, 0, 1],
         }
     }
@@ -44,13 +45,6 @@ impl ServerConfig {
         }
     }
 
-    /// Set the public directory for static files
-    #[allow(dead_code)]
-    pub fn with_public_dir<P: Into<PathBuf>>(mut self, dir: P) -> Self {
-        self.public_dir = dir.into();
-        self
-    }
-
     /// Set the host address to bind to
     #[allow(dead_code)]
     pub fn with_host(mut self, host: [u8; 4]) -> Self {
@@ -59,7 +53,7 @@ impl ServerConfig {
     }
 }
 
-/// Starts an HTTP server to serve features data and static files.
+/// Starts an HTTP server to serve features data and embedded static files.
 ///
 /// # Arguments
 ///
@@ -72,9 +66,9 @@ impl ServerConfig {
 ///
 /// # Server Routes
 ///
-/// * `GET /` - Serves index.html or default HTML page
+/// * `GET /` - Serves embedded index.html or default HTML page
 /// * `GET /features.json` - Serves features data as JSON
-/// * `GET /*` - Serves static files from `public/` directory
+/// * `GET /*` - Serves embedded static files
 ///
 /// # Example
 ///
@@ -117,18 +111,17 @@ pub async fn serve_features_with_config(features: &[Feature], config: ServerConf
         )
     });
 
-    // Route for static files from public folder
-    let static_route = warp::fs::dir(config.public_dir.clone());
+    // Route for root path to serve index.html
+    let index_route = warp::path::end().and(warp::get()).and_then(serve_index);
 
-    // Route for root path to serve index.html if it exists
-    let config_clone = config.clone();
-    let index_route = warp::path::end()
+    // Route for static files from embedded directory
+    let static_route = warp::path::tail()
         .and(warp::get())
-        .and_then(move || serve_index(config_clone.clone()));
+        .and_then(serve_static_file);
 
     let routes = features_route
-        .or(static_route)
         .or(index_route)
+        .or(static_route)
         .with(warp::cors().allow_any_origin())
         .recover(handle_rejection);
 
@@ -142,6 +135,7 @@ pub async fn serve_features_with_config(features: &[Feature], config: ServerConf
             .join("."),
         config.port
     );
+    println!("Serving embedded static files from build-time public directory");
 
     warp::serve(routes).run((config.host, config.port)).await;
 
@@ -150,40 +144,92 @@ pub async fn serve_features_with_config(features: &[Feature], config: ServerConf
 
 /// Serves the index page for the root path.
 ///
-/// If `public/index.html` exists, it will be served. Otherwise, a default
+/// If embedded `index.html` exists, it will be served. Otherwise, a default
 /// HTML page with navigation links will be returned.
-///
-/// # Arguments
-///
-/// * `config` - Server configuration containing public directory path
 ///
 /// # Returns
 ///
 /// * `Result<impl warp::Reply, warp::Rejection>` - HTML response or rejection
-///
-/// # Behavior
-///
-/// 1. Check if `public/index.html` exists
-/// 2. If it exists, read and serve the file with `text/html` content type
-/// 3. If it doesn't exist or can't be read, serve a default HTML page
-/// 4. If file reading fails, return a 404 not found error
-async fn serve_index(config: ServerConfig) -> Result<impl warp::Reply, warp::Rejection> {
-    let index_path = config.public_dir.join("index.html");
-    if index_path.exists() {
-        match fs::read_to_string(&index_path).await {
-            Ok(content) => Ok(warp::reply::with_header(
-                content,
-                "content-type",
-                "text/html",
-            )),
-            Err(e) => {
-                eprintln!("Warning: Failed to read {}: {}", index_path.display(), e);
-                Err(warp::reject::not_found())
-            }
-        }
+async fn serve_index() -> Result<impl warp::Reply, warp::Rejection> {
+    if let Some(file) = STATIC_DIR.get_file("index.html") {
+        let content = file.contents_utf8().unwrap_or("");
+        Ok(
+            warp::reply::with_header(content, "content-type", "text/html; charset=utf-8")
+                .into_response(),
+        )
     } else {
         let html = create_default_index_html();
-        Ok(warp::reply::with_header(html, "content-type", "text/html"))
+        Ok(
+            warp::reply::with_header(html, "content-type", "text/html; charset=utf-8")
+                .into_response(),
+        )
+    }
+}
+
+/// Serves static files from the embedded directory.
+///
+/// # Arguments
+///
+/// * `path` - The requested file path
+///
+/// # Returns
+///
+/// * `Result<impl warp::Reply, warp::Rejection>` - File content or rejection
+async fn serve_static_file(path: warp::path::Tail) -> Result<impl warp::Reply, warp::Rejection> {
+    let path_str = path.as_str();
+
+    // Try to get the file from the embedded directory
+    if let Some(file) = STATIC_DIR.get_file(path_str) {
+        let content_type = get_content_type(path_str);
+
+        if let Some(contents) = file.contents_utf8() {
+            // Text file
+            Ok(warp::reply::with_header(contents, "content-type", content_type).into_response())
+        } else {
+            // Binary file
+            Ok(
+                warp::reply::with_header(file.contents(), "content-type", content_type)
+                    .into_response(),
+            )
+        }
+    } else {
+        Err(warp::reject::not_found())
+    }
+}
+
+/// Determines the content type based on file extension.
+///
+/// # Arguments
+///
+/// * `path` - The file path
+///
+/// # Returns
+///
+/// * `&'static str` - The appropriate MIME type
+fn get_content_type(path: &str) -> &'static str {
+    let extension = Path::new(path)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("");
+
+    match extension.to_lowercase().as_str() {
+        "html" => "text/html; charset=utf-8",
+        "css" => "text/css; charset=utf-8",
+        "js" => "application/javascript; charset=utf-8",
+        "json" => "application/json; charset=utf-8",
+        "svg" => "image/svg+xml",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "ico" => "image/x-icon",
+        "txt" => "text/plain; charset=utf-8",
+        "pdf" => "application/pdf",
+        "xml" => "application/xml; charset=utf-8",
+        "woff" => "font/woff",
+        "woff2" => "font/woff2",
+        "ttf" => "font/ttf",
+        "eot" => "application/vnd.ms-fontobject",
+        _ => "application/octet-stream",
     }
 }
 
@@ -231,7 +277,7 @@ fn create_default_index_html() -> String {
         <ul class="links">
             <li><a href="/features.json">📊 View Features JSON</a></li>
         </ul>
-        <p><small>This server provides features data and serves static files from the public directory.</small></p>
+        <p><small>This server provides features data and serves embedded static files from the binary.</small></p>
     </div>
 </body>
 </html>"#.to_string()

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build_for_cli": "pnpm build && rm -rf dist/features.json && cp -r dist ../cli/public",
     "lint": "biome lint .",
     "format": "biome format .",
     "preview": "vite preview"
