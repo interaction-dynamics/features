@@ -28,11 +28,23 @@ Commands and their descriptions are listed below:
 From the CLI directory:
 
 ```bash
-cargo build --release
+
+cargo run ../../examples/javascript-basic/src/features
+
+# For the web dashboard
+cd ../web
+pnpm build_for_cli
+cd ../cli
+
+cargo run ../../examples/javascript-basic/src/features --serve # for the Web dashboard
 ```
 
 ## Deploy
 
 ```bash
+cd ../web
+pnpm build_for_cli
+cd ../cli
+
 cargo publish --allow-dirty
 ```
