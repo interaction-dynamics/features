@@ -1,0 +1,12 @@
+{
+  "name": "no-features",
+  "version": "1.0.0",
+  "description": "No features example",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
