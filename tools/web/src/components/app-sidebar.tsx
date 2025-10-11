@@ -91,7 +91,7 @@ export function AppSidebar({
             <SidebarMenuButton size="lg" asChild>
               <a href="./">
                 <img
-                  src="/feature-icon.svg"
+                  src="./feature-icon.svg"
                   alt="Feature Icon"
                   className="size-8"
                 />
