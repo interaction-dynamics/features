@@ -19,7 +19,7 @@ export function FeatureDescription({ description }: FeatureDescriptionProps) {
               type="button"
               onClick={() =>
                 window.open(
-                  'https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-a-decision',
+                  'https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-a-feature-description',
                   '_blank',
                 )
               }
