@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use std::collections::HashSet;
 
+mod build;
 mod checker;
 mod file_scanner;
 mod git_helper;
@@ -10,13 +11,14 @@ mod models;
 mod printer;
 mod readme_parser;
 
+use build::{BuildConfig, create_build};
 use checker::run_checks;
 use file_scanner::{list_files_recursive, list_files_recursive_with_changes};
 use http_server::serve_features;
 use models::Feature;
 use printer::print_features;
 
-/// Recursively list all files in a directory.
+/// A CLI tool for discovering features in a folder and serving them via HTTP or static builds.
 #[derive(Parser)]
 struct Cli {
     /// The path to the directory to list
@@ -49,6 +51,14 @@ struct Cli {
     /// Port for the HTTP server (default: 3000)
     #[arg(long, default_value = "3000")]
     port: u16,
+
+    /// Create a static build with embedded files and features.json
+    #[arg(long)]
+    build: bool,
+
+    /// Output directory for the static build
+    #[arg(long, default_value = "build")]
+    build_dir: std::path::PathBuf,
 }
 
 fn flatten_features(features: &[Feature]) -> Vec<Feature> {
@@ -98,7 +108,7 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
 async fn main() -> Result<()> {
     let args = Cli::parse();
 
-    let features = if args.json || args.serve {
+    let features = if args.json || args.serve || args.build {
         list_files_recursive_with_changes(&args.path)?
     } else {
         list_files_recursive(&args.path)?
@@ -106,6 +116,9 @@ async fn main() -> Result<()> {
 
     if args.serve {
         serve_features(&features, args.port).await?;
+    } else if args.build {
+        let build_config = BuildConfig::new(args.build_dir);
+        create_build(&features, build_config).await?;
     } else if args.check {
         run_checks(&features)?;
     } else if args.list_owners {
