@@ -1,8 +1,7 @@
 <div align="center">
     <img width="100" src="./tools/web/public/feature-icon.svg" alt="feature logo" />
 </div>
-
-<h1 style="text-align:center;">Feature-based architecture</h1>
+<h1 align="center">Feature-based architecture</h1>
 
 Feature-based architecture organizes the codebase by features rather than technical layers (like components, services, or utils). Each feature lives in its own self-contained folder with everything it needs — making the code more modular, discoverable, and maintainable as the project grows.
 
