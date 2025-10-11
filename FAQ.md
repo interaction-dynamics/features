@@ -3,7 +3,8 @@
 ## Table of Contents
 
 - [How can I add a feature?](#how-can-i-add-a-feature)
-- [How can I add a feature description?](#how-can-i-add-a-feature)
+- [How can I add a feature description?](#how-can-i-add-a-feature-description)
+- [How can I add an owner?](#how-can-i-add-an-owner)
 - [How can I add a decision?](#how-can-i-add-a-decision)
 
 ## How can I add a feature?
@@ -15,6 +16,15 @@ To add a new feature to the system, follow these steps:
 3. The feature will automatically be detected and displayed in the web interface
 
 ## How can I add a feature description?
+
+To add a new feature description to the system, follow these steps:
+
+1. In the feature folder, create a new README.md file
+2. In this README.md file, provide a detailed description of the feature, including its purpose, functionality, and any relevant technical details.
+
+## How can I add an owner?
+
+1. In the feature README, add a property `owner` in the [frontmatter]((https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g)) of the README.md file.
 
 To add a new feature description to the system, follow these steps:
 
