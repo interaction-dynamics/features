@@ -1,0 +1,428 @@
+name: Release CLI to NPM
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ env.version }}
+      should_release: ${{ env.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from Cargo.toml
+        id: version
+        run: |
+          VERSION=$(grep '^version = ' tools/cli/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_ENV
+          echo "should_release=true" >> $GITHUB_ENV
+          echo "Version found: $VERSION"
+
+  validate:
+    name: Validate CLI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./tools/cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            tools/cli/target/
+          key: ${{ runner.os }}-cargo-validate-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check Formatting 👕
+        run: cargo fmt --all -- --check
+      - name: Prepare public folder
+        run: mkdir -p public
+      - name: Clippy 🔍
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Build 🔧
+        run: cargo build --verbose
+      - name: Test ✔️
+        run: cargo test --verbose
+
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            code-target: win32-x64
+            ext: .exe
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            code-target: win32-arm64
+            ext: .exe
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            code-target: linux-x64
+            ext: ""
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            code-target: linux-arm64
+            ext: ""
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            code-target: linux-x64-musl
+            ext: ""
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            code-target: linux-arm64-musl
+            ext: ""
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            code-target: darwin-x64
+            ext: ""
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            code-target: darwin-arm64
+            ext: ""
+
+    name: Build ${{ matrix.code-target }}
+    runs-on: ${{ matrix.os }}
+    needs: check
+    if: needs.check.outputs.should_release == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl toolchain
+        if: contains(matrix.target, 'musl')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Install cross-compilation tools
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Configure cross-compilation
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+
+      - name: Setup cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            tools/cli/target/
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Prepare public folder
+        run: mkdir -p tools/cli/public
+
+      - name: Build binary
+        run: |
+          cd tools/cli
+          cargo build --release --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: "-C strip=symbols -C codegen-units=1"
+          FEATURES_VERSION: ${{ needs.check.outputs.version }}
+
+      - name: Copy binary
+        run: |
+          mkdir -p dist
+          cp tools/cli/target/${{ matrix.target }}/release/features${{ matrix.ext }} ./dist/features-${{ matrix.code-target }}${{ matrix.ext }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: ./dist/features-*
+          if-no-files-found: error
+
+  publish:
+    name: Publish to NPM
+    runs-on: ubuntu-latest
+    needs:
+      - check
+      - build
+    environment: npm-publish
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cli-*
+          merge-multiple: true
+          path: ./dist
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Create npm packages structure
+        run: |
+          mkdir -p packages/features-cli
+          mkdir -p packages/cli-win32-x64
+          mkdir -p packages/cli-win32-arm64
+          mkdir -p packages/cli-darwin-x64
+          mkdir -p packages/cli-darwin-arm64
+          mkdir -p packages/cli-linux-x64
+          mkdir -p packages/cli-linux-arm64
+          mkdir -p packages/cli-linux-x64-musl
+          mkdir -p packages/cli-linux-arm64-musl
+
+      - name: Generate platform packages
+        run: |
+          VERSION="${{ needs.check.outputs.version }}"
+
+          # Function to create platform package
+          create_platform_package() {
+            local platform=$1
+            local binary_name=$2
+            local os=$3
+            local cpu=$4
+            local libc=$5
+
+            local pkg_dir="packages/cli-${platform}"
+            local pkg_name="@interaction-dynamics/feature-cli-${platform}"
+
+            # Copy binary
+            cp "dist/features-${platform}${binary_name##*features}" "$pkg_dir/"
+            chmod +x "$pkg_dir/features"* 2>/dev/null || true
+
+            # Create package.json
+            cat > "$pkg_dir/package.json" << EOF
+          {
+            "name": "$pkg_name",
+            "version": "$VERSION",
+            "description": "Features CLI for $platform",
+            "license": "MIT",
+            "repository": {
+              "type": "git",
+              "url": "https://github.com/interaction-dynamics/features"
+            },
+            "os": ["$os"],
+            "cpu": ["$cpu"]$([ -n "$libc" ] && echo ",\n    \"libc\": [\"$libc\"]")
+          }
+          EOF
+
+            # Create README
+            cat > "$pkg_dir/README.md" << EOF
+          # Features CLI - $platform
+
+          This package contains the Features CLI binary for $platform.
+
+          This package is not meant to be used directly. Install \`@features/cli\` instead.
+          EOF
+          }
+
+          # Create all platform packages
+          create_platform_package "win32-x64" ".exe" "win32" "x64"
+          create_platform_package "win32-arm64" ".exe" "win32" "arm64"
+          create_platform_package "darwin-x64" "" "darwin" "x64"
+          create_platform_package "darwin-arm64" "" "darwin" "arm64"
+          create_platform_package "linux-x64" "" "linux" "x64" "glibc"
+          create_platform_package "linux-arm64" "" "linux" "arm64" "glibc"
+          create_platform_package "linux-x64-musl" "" "linux" "x64" "musl"
+          create_platform_package "linux-arm64-musl" "" "linux" "arm64" "musl"
+
+      - name: Create main package
+        run: |
+          VERSION="${{ needs.check.outputs.version }}"
+
+          # Create main package.json
+          cat > "packages/features-cli/package.json" << 'EOF'
+          {
+            "name": "features-cli",
+            "version": "$VERSION",
+            "description": "A CLI tool for discovering the features in a folder",
+            "license": "MIT",
+            "bin": {
+              "features": "bin/features"
+            },
+            "repository": {
+              "type": "git",
+              "url": "https://github.com/interaction-dynamics/features"
+            },
+            "homepage": "https://github.com/interaction-dynamics/features",
+            "keywords": [
+              "features",
+              "cli",
+              "documentation",
+              "analysis"
+            ],
+            "files": [
+              "bin/features",
+              "README.md"
+            ],
+            "engines": {
+              "node": ">=14.0.0"
+            },
+            "optionalDependencies": {
+              "@interaction-dynamics/feature-cli-win32-x64": "$VERSION",
+              "@interaction-dynamics/feature-cli-win32-arm64": "$VERSION",
+              "@interaction-dynamics/feature-cli-darwin-x64": "$VERSION",
+              "@interaction-dynamics/feature-cli-darwin-arm64": "$VERSION",
+              "@interaction-dynamics/feature-cli-linux-x64": "$VERSION",
+              "@interaction-dynamics/feature-cli-linux-arm64": "$VERSION",
+              "@interaction-dynamics/feature-cli-linux-x64-musl": "$VERSION",
+              "@interaction-dynamics/feature-cli-linux-arm64-musl": "$VERSION"
+            }
+          }
+          EOF
+
+          # Replace $VERSION placeholder
+          sed -i "s/\$VERSION/$VERSION/g" "packages/features-cli/package.json"
+
+          # Create bin directory and launcher script
+          mkdir -p packages/features-cli/bin
+          cat > "packages/features-cli/bin/features" << 'EOF'
+          #!/usr/bin/env node
+          const { platform, arch, env } = process;
+          const { execSync } = require("child_process");
+          const path = require("path");
+
+          function isMusl() {
+            let stderr;
+            try {
+              stderr = execSync("ldd --version", {
+                stdio: ['pipe', 'pipe', 'pipe']
+              });
+            } catch (err) {
+              stderr = err.stderr;
+            }
+            if (stderr && stderr.indexOf("musl") > -1) {
+              return true;
+            }
+            return false;
+          }
+
+          const PLATFORMS = {
+            win32: {
+              x64: "@interaction-dynamics/feature-cli-win32-x64/features.exe",
+              arm64: "@interaction-dynamics/feature-cli-win32-arm64/features.exe",
+            },
+            darwin: {
+              x64: "@interaction-dynamics/feature-cli-darwin-x64/features",
+              arm64: "@interaction-dynamics/feature-cli-darwin-arm64/features",
+            },
+            linux: {
+              x64: "@interaction-dynamics/feature-cli-linux-x64/features",
+              arm64: "@interaction-dynamics/feature-cli-linux-arm64/features",
+            },
+            "linux-musl": {
+              x64: "@interaction-dynamics/feature-cli-linux-x64-musl/features",
+              arm64: "@interaction-dynamics/feature-cli-linux-arm64-musl/features",
+            },
+          };
+
+          const binPath = env.FEATURES_BINARY ||
+            (platform === "linux" && isMusl()
+              ? PLATFORMS?.["linux-musl"]?.[arch]
+              : PLATFORMS?.[platform]?.[arch]
+            );
+
+          if (binPath) {
+            const result = require("child_process").spawnSync(
+              require.resolve(binPath),
+              process.argv.slice(2),
+              {
+                shell: false,
+                stdio: "inherit",
+                env: {
+                  ...env,
+                },
+              },
+            );
+
+            if (result.error) {
+              throw result.error;
+            }
+
+            process.exitCode = result.status;
+          } else {
+            console.error(
+              "The Features CLI package doesn't ship with prebuilt binaries for your platform yet. " +
+                "You can build from source by cloning the repository and following the build instructions.",
+            );
+            process.exitCode = 1;
+          }
+          EOF
+
+          chmod +x packages/features-cli/bin/features
+
+          # Create README
+          cat > "packages/features-cli/README.md" << 'EOF'
+          # Features CLI
+
+          A CLI tool for discovering the features in a folder.
+
+          ## Installation
+
+          ```bash
+          npm install -g features-cli
+          ```
+
+          ## Usage
+
+          ```bash
+          features [directory] [options]
+          ```
+
+          For more information, see the [GitHub repository](https://github.com/interaction-dynamics/features).
+          EOF
+
+      - name: Publish platform packages
+        run: |
+          for pkg in packages/cli-*; do
+            echo "Publishing $pkg..."
+            npm publish "$pkg" --access public
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish main package
+        run: |
+          echo "Publishing main package..."
+          npm publish "packages/features-cli" --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: CLI v${{ needs.check.outputs.version }}
+          draft: false
+          files: |
+            dist/features-*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

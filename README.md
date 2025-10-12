@@ -63,8 +63,8 @@ examples/rust-basic/src/
 
 ## Tools
 
-- [Rust CLI](./tools/cli): to parse the code, find the features and serve the web dashboard ui
-- [Web UI](./tools/web): to visualize the features in a dashboard. Try the demo [here](http://interaction-dynamics.io/features/). A watch mode version is integrated into the CLI but it is possible to build a static version of the dashboard.
+- [Rust CLI](./tools/cli): Command-line tool to parse the code, find the features and serve the web dashboard UI
+- [Web UI](./tools/web): Dashboard to visualize the features in your project. Try the demo [here](http://interaction-dynamics.io/features/). A watch mode version is integrated into the CLI but it is possible to build a static version of the dashboard.
 
 ## License
 
