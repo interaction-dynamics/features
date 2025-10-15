@@ -131,13 +131,6 @@ jobs:
         working-directory: tools/cli
         if: matrix.target != 'x86_64-unknown-linux-gnu' && runner.os == 'Linux'
         run: cross build --release --target ${{ matrix.target }}
-
-
-          if [[ "${{ matrix.target }}" != "x86_64-unknown-linux-gnu" ]] && [[ "${{ runner.os }}" == "Linux" ]]; then
-          cross build --release --target ${{ matrix.target }}
-          else
-          cargo build --release --target ${{ matrix.target }}
-          fi
         env:
           RUSTFLAGS: "-C strip=symbols -C codegen-units=1"
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
