@@ -127,14 +127,27 @@ jobs:
       - name: Prepare public folder
         run: mkdir -p tools/cli/public
 
-      - name: Build binary
+      - name: Build binary with cross compilation
         working-directory: tools/cli
-        run: |
+        if: matrix.target != 'x86_64-unknown-linux-gnu' && runner.os == 'Linux'
+        run: cross build --release --target ${{ matrix.target }}
+
+
+          if [[ "${{ matrix.target }}" != "x86_64-unknown-linux-gnu" ]] && [[ "${{ runner.os }}" == "Linux" ]]; then
+          cross build --release --target ${{ matrix.target }}
+          else
           cargo build --release --target ${{ matrix.target }}
+          fi
         env:
           RUSTFLAGS: "-C strip=symbols -C codegen-units=1"
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
-
+      - name: Build binary for with cargo
+        working-directory: tools/cli
+        if: matrix.target == 'x86_64-unknown-linux-gnu' || runner.os != 'Linux'
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          RUSTFLAGS: "-C strip=symbols -C codegen-units=1"
+          FEATURES_VERSION: ${{ needs.check.outputs.version }}
       - name: Copy binary
         run: |
           mkdir -p dist
