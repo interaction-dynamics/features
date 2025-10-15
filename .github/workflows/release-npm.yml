@@ -128,13 +128,9 @@ jobs:
         run: mkdir -p tools/cli/public
 
       - name: Build binary
+        working-directory: tools/cli
         run: |
-          cd tools/cli
-          if [[ "${{ matrix.target }}" != "x86_64-unknown-linux-gnu" ]] && [[ "${{ runner.os }}" == "Linux" ]]; then
-            cross build --release --target ${{ matrix.target }}
-          else
-            cargo build --release --target ${{ matrix.target }}
-          fi
+          cargo build --release --target ${{ matrix.target }}
         env:
           RUSTFLAGS: "-C strip=symbols -C codegen-units=1"
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
