@@ -381,7 +381,7 @@ jobs:
           ## Installation
 
           ```bash
-          npm install -g features-cli
+          pnpm install -g features-cli
           ```
 
           ## Usage
@@ -397,7 +397,7 @@ jobs:
         run: |
           for pkg in packages/cli-*; do
             echo "Publishing $pkg..."
-            npm publish "$pkg" --access public --tag latest --provenance
+            pnpm publish "$pkg" --access public --tag latest --provenance
           done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -405,7 +405,7 @@ jobs:
       - name: Publish main package
         run: |
           echo "Publishing main package..."
-          npm publish "packages/features-cli" --access public
+          pnpm publish "packages/features-cli" --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
