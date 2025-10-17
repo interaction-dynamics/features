@@ -403,7 +403,7 @@ jobs:
         run: |
           for pkg in packages/cli-*; do
             echo "Publishing $pkg..."
-            pnpm publish "$pkg" --access public --tag latest --provenance
+            pnpm publish "$pkg" --access public --tag latest --no-git-checks
           done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -411,7 +411,7 @@ jobs:
       - name: Publish main package
         run: |
           echo "Publishing main package..."
-          pnpm publish "packages/features-cli" --access public
+          pnpm publish "packages/features-cli" --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
