@@ -144,7 +144,7 @@ jobs:
       - name: Copy binary
         run: |
           mkdir -p dist
-          cp tools/cli/target/${{ matrix.target }}/release/features${{ matrix.ext }} ./dist/features-${{ matrix.code-target }}${{ matrix.ext }}
+          cp tools/cli/target/${{ matrix.target }}/release/features${{ matrix.ext }} ./dist/features-${{ matrix.code-target }}/features${{ matrix.ext }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -211,10 +211,10 @@ jobs:
             local libc=$5
 
             local pkg_dir="packages/cli-${platform}"
-            local pkg_name="@interaction-dynamics/feature-cli-${platform}"
+            local pkg_name="@feature-cli/feature-cli--${platform}"
 
             # Copy binary
-            cp "dist/features-${platform}${binary_name##*features}" "$pkg_dir/"
+            cp "dist/features-${platform}/features${binary_name##*features}" "$pkg_dir/"
             chmod +x "$pkg_dir/features"* 2>/dev/null || true
 
             # Create package.json
@@ -286,14 +286,14 @@ jobs:
               "node": ">=14.0.0"
             },
             "optionalDependencies": {
-              "@interaction-dynamics/feature-cli-win32-x64": "$VERSION",
-              "@interaction-dynamics/feature-cli-win32-arm64": "$VERSION",
-              "@interaction-dynamics/feature-cli-darwin-x64": "$VERSION",
-              "@interaction-dynamics/feature-cli-darwin-arm64": "$VERSION",
-              "@interaction-dynamics/feature-cli-linux-x64": "$VERSION",
-              "@interaction-dynamics/feature-cli-linux-arm64": "$VERSION",
-              "@interaction-dynamics/feature-cli-linux-x64-musl": "$VERSION",
-              "@interaction-dynamics/feature-cli-linux-arm64-musl": "$VERSION"
+              "@feature-cli/feature-cli--win32-x64": "$VERSION",
+              "@feature-cli/feature-cli--win32-arm64": "$VERSION",
+              "@feature-cli/feature-cli--darwin-x64": "$VERSION",
+              "@feature-cli/feature-cli--darwin-arm64": "$VERSION",
+              "@feature-cli/feature-cli--linux-x64": "$VERSION",
+              "@feature-cli/feature-cli--linux-arm64": "$VERSION",
+              "@feature-cli/feature-cli--linux-x64-musl": "$VERSION",
+              "@feature-cli/feature-cli--linux-arm64-musl": "$VERSION"
             }
           }
           EOF
@@ -326,20 +326,20 @@ jobs:
 
           const PLATFORMS = {
             win32: {
-              x64: "@interaction-dynamics/feature-cli-win32-x64/features.exe",
-              arm64: "@interaction-dynamics/feature-cli-win32-arm64/features.exe",
+              x64: "@feature-cli/feature-cli--win32-x64/features.exe",
+              arm64: "@feature-cli/feature-cli--win32-arm64/features.exe",
             },
             darwin: {
-              x64: "@interaction-dynamics/feature-cli-darwin-x64/features",
-              arm64: "@interaction-dynamics/feature-cli-darwin-arm64/features",
+              x64: "@feature-cli/feature-cli--darwin-x64/features",
+              arm64: "@feature-cli/feature-cli--darwin-arm64/features",
             },
             linux: {
-              x64: "@interaction-dynamics/feature-cli-linux-x64/features",
-              arm64: "@interaction-dynamics/feature-cli-linux-arm64/features",
+              x64: "@feature-cli/feature-cli--linux-x64/features",
+              arm64: "@feature-cli/feature-cli--linux-arm64/features",
             },
             "linux-musl": {
-              x64: "@interaction-dynamics/feature-cli-linux-x64-musl/features",
-              arm64: "@interaction-dynamics/feature-cli-linux-arm64-musl/features",
+              x64: "@feature-cli/feature-cli--linux-x64-musl/features",
+              arm64: "@feature-cli/feature-cli--linux-arm64-musl/features",
             },
           };
 
