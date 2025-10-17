@@ -1,13 +1,40 @@
 # Features CLI
 
-A CLI tool for discovering and managing features in a feature-based architecture project.
+A CLI tool for discovering and managing features in a feature-based architecture project by detecting README.md or README.mdx files in directories.
 
 ## Getting Started
 
 ```bash
 cargo binstall features-cli
 
-features /path/to/features # list all the features in the directory
+features /path/to/project # list all features in the directory and subdirectories
+```
+
+## Feature Detection
+
+The CLI automatically detects features by scanning directories for README.md or README.mdx files. Any directory containing a README file is considered a feature, with the following rules:
+
+- **README formats**: Supports both README.md and README.mdx files
+- **Metadata parsing**: Extracts owner and metadata from YAML frontmatter
+- **Description extraction**: Uses content after the first heading as feature description
+- **Nested features**: Supports hierarchical feature organization
+- **Documentation exclusion**: Ignores README files in documentation directories (docs, __docs__, decisions, etc.)
+
+### README Format Example
+
+```markdown
+---
+owner: "Team Name"
+status: "active"
+version: "1.0.0"
+tags: ["authentication", "security"]
+---
+
+# Feature Name
+
+This is the feature description that will be extracted by the CLI.
+
+## Additional sections are included in the description
 ```
 
 Commands and their descriptions are listed below:

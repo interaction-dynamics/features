@@ -26,6 +26,8 @@ fn read_readme_content(content: &str) -> String {
     lines_after_title.join("\n").trim().to_string()
 }
 
+/// Reads README information from README.md or README.mdx files
+/// Returns (owner, description, metadata) tuple
 pub fn read_readme_info(
     readme_path: &Path,
 ) -> Result<(String, String, HashMap<String, serde_json::Value>)> {
@@ -34,7 +36,7 @@ pub fn read_readme_info(
     }
 
     let content = fs::read_to_string(readme_path)
-        .with_context(|| format!("could not read README.md at `{}`", readme_path.display()))?;
+        .with_context(|| format!("could not read README file at `{}`", readme_path.display()))?;
 
     let mut owner = "Unknown".to_string();
     let mut description = "".to_string();
