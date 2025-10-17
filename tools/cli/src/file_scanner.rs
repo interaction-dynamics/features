@@ -6,6 +6,56 @@ use crate::git_helper::get_commits_for_path;
 use crate::models::Feature;
 use crate::readme_parser::read_readme_info;
 
+fn is_documentation_directory(dir_path: &Path) -> bool {
+    let dir_name = dir_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("");
+
+    // Common documentation directory names
+    let doc_dirs = [
+        "docs",
+        "__docs__",
+        ".docs",
+        "doc",
+        "__doc__",
+        ".doc",
+        "decisions",
+        "decision",
+        "adrs",
+        "adr",
+        "guides",
+        "guide",
+        "tutorials",
+        "tutorial",
+    ];
+
+    doc_dirs.contains(&dir_name.to_lowercase().as_str())
+}
+
+fn is_inside_documentation_directory(dir_path: &Path) -> bool {
+    // Check if any parent directory is a documentation directory
+    for ancestor in dir_path.ancestors().skip(1) {
+        if is_documentation_directory(ancestor) {
+            return true;
+        }
+    }
+    false
+}
+
+fn find_readme_file(dir_path: &Path) -> Option<std::path::PathBuf> {
+    let readme_candidates = ["README.md", "README.mdx"];
+
+    for candidate in &readme_candidates {
+        let readme_path = dir_path.join(candidate);
+        if readme_path.exists() {
+            return Some(readme_path);
+        }
+    }
+
+    None
+}
+
 pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
     list_files_recursive_impl(dir, false)
 }
@@ -70,8 +120,12 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
         let name = path.file_name().unwrap().to_string_lossy();
 
         if path.is_dir() {
-            if dir.ends_with("features") {
-                let readme_path = path.join("README.md");
+            // Skip documentation directories and directories inside them
+            if !is_documentation_directory(&path)
+                && !is_inside_documentation_directory(&path)
+                && find_readme_file(&path).is_some()
+            {
+                let readme_path = find_readme_file(&path).unwrap();
                 let (owner, description, meta) = read_readme_info(&readme_path)?;
 
                 let new_features = list_files_recursive_impl(&path, include_changes);

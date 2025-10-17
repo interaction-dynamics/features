@@ -18,7 +18,8 @@ use http_server::serve_features_with_watching;
 use models::Feature;
 use printer::print_features;
 
-/// A CLI tool for discovering features in a folder and serving them via HTTP or static builds.
+/// A CLI tool for discovering features in a folder by reading README.md or README.mdx files,
+/// and serving them via HTTP or static builds.
 #[derive(Parser)]
 struct Cli {
     /// The path to the directory to list
