@@ -211,7 +211,7 @@ jobs:
             local libc=$5
 
             local pkg_dir="packages/cli-${platform}"
-            local pkg_name="@features-cli/feature-cli--${platform}"
+            local pkg_name="@features-cli/feature-cli-${platform}"
 
             # Copy binary
             cp "dist/features-${platform}${binary_name##*features}" "$pkg_dir/features${binary_name##*features}"
@@ -286,14 +286,14 @@ jobs:
               "node": ">=14.0.0"
             },
             "optionalDependencies": {
-              "@features-cli/feature-cli--win32-x64": "$VERSION",
-              "@features-cli/feature-cli--win32-arm64": "$VERSION",
-              "@features-cli/feature-cli--darwin-x64": "$VERSION",
-              "@features-cli/feature-cli--darwin-arm64": "$VERSION",
-              "@features-cli/feature-cli--linux-x64": "$VERSION",
-              "@features-cli/feature-cli--linux-arm64": "$VERSION",
-              "@features-cli/feature-cli--linux-x64-musl": "$VERSION",
-              "@features-cli/feature-cli--linux-arm64-musl": "$VERSION"
+              "@features-cli/feature-cli-win32-x64": "$VERSION",
+              "@features-cli/feature-cli-win32-arm64": "$VERSION",
+              "@features-cli/feature-cli-darwin-x64": "$VERSION",
+              "@features-cli/feature-cli-darwin-arm64": "$VERSION",
+              "@features-cli/feature-cli-linux-x64": "$VERSION",
+              "@features-cli/feature-cli-linux-arm64": "$VERSION",
+              "@features-cli/feature-cli-linux-x64-musl": "$VERSION",
+              "@features-cli/feature-cli-linux-arm64-musl": "$VERSION"
             }
           }
           EOF
@@ -326,20 +326,20 @@ jobs:
 
           const PLATFORMS = {
             win32: {
-              x64: "@features-cli/feature-cli--win32-x64/features.exe",
-              arm64: "@features-cli/feature-cli--win32-arm64/features.exe",
+              x64: "@features-cli/feature-cli-win32-x64/features.exe",
+              arm64: "@features-cli/feature-cli-win32-arm64/features.exe",
             },
             darwin: {
-              x64: "@features-cli/feature-cli--darwin-x64/features",
-              arm64: "@features-cli/feature-cli--darwin-arm64/features",
+              x64: "@features-cli/feature-cli-darwin-x64/features",
+              arm64: "@features-cli/feature-cli-darwin-arm64/features",
             },
             linux: {
-              x64: "@features-cli/feature-cli--linux-x64/features",
-              arm64: "@features-cli/feature-cli--linux-arm64/features",
+              x64: "@features-cli/feature-cli-linux-x64/features",
+              arm64: "@features-cli/feature-cli-linux-arm64/features",
             },
             "linux-musl": {
-              x64: "@features-cli/feature-cli--linux-x64-musl/features",
-              arm64: "@features-cli/feature-cli--linux-arm64-musl/features",
+              x64: "@features-cli/feature-cli-linux-x64-musl/features",
+              arm64: "@features-cli/feature-cli-linux-arm64-musl/features",
             },
           };
 
