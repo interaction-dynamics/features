@@ -397,7 +397,7 @@ jobs:
         run: |
           for pkg in packages/cli-*; do
             echo "Publishing $pkg..."
-            npm publish "$pkg" --access public
+            npm publish "$pkg" --access public --tag latest --provenance
           done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
