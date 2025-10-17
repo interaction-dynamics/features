@@ -229,7 +229,7 @@ jobs:
               "url": "https://github.com/interaction-dynamics/features"
             },
             "os": ["$os"],
-            "cpu": ["$cpu"]$([ -n "$libc" ] && echo ",\n    \"libc\": [\"$libc\"]")
+            "cpu": ["$cpu"]$([ -n "$libc" ] && echo ", \"libc\": [\"$libc\"]")
           }
           EOF
 
