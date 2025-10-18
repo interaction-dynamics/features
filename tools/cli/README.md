@@ -5,7 +5,10 @@ A CLI tool for discovering and managing features in a feature-based architecture
 ## Getting Started
 
 ```bash
+npm install -g features-cli
+# or
 cargo binstall features-cli
+
 
 features /path/to/project # list all features in the directory and subdirectories
 ```
