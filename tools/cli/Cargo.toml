@@ -12,6 +12,7 @@ keywords = ["features", "cli", "documentation", "analysis", "architecture"]
 categories = ["command-line-utilities", "development-tools"]
 authors = ["Interaction Dynamics <thibault.friedrich@interaction-dynamics.io>"]
 include = ["src", "public", "!public/features.json", "README.md"]
+
 [[bin]]
 name = "features"
 test = false
