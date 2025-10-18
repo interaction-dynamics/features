@@ -106,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: public
-          path: dist/
+          path: tools/web/dist/
           if-no-files-found: error
 
   build:
