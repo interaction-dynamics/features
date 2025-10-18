@@ -58,6 +58,20 @@ jobs:
       - name: Test ✔️
         run: cargo test --verbose
 
+  build-dashboard:
+    name: Build dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install web dependencies 🔧
+        working-directory: ./tools/web
+        run: pnpm install
+
+      - name: Prepare public folder
+        working-directory: ./tools/cli
+        run: mkdir -p public
+      - name: Build web application 🏗️
+        working-directory: ./tools/web
+        run: pnpm build_for_cli
   build:
     strategy:
       matrix:
@@ -97,7 +111,7 @@ jobs:
 
     name: Build ${{ matrix.code-target }}
     runs-on: ${{ matrix.os }}
-    needs: check
+    needs: build-dashboard
     if: needs.check.outputs.should_release == 'true'
 
     steps:
@@ -157,9 +171,7 @@ jobs:
   publish-crate:
     name: Publish to crates.io
     runs-on: ubuntu-latest
-    needs:
-      - check
-      - validate
+    needs: build-dashboard
     environment: crates-publish
     permissions:
       contents: read
