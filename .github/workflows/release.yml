@@ -101,13 +101,12 @@ jobs:
         run: |
           pnpm build
           rm -rf dist/features.json
-          mv dist public
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: public
-          path: public
+          path: dist/
           if-no-files-found: error
 
   build:
