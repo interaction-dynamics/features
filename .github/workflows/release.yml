@@ -57,20 +57,19 @@ jobs:
         run: cargo build --verbose
       - name: Test ✔️
         run: cargo test --verbose
-
   build-dashboard:
     name: Build dashboard
     runs-on: ubuntu-latest
     steps:
       - name: Install web dependencies 🔧
-        working-directory: ./tools/web
+        working-directory: tools/web
         run: pnpm install
 
       - name: Prepare public folder
-        working-directory: ./tools/cli
+        working-directory: tools/cli
         run: mkdir -p public
       - name: Build web application 🏗️
-        working-directory: ./tools/web
+        working-directory: tools/web
         run: pnpm build_for_cli
   build:
     strategy:
@@ -111,7 +110,10 @@ jobs:
 
     name: Build ${{ matrix.code-target }}
     runs-on: ${{ matrix.os }}
-    needs: build-dashboard
+    needs:
+      - build-dashboard
+      - validate
+      - check
     if: needs.check.outputs.should_release == 'true'
 
     steps:
@@ -171,7 +173,10 @@ jobs:
   publish-crate:
     name: Publish to crates.io
     runs-on: ubuntu-latest
-    needs: build-dashboard
+    needs:
+      - build-dashboard
+      - validate
+      - check
     environment: crates-publish
     permissions:
       contents: read
@@ -231,13 +236,11 @@ jobs:
     name: Publish to NPM
     runs-on: ubuntu-latest
     needs:
-      - check
       - build
     environment: npm-publish
     permissions:
       contents: write
       id-token: write
-
     steps:
       - uses: actions/checkout@v4
 
