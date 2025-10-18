@@ -56,15 +56,16 @@ examples/rust-basic/src/
 | **MUST** | Create a folder `features` | `features/` |
 | **MUST** | Create your feature folder like `feature-1` | `features/feature-1/` |
 | **MUST** | Add the code related to this feature inside the feature folder | `features/feature-1/file.js` |
-| **SHOULD** | Add a README.md file into the feature folder | `features/feature-1/README.md` |
+| **SHOULD** | Add a README.md or README.mdx file into the feature folder | `features/feature-1/README.md` |
 | **SHOULD** | Add a line of text describing the feature after the title in the README.md file | `Handles user login and logout functionality` |
 | **SHOULD** | Add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` | <pre>---<br/>owner: backend-team<br/>---</pre> |
+| **MAY** | Add all the properties you want in the [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) | <pre>---<br/>figma: <url><br/>---</pre> |
 | **MAY** | Add [MADR files](https://adr.github.io/madr/) into the feature's decisions folder | `features/feature-1/__docs__/decisions/001-use-jwt-tokens.md` |
 
 ## Tools
 
 - [Rust CLI](./tools/cli): Command-line tool to parse the code, find the features and serve the web dashboard UI
-- [Web UI](./tools/web): Dashboard to visualize the features in your project. Try the demo [here](http://interaction-dynamics.io/features/). A watch mode version is integrated into the CLI but it is possible to build a static version of the dashboard.
+- [Web UI](./tools/web): Dashboard to visualize the features in your project. Try the demo [here](http://interaction-dynamics.io/features/). A watch mode version and a static build version are integrated into the CLI.
 
 ## License
 

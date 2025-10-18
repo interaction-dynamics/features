@@ -24,9 +24,10 @@ The CLI automatically detects features by scanning directories for README.md or 
 
 ```markdown
 ---
-owner: "Team Name"
-status: "active"
-version: "1.0.0"
+owner: Team Name
+figma: https://www.figma.com/file/1234567890/Feature-Name?node-id=0%3A1
+status: active
+version: 1.0.0
 tags: ["authentication", "security"]
 ---
 
@@ -43,7 +44,7 @@ Commands and their descriptions are listed below:
 | ------- | ----------- |
 | `--json` | Output features as JSON |
 | `--flat` | Output features as a flat array instead of nested structure |
-| `--description` | Include feature descriptions in the output |
+| `--description` | Include feature descriptions in the output. The description is automatically included in the json format |
 | `--list-owners` | Display only unique list of owners |
 | `--check` | Run validation checks on features (e.g., duplicate names) |
 | `--serve` | Start an HTTP server to serve features and the web dashboard UI |
