@@ -567,7 +567,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v')
         with:
-          name: v${{ needs.check.outputs.version }}
+          name: CLI v${{ needs.check.outputs.version }}
           draft: false
           files: |
             dist/features-*
