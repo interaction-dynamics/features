@@ -561,6 +561,7 @@ jobs:
     needs:
       - publish-crate
       - publish-npm
+      - check
     steps:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
