@@ -199,14 +199,14 @@ jobs:
       - name: Dry run publish
         working-directory: tools/cli
         if: env.SKIP_PUBLISH == 'false'
-        run: cargo publish --dry-run --token ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish --dry-run --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
         env:
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
 
       - name: Publish to crates.io
         working-directory: tools/cli
         if: env.SKIP_PUBLISH == 'false'
-        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
         env:
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
 
