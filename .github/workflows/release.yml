@@ -1,4 +1,4 @@
-name: Release CLI to NPM
+name: Release CLI
 on:
   workflow_dispatch:
   push:
