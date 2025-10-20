@@ -35,7 +35,7 @@ By following specific guidelines and conventions, it becomes easier to add tooli
 The minimum folder structure is as follows:
 
 ```bash
-examples/rust-basic/src/
+src/
 ├── features
 │   ├── feature-1
 │   │   ├── file.rs # rust or any other language source code file
