@@ -37,11 +37,19 @@ The minimum folder structure is as follows:
 ```bash
 src/
 ├── features
-│   ├── feature-1
-│   │   ├── file.rs # rust or any other language source code file
-│   │   └── README.md
+│   ├── saveUser
+│   │   ├── components/
+│   │   │   ├── UserForm.ts
+│   │   │   └── EmailInput.ts
+│   │   ├── utils/
+│   │   │   ├── useSaveUser.ts
+│   │   │   ├── useFetchUser.ts
+│   │   │   └── transformUser.ts
+│   │   └── README.md # a README.md file for large features helps
 │   └── feature-2
-│      └── file.rs
+│       └── ... # ...
+├── components # common components used across features
+├── utils # common utils/hooks used across features
 └── ... # other source code
 ```
 
