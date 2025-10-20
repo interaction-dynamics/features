@@ -78,3 +78,12 @@ We welcome contributions to this project! If you have any ideas or suggestions, 
 ## Roadmap
 
 Check [here](https://github.com/orgs/interaction-dynamics/projects/18/views/4).
+
+## Bibliography about features-based architecture
+
+> Feature based architecture shouldn't be confused with feature-based design.
+
+- [Scalable React Projects with Feature-Based Architecture](https://dev.to/naserrasouli/scalable-react-projects-with-feature-based-architecture-117c)
+- [Reddit discussion about feature-based architecture](https://www.reddit.com/r/reactjs/comments/1afywy4/codebase_examples_of_featuredriven_or_vertical/)
+- [Why I Recommend a Feature-Driven Approach to Software Design](https://khalilstemmler.com/articles/software-design-architecture/feature-driven/): global vision of feature oriented development
+- [Bullet-proof react folder architecture](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md)
