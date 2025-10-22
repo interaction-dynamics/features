@@ -30,9 +30,10 @@ fn is_inside_documentation_directory(dir_path: &Path) -> bool {
 
 fn is_direct_subfolder_of_features(dir_path: &Path) -> bool {
     if let Some(parent) = dir_path.parent()
-        && let Some(parent_name) = parent.file_name().and_then(|name| name.to_str()) {
-            return parent_name == "features";
-        }
+        && let Some(parent_name) = parent.file_name().and_then(|name| name.to_str())
+    {
+        return parent_name == "features";
+    }
     false
 }
 
