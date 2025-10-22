@@ -1,13 +1,94 @@
 //! Integration tests for file_scanner module
 //!
 //! This test suite verifies that the file scanner correctly identifies and parses
-//! README files in direct subfolders of a "features" directory.
+//! README files in direct subfolders of a "features" directory, including nested
+//! features within feature folders.
 //!
-//! The test uses snapshot comparison to ensure the output matches expected results.
+//! The test uses snapshot comparison with recursive validation to ensure the output
+//! matches expected results at all nesting levels.
 
-use features_cli::file_scanner::list_files_recursive;
+use features_cli::file_scanner::list_files_recursive_with_changes;
 use features_cli::models::Feature;
 use std::path::PathBuf;
+
+/// Recursively compares two features including their nested features.
+///
+/// This function validates all fields of a feature and then recursively
+/// validates any nested features in the `features` field. The `parent_path`
+/// parameter is used to build a hierarchical path for error messages,
+/// making it easier to identify which nested feature failed the comparison.
+///
+/// # Arguments
+///
+/// * `actual` - The actual feature from the scanner
+/// * `expected` - The expected feature from the snapshot
+/// * `parent_path` - Hierarchical path to this feature (empty for root features)
+fn compare_features_recursive(actual: &Feature, expected: &Feature, parent_path: &str) {
+    let feature_path = if parent_path.is_empty() {
+        actual.name.clone()
+    } else {
+        format!("{} -> {}", parent_path, actual.name)
+    };
+
+    assert_eq!(
+        actual.name, expected.name,
+        "Feature name mismatch at '{}'",
+        feature_path
+    );
+    assert_eq!(
+        actual.description, expected.description,
+        "Feature '{}' description mismatch",
+        feature_path
+    );
+    assert_eq!(
+        actual.owner, expected.owner,
+        "Feature '{}' owner mismatch",
+        feature_path
+    );
+    assert!(
+        actual
+            .path
+            .ends_with(&expected.path.split('/').last().unwrap()),
+        "Feature '{}' path mismatch. Expected to end with '{}', got '{}'",
+        feature_path,
+        expected.path.split('/').last().unwrap(),
+        actual.path
+    );
+    assert_eq!(
+        actual.features.len(),
+        expected.features.len(),
+        "Feature '{}' should have {} nested features, got {}",
+        feature_path,
+        expected.features.len(),
+        actual.features.len()
+    );
+    assert_eq!(
+        actual.meta, expected.meta,
+        "Feature '{}' meta mismatch",
+        feature_path
+    );
+    assert_eq!(
+        actual.changes.len(),
+        expected.changes.len(),
+        "Feature '{}' should have {} changes, got {}",
+        feature_path,
+        expected.changes.len(),
+        actual.changes.len()
+    );
+    assert_eq!(
+        actual.decisions.len(),
+        expected.decisions.len(),
+        "Feature '{}' should have {} decisions, got {}",
+        feature_path,
+        expected.decisions.len(),
+        actual.decisions.len()
+    );
+
+    // Recursively compare nested features
+    for (actual_nested, expected_nested) in actual.features.iter().zip(expected.features.iter()) {
+        compare_features_recursive(actual_nested, expected_nested, &feature_path);
+    }
+}
 
 #[test]
 fn test_javascript_basic_snapshot() {
@@ -23,7 +104,7 @@ fn test_javascript_basic_snapshot() {
     }
 
     // Scan the directory
-    let result = list_files_recursive(&test_path);
+    let result = list_files_recursive_with_changes(&test_path);
     assert!(
         result.is_ok(),
         "Failed to scan directory: {:?}",
@@ -49,57 +130,9 @@ fn test_javascript_basic_snapshot() {
         actual_features.len()
     );
 
-    // Compare each feature
+    // Compare each feature recursively
     for (actual, expected) in actual_features.iter().zip(expected_features.iter()) {
-        assert_eq!(actual.name, expected.name, "Feature name mismatch");
-        assert_eq!(
-            actual.description, expected.description,
-            "Feature '{}' description mismatch",
-            actual.name
-        );
-        assert_eq!(
-            actual.owner, expected.owner,
-            "Feature '{}' owner mismatch",
-            actual.name
-        );
-        assert!(
-            actual
-                .path
-                .ends_with(&expected.path.split('/').last().unwrap()),
-            "Feature '{}' path mismatch. Expected to end with '{}', got '{}'",
-            actual.name,
-            expected.path.split('/').last().unwrap(),
-            actual.path
-        );
-        assert_eq!(
-            actual.features.len(),
-            expected.features.len(),
-            "Feature '{}' should have {} nested features, got {}",
-            actual.name,
-            expected.features.len(),
-            actual.features.len()
-        );
-        assert_eq!(
-            actual.meta, expected.meta,
-            "Feature '{}' meta mismatch",
-            actual.name
-        );
-        assert_eq!(
-            actual.changes.len(),
-            expected.changes.len(),
-            "Feature '{}' should have {} changes, got {}",
-            actual.name,
-            expected.changes.len(),
-            actual.changes.len()
-        );
-        assert_eq!(
-            actual.decisions.len(),
-            expected.decisions.len(),
-            "Feature '{}' should have {} decisions, got {}",
-            actual.name,
-            expected.decisions.len(),
-            actual.decisions.len()
-        );
+        compare_features_recursive(actual, expected, "");
     }
 
     // Optional: Print JSON for debugging (run with --nocapture to see)
