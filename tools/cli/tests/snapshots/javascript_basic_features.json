@@ -14,7 +14,38 @@
     "description": "This is a Feature that does something useful.",
     "owner": "team1",
     "path": "../../examples/javascript-basic/src/features/feature-1",
-    "features": [],
+    "features": [
+      {
+        "name": "feature-2",
+        "description": "This is a nested Feature that does something useful.",
+        "owner": "team1",
+        "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-2",
+        "features": [],
+        "meta": {},
+        "changes": [],
+        "decisions": []
+      },
+      {
+        "name": "feature-3",
+        "description": "This is another nested Feature that does something useful.",
+        "owner": "team1",
+        "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-3",
+        "features": [],
+        "meta": {},
+        "changes": [],
+        "decisions": []
+      },
+      {
+        "name": "feature-4",
+        "description": "",
+        "owner": "team1",
+        "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-4",
+        "features": [],
+        "meta": {},
+        "changes": [],
+        "decisions": []
+      }
+    ],
     "meta": {},
     "changes": [],
     "decisions": []

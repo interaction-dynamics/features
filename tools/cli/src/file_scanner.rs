@@ -144,12 +144,22 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
                     Vec::new()
                 };
 
+                // Check if this feature has nested features
+                let nested_features_path = path.join("features");
+                let nested_features =
+                    if nested_features_path.exists() && nested_features_path.is_dir() {
+                        list_files_recursive_impl(&nested_features_path, include_changes)
+                            .unwrap_or_default()
+                    } else {
+                        Vec::new()
+                    };
+
                 features.push(Feature {
                     name: name.to_string(),
                     description,
                     owner,
                     path: path.to_string_lossy().to_string(),
-                    features: Vec::new(),
+                    features: nested_features,
                     meta,
                     changes,
                     decisions,
