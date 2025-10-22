@@ -55,6 +55,8 @@ jobs:
         working-directory: ./tools/cli
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # Fetches the entire history of the repository
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
