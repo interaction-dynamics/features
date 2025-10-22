@@ -48,10 +48,10 @@ fn compare_features_recursive(actual: &Feature, expected: &Feature, parent_path:
     assert!(
         actual
             .path
-            .ends_with(&expected.path.split('/').last().unwrap()),
+            .ends_with(&expected.path.split('/').next_back().unwrap()),
         "Feature '{}' path mismatch. Expected to end with '{}', got '{}'",
         feature_path,
-        expected.path.split('/').last().unwrap(),
+        expected.path.split('/').next_back().unwrap(),
         actual.path
     );
     assert_eq!(
