@@ -1,0 +1,22 @@
+[
+  {
+    "name": "feature-1",
+    "description": "This is a Feature that does something useful.",
+    "owner": "team1",
+    "path": "../../examples/javascript-basic/src/features/feature-1",
+    "features": [],
+    "meta": {},
+    "changes": [],
+    "decisions": []
+  },
+  {
+    "name": "feature-2",
+    "description": "This is a feature that does something very interesting.",
+    "owner": "Unknown",
+    "path": "../../examples/javascript-basic/src/features/feature-2",
+    "features": [],
+    "meta": {},
+    "changes": [],
+    "decisions": []
+  }
+]

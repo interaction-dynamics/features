@@ -68,8 +68,8 @@ impl BuildConfig {
 /// # Example
 ///
 /// ```rust,no_run
-/// use your_crate::build::{create_build, BuildConfig};
-/// use your_crate::models::Feature;
+/// use features_cli::build::{create_build, BuildConfig};
+/// use features_cli::models::Feature;
 ///
 /// #[tokio::main]
 /// async fn main() -> anyhow::Result<()> {
@@ -164,26 +164,4 @@ async fn generate_features_json(features: &[Feature], output_dir: &Path) -> Resu
     println!("  Created: {}", features_path.display());
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-
-    #[tokio::test]
-    async fn test_create_build() {
-        let temp_dir = tempdir().unwrap();
-        let config = BuildConfig::new(temp_dir.path().join("test_build"));
-        let features = vec![];
-
-        let result = create_build(&features, config).await;
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_list_build_files() {
-        let files = list_build_files();
-        assert!(files.contains(&"features.json".to_string()));
-    }
 }

@@ -13,22 +13,7 @@ fn is_documentation_directory(dir_path: &Path) -> bool {
         .unwrap_or("");
 
     // Common documentation directory names
-    let doc_dirs = [
-        "docs",
-        "__docs__",
-        ".docs",
-        "doc",
-        "__doc__",
-        ".doc",
-        "decisions",
-        "decision",
-        "adrs",
-        "adr",
-        "guides",
-        "guide",
-        "tutorials",
-        "tutorial",
-    ];
+    let doc_dirs = ["docs", "__docs__", ".docs"];
 
     doc_dirs.contains(&dir_name.to_lowercase().as_str())
 }
@@ -38,6 +23,15 @@ fn is_inside_documentation_directory(dir_path: &Path) -> bool {
     for ancestor in dir_path.ancestors().skip(1) {
         if is_documentation_directory(ancestor) {
             return true;
+        }
+    }
+    false
+}
+
+fn is_direct_subfolder_of_features(dir_path: &Path) -> bool {
+    if let Some(parent) = dir_path.parent() {
+        if let Some(parent_name) = parent.file_name().and_then(|name| name.to_str()) {
+            return parent_name == "features";
         }
     }
     false
@@ -121,14 +115,14 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
 
         if path.is_dir() {
             // Skip documentation directories and directories inside them
+            // Only process directories that are direct subfolders of "features"
             if !is_documentation_directory(&path)
                 && !is_inside_documentation_directory(&path)
+                && is_direct_subfolder_of_features(&path)
                 && find_readme_file(&path).is_some()
             {
                 let readme_path = find_readme_file(&path).unwrap();
                 let (owner, description, meta) = read_readme_info(&readme_path)?;
-
-                let new_features = list_files_recursive_impl(&path, include_changes);
 
                 let changes = if include_changes {
                     get_commits_for_path(&path, &path.to_string_lossy()).unwrap_or_default()
@@ -147,7 +141,7 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
                     description,
                     owner,
                     path: path.to_string_lossy().to_string(),
-                    features: new_features?,
+                    features: Vec::new(),
                     meta,
                     changes,
                     decisions,
