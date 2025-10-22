@@ -119,10 +119,18 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
             if !is_documentation_directory(&path)
                 && !is_inside_documentation_directory(&path)
                 && is_direct_subfolder_of_features(&path)
-                && find_readme_file(&path).is_some()
             {
-                let readme_path = find_readme_file(&path).unwrap();
-                let (owner, description, meta) = read_readme_info(&readme_path)?;
+                // Try to find and read README file, use defaults if not found
+                let (owner, description, meta) = if let Some(readme_path) = find_readme_file(&path)
+                {
+                    read_readme_info(&readme_path)?
+                } else {
+                    (
+                        "Unknown".to_string(),
+                        "".to_string(),
+                        std::collections::HashMap::new(),
+                    )
+                };
 
                 let changes = if include_changes {
                     get_commits_for_path(&path, &path.to_string_lossy()).unwrap_or_default()

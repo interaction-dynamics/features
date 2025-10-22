@@ -1,5 +1,15 @@
 [
   {
+    "name": "feature-0",
+    "description": "",
+    "owner": "Unknown",
+    "path": "../../examples/javascript-basic/src/features/feature-0",
+    "features": [],
+    "meta": {},
+    "changes": [],
+    "decisions": []
+  },
+  {
     "name": "feature-1",
     "description": "This is a Feature that does something useful.",
     "owner": "team1",
