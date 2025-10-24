@@ -99,15 +99,19 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
       <Tabs defaultValue="description" className="mt-4">
         <TabsList>
           <TabsTrigger value="description">Description</TabsTrigger>
-          <TabsTrigger value="changes">Changes</TabsTrigger>
+          {feature.changes.length > 0 && (
+            <TabsTrigger value="changes">Changes</TabsTrigger>
+          )}
           <TabsTrigger value="decisions">Decisions</TabsTrigger>
         </TabsList>
         <TabsContent value="description" className="mt-1">
           <FeatureDescription description={feature.description} />
         </TabsContent>
-        <TabsContent value="changes" className="mt-1">
-          <FeatureChanges changes={feature.changes} />
-        </TabsContent>
+        {feature.changes.length > 0 && (
+          <TabsContent value="changes" className="mt-1">
+            <FeatureChanges changes={feature.changes} />
+          </TabsContent>
+        )}
         <TabsContent value="decisions" className="mt-1">
           <FeatureDecisions decisions={feature.decisions} />
         </TabsContent>
