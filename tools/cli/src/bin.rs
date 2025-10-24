@@ -120,6 +120,7 @@ async fn main() -> Result<()> {
     };
 
     if args.serve {
+        eprintln!("Watching directory: {}", args.path.display());
         serve_features_with_watching(&features, args.port, args.path.clone()).await?;
     } else if args.build {
         let build_config = BuildConfig::new(args.build_dir);
