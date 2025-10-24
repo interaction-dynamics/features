@@ -354,6 +354,30 @@ jobs:
             cp "dist/features-${platform}${binary_name##*features}" "$pkg_dir/features${binary_name##*features}"
             chmod +x "$pkg_dir/features"* 2>/dev/null || true
 
+            # Create postinstall script
+            cat > "$pkg_dir/postinstall.js" << 'POSTINSTALL_EOF'
+          #!/usr/bin/env node
+          const fs = require('fs');
+          const path = require('path');
+
+          // Find the binary file
+          const files = fs.readdirSync(__dirname);
+          const binaryFile = files.find(f => f.startsWith('features'));
+
+          if (binaryFile) {
+            const binaryPath = path.join(__dirname, binaryFile);
+            try {
+              // Make the binary executable (chmod +x)
+              fs.chmodSync(binaryPath, 0o755);
+              console.log(`Made ${binaryFile} executable`);
+            } catch (err) {
+              console.warn(`Warning: Could not make ${binaryFile} executable:`, err.message);
+            }
+          }
+          POSTINSTALL_EOF
+
+            chmod +x "$pkg_dir/postinstall.js"
+
             # Create package.json
             cat > "$pkg_dir/package.json" << EOF
           {
@@ -368,6 +392,13 @@ jobs:
             "publishConfig": {
                 "provenance": true
             },
+            "scripts": {
+              "postinstall": "node postinstall.js"
+            },
+            "files": [
+              "features*",
+              "postinstall.js"
+            ],
             "os": ["$os"],
             "cpu": ["$cpu"]$([ -n "$libc" ] && echo ", \"libc\": [\"$libc\"]")
           }
