@@ -60,6 +60,10 @@ struct Cli {
     /// Output directory for the static build
     #[arg(long, default_value = "build")]
     build_dir: std::path::PathBuf,
+
+    /// Include changes (git commits and decisions) in the output
+    #[arg(long)]
+    changes: bool,
 }
 
 fn flatten_features(features: &[Feature]) -> Vec<Feature> {
@@ -109,7 +113,7 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
 async fn main() -> Result<()> {
     let args = Cli::parse();
 
-    let features = if args.json || args.serve || args.build {
+    let features = if args.changes {
         list_files_recursive_with_changes(&args.path)?
     } else {
         list_files_recursive(&args.path)?

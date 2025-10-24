@@ -138,11 +138,8 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
                     Vec::new()
                 };
 
-                let decisions = if include_changes {
-                    read_decision_files(&path).unwrap_or_default()
-                } else {
-                    Vec::new()
-                };
+                // Always include decisions regardless of include_changes flag
+                let decisions = read_decision_files(&path).unwrap_or_default();
 
                 // Check if this feature has nested features
                 let nested_features_path = path.join("features");
