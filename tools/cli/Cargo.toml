@@ -1,6 +1,6 @@
 [package]
 name = "features-cli"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2024"
 description = "A CLI tool for discovering the features in a folder"
 license = "MIT"
