@@ -70,7 +70,7 @@ pub fn get_all_commits_by_path(repo_path: &Path) -> Result<HashMap<String, Vec<C
                 let ancestor_str = ancestor.to_string_lossy().to_string();
 
                 // Only add if not already present (to avoid duplicates)
-                let changes_list = path_changes.entry(ancestor_str).or_insert_with(Vec::new);
+                let changes_list = path_changes.entry(ancestor_str).or_default();
                 if !changes_list.iter().any(|c| c.hash == change.hash) {
                     changes_list.push(change.clone());
                 }
@@ -101,17 +101,16 @@ fn get_affected_paths(repo: &Repository, commit: &git2::Commit) -> Result<Vec<St
 
     diff.foreach(
         &mut |delta, _| {
-            if let Some(path) = delta.new_file().path() {
-                if let Some(path_str) = path.to_str() {
-                    paths.push(path_str.to_string());
-                }
+            if let Some(path) = delta.new_file().path()
+                && let Some(path_str) = path.to_str()
+            {
+                paths.push(path_str.to_string());
             }
-            if let Some(path) = delta.old_file().path() {
-                if let Some(path_str) = path.to_str() {
-                    if !paths.contains(&path_str.to_string()) {
-                        paths.push(path_str.to_string());
-                    }
-                }
+            if let Some(path) = delta.old_file().path()
+                && let Some(path_str) = path.to_str()
+                && !paths.contains(&path_str.to_string())
+            {
+                paths.push(path_str.to_string());
             }
             true
         },
@@ -140,10 +139,10 @@ fn collect_tree_paths(
 
             paths.push(path.clone());
 
-            if entry.kind() == Some(git2::ObjectType::Tree) {
-                if let Ok(subtree) = entry.to_object(repo).and_then(|obj| obj.peel_to_tree()) {
-                    collect_tree_paths(repo, &subtree, &path, paths)?;
-                }
+            if entry.kind() == Some(git2::ObjectType::Tree)
+                && let Ok(subtree) = entry.to_object(repo).and_then(|obj| obj.peel_to_tree())
+            {
+                collect_tree_paths(repo, &subtree, &path, paths)?;
             }
         }
     }
