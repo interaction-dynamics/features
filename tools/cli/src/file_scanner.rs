@@ -1,9 +1,11 @@
 use anyhow::{Context, Result};
+use git2::Repository;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use crate::git_helper::get_commits_for_path;
-use crate::models::Feature;
+use crate::git_helper::get_all_commits_by_path;
+use crate::models::{Change, Feature};
 use crate::readme_parser::read_readme_info;
 
 fn is_documentation_directory(dir_path: &Path) -> bool {
@@ -51,11 +53,13 @@ fn find_readme_file(dir_path: &Path) -> Option<std::path::PathBuf> {
 }
 
 pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
-    list_files_recursive_impl(dir, false)
+    list_files_recursive_impl(dir, None)
 }
 
 pub fn list_files_recursive_with_changes(dir: &Path) -> Result<Vec<Feature>> {
-    list_files_recursive_impl(dir, true)
+    // Get all commits once at the beginning for efficiency
+    let all_commits = get_all_commits_by_path(dir).unwrap_or_default();
+    list_files_recursive_impl(dir, Some(&all_commits))
 }
 
 fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
@@ -100,7 +104,10 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
     Ok(decisions)
 }
 
-fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Feature>> {
+fn list_files_recursive_impl(
+    dir: &Path,
+    changes_map: Option<&HashMap<String, Vec<Change>>>,
+) -> Result<Vec<Feature>> {
     let entries = fs::read_dir(dir)
         .with_context(|| format!("could not read directory `{}`", dir.display()))?;
 
@@ -132,8 +139,9 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
                     )
                 };
 
-                let changes = if include_changes {
-                    get_commits_for_path(&path, &path.to_string_lossy()).unwrap_or_default()
+                let changes = if let Some(map) = changes_map {
+                    // Convert the absolute path to a repo-relative path and look up changes
+                    get_changes_for_path(&path, map).unwrap_or_default()
                 } else {
                     Vec::new()
                 };
@@ -145,7 +153,7 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
                 let nested_features_path = path.join("features");
                 let nested_features =
                     if nested_features_path.exists() && nested_features_path.is_dir() {
-                        list_files_recursive_impl(&nested_features_path, include_changes)
+                        list_files_recursive_impl(&nested_features_path, changes_map)
                             .unwrap_or_default()
                     } else {
                         Vec::new()
@@ -162,11 +170,39 @@ fn list_files_recursive_impl(dir: &Path, include_changes: bool) -> Result<Vec<Fe
                     decisions,
                 });
             } else {
-                let new_features = list_files_recursive_impl(&path, include_changes);
+                let new_features = list_files_recursive_impl(&path, changes_map);
                 features.extend(new_features?);
             }
         }
     }
 
     Ok(features)
+}
+
+/// Get changes for a specific path from the pre-computed changes map
+fn get_changes_for_path(
+    path: &Path,
+    changes_map: &HashMap<String, Vec<Change>>,
+) -> Result<Vec<Change>> {
+    // Canonicalize the path
+    let canonical_path = std::fs::canonicalize(path)?;
+
+    // Find the repository and get the working directory
+    let repo = Repository::discover(path)?;
+    let repo_workdir = repo
+        .workdir()
+        .context("repository has no working directory")?;
+
+    // Convert to relative path from repo root
+    let relative_path = canonical_path
+        .strip_prefix(repo_workdir)
+        .context("path is not within repository")?;
+
+    let relative_path_str = relative_path.to_string_lossy().to_string();
+
+    // Look up the changes in the map
+    Ok(changes_map
+        .get(&relative_path_str)
+        .cloned()
+        .unwrap_or_default())
 }
