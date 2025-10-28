@@ -7,7 +7,7 @@
 //! The test uses snapshot comparison with recursive validation to ensure the output
 //! matches expected results at all nesting levels.
 
-use features_cli::file_scanner::list_files_recursive_with_changes;
+use features_cli::file_scanner::{list_files_recursive, list_files_recursive_with_changes};
 use features_cli::models::Feature;
 use std::path::PathBuf;
 
@@ -141,6 +141,62 @@ fn test_javascript_basic_snapshot() {
             serde_json::to_string_pretty(&actual_features).expect("Failed to serialize features");
         println!(
             "\n========== Actual JSON Output ==========\n{}\n========== End ==========\n",
+            json
+        );
+    }
+}
+
+#[test]
+fn test_javascript_basic_snapshot_without_changes() {
+    // Path to the test directory (relative to the workspace root when tests run)
+    let test_path = PathBuf::from("../../examples/javascript-basic/src");
+
+    if !test_path.exists() {
+        println!(
+            "Skipping test - test path does not exist: {}",
+            test_path.display()
+        );
+        return;
+    }
+
+    // Scan the directory without changes
+    let result = list_files_recursive(&test_path);
+    assert!(
+        result.is_ok(),
+        "Failed to scan directory: {:?}",
+        result.err()
+    );
+
+    let actual_features = result.unwrap();
+
+    // Load the snapshot
+    let snapshot_path = PathBuf::from("tests/snapshots/javascript_basic_features_no_changes.json");
+    let snapshot_content = std::fs::read_to_string(&snapshot_path)
+        .expect("Failed to read snapshot file. Make sure tests/snapshots/javascript_basic_features_no_changes.json exists");
+
+    let expected_features: Vec<Feature> =
+        serde_json::from_str(&snapshot_content).expect("Failed to parse snapshot JSON");
+
+    // Compare the results
+    assert_eq!(
+        actual_features.len(),
+        expected_features.len(),
+        "Number of features doesn't match snapshot. Expected: {}, Got: {}",
+        expected_features.len(),
+        actual_features.len()
+    );
+
+    // Compare each feature recursively
+    for (actual, expected) in actual_features.iter().zip(expected_features.iter()) {
+        compare_features_recursive(actual, expected, "");
+    }
+
+    // Optional: Print JSON for debugging (run with --nocapture to see)
+    if std::env::var("PRINT_JSON").is_ok() {
+        let json =
+            serde_json::to_string_pretty(&actual_features).expect("Failed to serialize features");
+        println!(
+            "\n========== Actual JSON Output (No Changes) ==========\n{}\n========== End ==========\n",
             json
         );
     }
