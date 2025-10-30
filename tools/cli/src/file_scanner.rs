@@ -54,29 +54,25 @@ fn find_readme_file(dir_path: &Path) -> Option<std::path::PathBuf> {
 
 /// Check if a directory has a README with `feature: true` in front matter
 fn has_feature_flag_in_readme(dir_path: &Path) -> bool {
-    if let Some(readme_path) = find_readme_file(dir_path) {
-        if let Ok(content) = fs::read_to_string(&readme_path) {
+    if let Some(readme_path) = find_readme_file(dir_path)
+        && let Ok(content) = fs::read_to_string(&readme_path) {
             // Check if content starts with YAML front matter (---)
-            if let Some(stripped) = content.strip_prefix("---\n") {
-                if let Some(end_pos) = stripped.find("\n---\n") {
+            if let Some(stripped) = content.strip_prefix("---\n")
+                && let Some(end_pos) = stripped.find("\n---\n") {
                     let yaml_content = &stripped[..end_pos];
 
                     // Parse YAML front matter
                     if let Ok(yaml_value) = serde_yaml::from_str::<serde_yaml::Value>(yaml_content)
-                    {
-                        if let Some(mapping) = yaml_value.as_mapping() {
+                        && let Some(mapping) = yaml_value.as_mapping() {
                             // Check for feature: true
                             if let Some(feature_value) =
-                                mapping.get(&serde_yaml::Value::String("feature".to_string()))
+                                mapping.get(serde_yaml::Value::String("feature".to_string()))
                             {
                                 return feature_value.as_bool() == Some(true);
                             }
                         }
-                    }
                 }
-            }
         }
-    }
     false
 }
 
@@ -154,7 +150,7 @@ fn process_feature_directory(
     changes_map: Option<&HashMap<String, Vec<Change>>>,
 ) -> Result<Feature> {
     // Try to find and read README file, use defaults if not found
-    let (owner, description, mut meta) = if let Some(readme_path) = find_readme_file(&path) {
+    let (owner, description, mut meta) = if let Some(readme_path) = find_readme_file(path) {
         read_readme_info(&readme_path)?
     } else {
         (
@@ -169,13 +165,13 @@ fn process_feature_directory(
 
     let changes = if let Some(map) = changes_map {
         // Convert the absolute path to a repo-relative path and look up changes
-        get_changes_for_path(&path, map).unwrap_or_default()
+        get_changes_for_path(path, map).unwrap_or_default()
     } else {
         Vec::new()
     };
 
     // Always include decisions regardless of include_changes flag
-    let decisions = read_decision_files(&path).unwrap_or_default();
+    let decisions = read_decision_files(path).unwrap_or_default();
 
     // Check if this feature has nested features in a 'features' subdirectory
     let nested_features_path = path.join("features");
