@@ -94,12 +94,12 @@ function buildPathTree(features: Feature[]): TreeNode {
     if (!relativePath) return
 
     const parts = relativePath.split('/')
-    let currentNode = node
+    let currentNode: TreeNode | undefined = node
 
     // Build the path up to the feature, creating folders as needed
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i]
-      if (!currentNode.children.has(part)) {
+      if (currentNode && !currentNode.children.has(part)) {
         const folderPath = commonAncestor
           ? `${commonAncestor}/${parts.slice(0, i + 1).join('/')}`
           : parts.slice(0, i + 1).join('/')
@@ -111,7 +111,9 @@ function buildPathTree(features: Feature[]): TreeNode {
           children: new Map(),
         })
       }
-      currentNode = currentNode.children.get(part)!
+      if (currentNode) {
+        currentNode = currentNode.children.get(part)
+      }
     }
 
     // Add the feature itself
@@ -131,7 +133,9 @@ function buildPathTree(features: Feature[]): TreeNode {
         const nestedNode: TreeNode = {
           name: nestedFeature.name,
           path: nestedFeature.path,
-          isFolder: nestedFeature.features && nestedFeature.features.length > 0,
+          isFolder:
+            (nestedFeature.features && nestedFeature.features.length > 0) ??
+            false,
           feature: nestedFeature,
           children: new Map(),
         }
@@ -159,8 +163,9 @@ function buildPathTree(features: Feature[]): TreeNode {
         featureNode.children.set(nestedFeature.name, nestedNode)
       }
     }
-
-    currentNode.children.set(featureName, featureNode)
+    if (currentNode) {
+      currentNode.children.set(featureName, featureNode)
+    }
   }
 
   // Process all top-level features
