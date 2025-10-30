@@ -37,7 +37,10 @@ By following specific guidelines and conventions, it becomes easier to add tooli
 
 ### Folder structure
 
-The minimum folder structure is as follows:
+Features can be organized in two ways:
+
+#### Method 1: Features folder (recommended)
+Place features in a dedicated `features` folder:
 
 ```bash
 src/
@@ -58,6 +61,18 @@ src/
 └── ... # other source code
 ```
 
+#### Method 2: Feature flag
+Mark any folder as a feature by adding `feature: true` in its README frontmatter:
+
+```yaml
+---
+feature: true
+owner: backend-team
+---
+```
+
+This allows features to be organized anywhere in your codebase while still being discoverable by the tools.
+
 > You can find more sophisticated examples in the [examples](./examples) folder.
 
 ### Details
@@ -66,9 +81,8 @@ src/
 
 | Requirement | Description | Example |
 |-------------|-------------|---------|
-| **MUST** | Create a folder `features` | `features/` |
-| **MUST** | Create your feature folder like `feature-1` | `features/feature-1/` |
-| **MUST** | Add the code related to this feature inside the feature folder | `features/feature-1/file.js` |
+| **MUST** | Either: Create features in a `features` folder OR add `feature: true` to README frontmatter | `features/feature-1/` or any folder with feature flag |
+| **MUST** | Add the code related to this feature inside the feature folder | `feature-1/file.js` |
 | **SHOULD** | Add a README.md or README.mdx file into the feature folder | `features/feature-1/README.md` |
 | **SHOULD** | Add a line of text describing the feature after the title in the README.md file | `Handles user login and logout functionality` |
 | **SHOULD** | Add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` | <pre>---<br/>owner: backend-team<br/>---</pre> |

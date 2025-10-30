@@ -52,6 +52,50 @@ fn find_readme_file(dir_path: &Path) -> Option<std::path::PathBuf> {
     None
 }
 
+/// Check if a directory has a README with `feature: true` in front matter
+fn has_feature_flag_in_readme(dir_path: &Path) -> bool {
+    if let Some(readme_path) = find_readme_file(dir_path) {
+        if let Ok(content) = fs::read_to_string(&readme_path) {
+            // Check if content starts with YAML front matter (---)
+            if let Some(stripped) = content.strip_prefix("---\n") {
+                if let Some(end_pos) = stripped.find("\n---\n") {
+                    let yaml_content = &stripped[..end_pos];
+
+                    // Parse YAML front matter
+                    if let Ok(yaml_value) = serde_yaml::from_str::<serde_yaml::Value>(yaml_content)
+                    {
+                        if let Some(mapping) = yaml_value.as_mapping() {
+                            // Check for feature: true
+                            if let Some(feature_value) =
+                                mapping.get(&serde_yaml::Value::String("feature".to_string()))
+                            {
+                                return feature_value.as_bool() == Some(true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Check if a directory should be treated as a feature
+fn is_feature_directory(dir_path: &Path) -> bool {
+    // Skip documentation directories
+    if is_documentation_directory(dir_path) || is_inside_documentation_directory(dir_path) {
+        return false;
+    }
+
+    // Check if it's a direct subfolder of "features" (existing behavior)
+    if is_direct_subfolder_of_features(dir_path) {
+        return true;
+    }
+
+    // Check if the directory has a README with feature: true
+    has_feature_flag_in_readme(dir_path)
+}
+
 pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
     list_files_recursive_impl(dir, None)
 }
@@ -104,6 +148,76 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
     Ok(decisions)
 }
 
+fn process_feature_directory(
+    path: &Path,
+    name: &str,
+    changes_map: Option<&HashMap<String, Vec<Change>>>,
+) -> Result<Feature> {
+    // Try to find and read README file, use defaults if not found
+    let (owner, description, mut meta) = if let Some(readme_path) = find_readme_file(&path) {
+        read_readme_info(&readme_path)?
+    } else {
+        (
+            "Unknown".to_string(),
+            "".to_string(),
+            std::collections::HashMap::new(),
+        )
+    };
+
+    // Remove the 'feature' key from meta if it exists (it's redundant since we know it's a feature)
+    meta.remove("feature");
+
+    let changes = if let Some(map) = changes_map {
+        // Convert the absolute path to a repo-relative path and look up changes
+        get_changes_for_path(&path, map).unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
+    // Always include decisions regardless of include_changes flag
+    let decisions = read_decision_files(&path).unwrap_or_default();
+
+    // Check if this feature has nested features in a 'features' subdirectory
+    let nested_features_path = path.join("features");
+    let mut nested_features = if nested_features_path.exists() && nested_features_path.is_dir() {
+        list_files_recursive_impl(&nested_features_path, changes_map).unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
+    // Also check for nested features marked with feature: true in subdirectories
+    let entries = fs::read_dir(path)
+        .with_context(|| format!("could not read directory `{}`", path.display()))?;
+
+    let mut entries: Vec<_> = entries.collect::<Result<_, _>>()?;
+    entries.sort_by_key(|entry| entry.path());
+
+    for entry in entries {
+        let entry_path = entry.path();
+        let entry_name = entry_path.file_name().unwrap().to_string_lossy();
+
+        if entry_path.is_dir()
+            && entry_name != "features" // Don't process 'features' folder twice
+            && !is_documentation_directory(&entry_path)
+            && has_feature_flag_in_readme(&entry_path)
+        {
+            let nested_feature = process_feature_directory(&entry_path, &entry_name, changes_map)?;
+            nested_features.push(nested_feature);
+        }
+    }
+
+    Ok(Feature {
+        name: name.to_string(),
+        description,
+        owner,
+        path: path.to_string_lossy().to_string(),
+        features: nested_features,
+        meta,
+        changes,
+        decisions,
+    })
+}
+
 fn list_files_recursive_impl(
     dir: &Path,
     changes_map: Option<&HashMap<String, Vec<Change>>>,
@@ -121,57 +235,15 @@ fn list_files_recursive_impl(
         let name = path.file_name().unwrap().to_string_lossy();
 
         if path.is_dir() {
-            // Skip documentation directories and directories inside them
-            // Only process directories that are direct subfolders of "features"
-            if !is_documentation_directory(&path)
+            if is_feature_directory(&path) {
+                let feature = process_feature_directory(&path, &name, changes_map)?;
+                features.push(feature);
+            } else if !is_documentation_directory(&path)
                 && !is_inside_documentation_directory(&path)
-                && is_direct_subfolder_of_features(&path)
             {
-                // Try to find and read README file, use defaults if not found
-                let (owner, description, meta) = if let Some(readme_path) = find_readme_file(&path)
-                {
-                    read_readme_info(&readme_path)?
-                } else {
-                    (
-                        "Unknown".to_string(),
-                        "".to_string(),
-                        std::collections::HashMap::new(),
-                    )
-                };
-
-                let changes = if let Some(map) = changes_map {
-                    // Convert the absolute path to a repo-relative path and look up changes
-                    get_changes_for_path(&path, map).unwrap_or_default()
-                } else {
-                    Vec::new()
-                };
-
-                // Always include decisions regardless of include_changes flag
-                let decisions = read_decision_files(&path).unwrap_or_default();
-
-                // Check if this feature has nested features
-                let nested_features_path = path.join("features");
-                let nested_features =
-                    if nested_features_path.exists() && nested_features_path.is_dir() {
-                        list_files_recursive_impl(&nested_features_path, changes_map)
-                            .unwrap_or_default()
-                    } else {
-                        Vec::new()
-                    };
-
-                features.push(Feature {
-                    name: name.to_string(),
-                    description,
-                    owner,
-                    path: path.to_string_lossy().to_string(),
-                    features: nested_features,
-                    meta,
-                    changes,
-                    decisions,
-                });
-            } else {
-                let new_features = list_files_recursive_impl(&path, changes_map);
-                features.extend(new_features?);
+                // Recursively search for features in non-documentation subdirectories
+                let new_features = list_files_recursive_impl(&path, changes_map)?;
+                features.extend(new_features);
             }
         }
     }

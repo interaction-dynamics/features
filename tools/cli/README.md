@@ -15,16 +15,24 @@ features /path/to/project # list all features in the directory and subdirectorie
 
 ## Feature Detection
 
-The CLI automatically detects features by scanning directories for README.md or README.mdx files. Any directory containing a README file is considered a feature, with the following rules:
+The CLI automatically detects features using two methods:
 
-- **README formats**: Supports both README.md and README.mdx files
+### Method 1: Features folder (default)
+Any directory that is a direct subfolder of a `features` directory is considered a feature.
+
+### Method 2: Feature flag in README
+Any directory with a README.md or README.mdx file containing `feature: true` in the YAML frontmatter is considered a feature.
+
+Both methods support:
+- **README formats**: Both README.md and README.mdx files
 - **Metadata parsing**: Extracts owner and metadata from YAML frontmatter
 - **Description extraction**: Uses content after the first heading as feature description
-- **Nested features**: Supports hierarchical feature organization
+- **Nested features**: Supports hierarchical feature organization (via `features` subfolder or nested directories with `feature: true`)
 - **Documentation exclusion**: Ignores README files in documentation directories (docs, __docs__, decisions, etc.)
 
-### README Format Example
+### README Format Examples
 
+#### Standard feature (in features folder):
 ```markdown
 ---
 owner: Team Name
@@ -39,6 +47,19 @@ tags: ["authentication", "security"]
 This is the feature description that will be extracted by the CLI.
 
 ## Additional sections are included in the description
+```
+
+#### Explicit feature (anywhere with feature flag):
+```markdown
+---
+feature: true
+owner: Team Name
+status: active
+---
+
+# Feature Name
+
+This feature can be located anywhere in your codebase, not just in a features folder.
 ```
 
 Commands and their descriptions are listed below:
