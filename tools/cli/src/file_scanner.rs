@@ -55,24 +55,27 @@ fn find_readme_file(dir_path: &Path) -> Option<std::path::PathBuf> {
 /// Check if a directory has a README with `feature: true` in front matter
 fn has_feature_flag_in_readme(dir_path: &Path) -> bool {
     if let Some(readme_path) = find_readme_file(dir_path)
-        && let Ok(content) = fs::read_to_string(&readme_path) {
-            // Check if content starts with YAML front matter (---)
-            if let Some(stripped) = content.strip_prefix("---\n")
-                && let Some(end_pos) = stripped.find("\n---\n") {
-                    let yaml_content = &stripped[..end_pos];
+        && let Ok(content) = fs::read_to_string(&readme_path)
+    {
+        // Check if content starts with YAML front matter (---)
+        if let Some(stripped) = content.strip_prefix("---\n")
+            && let Some(end_pos) = stripped.find("\n---\n")
+        {
+            let yaml_content = &stripped[..end_pos];
 
-                    // Parse YAML front matter
-                    if let Ok(yaml_value) = serde_yaml::from_str::<serde_yaml::Value>(yaml_content)
-                        && let Some(mapping) = yaml_value.as_mapping() {
-                            // Check for feature: true
-                            if let Some(feature_value) =
-                                mapping.get(serde_yaml::Value::String("feature".to_string()))
-                            {
-                                return feature_value.as_bool() == Some(true);
-                            }
-                        }
+            // Parse YAML front matter
+            if let Ok(yaml_value) = serde_yaml::from_str::<serde_yaml::Value>(yaml_content)
+                && let Some(mapping) = yaml_value.as_mapping()
+            {
+                // Check for feature: true
+                if let Some(feature_value) =
+                    mapping.get(serde_yaml::Value::String("feature".to_string()))
+                {
+                    return feature_value.as_bool() == Some(true);
                 }
+            }
         }
+    }
     false
 }
 
