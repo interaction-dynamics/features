@@ -85,7 +85,7 @@ export function AppSidebar({
 
   return (
     <Sidebar {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="relative">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
@@ -133,6 +133,7 @@ export function AppSidebar({
             </div>
           </div>
         )}
+        <div className="h-4 absolute bottom-[-1rem] z-50 inset-x-0 bg-gradient-to-b from-sidebar  to-transparent" />
       </SidebarHeader>
       <SidebarContent>
         {isSearching ? (
@@ -155,7 +156,10 @@ export function AppSidebar({
                       isActive={activeFeature?.path === feature.path}
                       onClick={() => onFeatureClick(feature)}
                     >
-                      <a href={`#${feature.path}`}>
+                      <a
+                        href={`#${feature.path}`}
+                        title={formatFeatureName(feature.name)}
+                      >
                         <div className="flex flex-col items-start gap-0.5">
                           <span className="font-medium">
                             {formatFeatureName(feature.name)}
@@ -180,7 +184,8 @@ export function AppSidebar({
           </SidebarMenu>
         )}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="relative">
+        <div className="h-4 absolute top-[-1rem] z-50 inset-x-0 bg-gradient-to-t from-sidebar  to-transparent" />
         <ModeToggle />
       </SidebarFooter>
       <SidebarRail />

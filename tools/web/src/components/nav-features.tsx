@@ -14,6 +14,11 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
 } from '@/components/ui/sidebar'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
 import { HelpButton } from './help-button'
@@ -30,6 +35,10 @@ interface TreeNode {
   isFolder: boolean
   feature?: Feature
   children: Map<string, TreeNode>
+}
+
+function formatNodeName(name: string, isFeature: boolean) {
+  return isFeature ? formatFeatureName(name) : name
 }
 
 // Find the common ancestor path of all features
@@ -229,14 +238,24 @@ function TreeNodeItem({
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
-          className="cursor-pointer w-full"
+          className="cursor-pointer w-full "
           asChild
           isActive={isActive}
-          onClick={() => node.feature && onFeatureClick?.(node.feature)}
+          onClick={() => {
+            console.log('click')
+            if (node.feature) {
+              onFeatureClick?.(node.feature)
+            }
+          }}
+          tooltip={formatNodeName(node.name, isFeature)}
+          title={formatNodeName(node.name, isFeature)}
         >
-          <span className="flex items-center gap-2">
+          <span
+            className="flex items-center gap-2 truncate cursor-pointer"
+            title={formatNodeName(node.name, isFeature)}
+          >
             {!isFeature && <Folder className="h-4 w-4 opacity-60" />}
-            {isFeature ? formatFeatureName(node.name) : node.name}
+            {formatNodeName(node.name, isFeature)}
           </span>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -255,7 +274,7 @@ function TreeNodeItem({
         <CollapsibleTrigger asChild>
           <SidebarMenuButton
             className="cursor-pointer"
-            tooltip={isFeature ? formatFeatureName(node.name) : node.name}
+            tooltip={formatNodeName(node.name, isFeature)}
             isActive={isActive}
             onClick={() => {
               if (node.feature) {
@@ -263,15 +282,19 @@ function TreeNodeItem({
               }
               setIsOpen(!isOpen)
             }}
+            title={formatNodeName(node.name, isFeature)}
           >
-            <span className="flex items-center gap-2">
+            <span
+              className="flex items-center gap-2 truncate cursor-pointer"
+              title={formatNodeName(node.name, isFeature)}
+            >
               {!isFeature &&
                 (isOpen ? (
                   <FolderOpen className="h-4 w-4 opacity-60" />
                 ) : (
                   <Folder className="h-4 w-4 opacity-60" />
                 ))}
-              {isFeature ? formatFeatureName(node.name) : node.name}
+              {formatNodeName(node.name, isFeature)}
             </span>
             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
