@@ -5,10 +5,16 @@ import { Button } from './ui/button'
 interface HelpButtonProps {
   className?: string
   title?: string
-  url?: string
+  tooltip?: string
+  url: string
 }
 
-export function HelpButton({ className, title, url }: HelpButtonProps) {
+export function HelpButton({
+  className,
+  title,
+  url,
+  tooltip,
+}: HelpButtonProps) {
   return (
     <Button
       variant="link"
@@ -17,7 +23,7 @@ export function HelpButton({ className, title, url }: HelpButtonProps) {
         'text-muted-foreground text-xs hover:text-foreground transition-colors flex items-center gap-1 p-0 px-0!',
         className,
       )}
-      title={title}
+      title={tooltip ?? title}
     >
       <HelpCircle className="h-4 w-4" />
       <span className="text-sm">{title}</span>

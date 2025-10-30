@@ -10,6 +10,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { FeatureDetails } from './components/feature-details'
+import { HelpButton } from './components/help-button'
 import { FeaturesContext } from './lib/features-context'
 import type { Feature } from './models/feature'
 
@@ -40,14 +41,18 @@ export function Dashboard() {
   const [currentFeature, setCurrentFeature] = useState<Feature | null>(null)
 
   useEffect(() => {
-    if (featurePath && features.length > 0) {
-      // Find the updated version of the current feature by path
-      const updatedFeature = findFeatureByPath(features, featurePath)
-      if (updatedFeature) {
-        setCurrentFeature(updatedFeature)
+    if (features.length > 0) {
+      if (featurePath) {
+        // Find the updated version of the current feature by path
+        const updatedFeature = findFeatureByPath(features, featurePath)
+        if (updatedFeature) {
+          setCurrentFeature(updatedFeature)
+        } else {
+          // Feature was deleted, clear the selection
+          setCurrentFeature(null)
+        }
       } else {
-        // Feature was deleted, clear the selection
-        setCurrentFeature(null)
+        setCurrentFeature(features[0])
       }
     } else {
       setCurrentFeature(null)
@@ -61,12 +66,10 @@ export function Dashboard() {
 
   return (
     <SidebarProvider>
-      {currentFeature && (
-        <AppSidebar
-          activeFeature={currentFeature}
-          onFeatureClick={onSelectFeature}
-        />
-      )}
+      <AppSidebar
+        activeFeature={currentFeature}
+        onFeatureClick={onSelectFeature}
+      />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b">
           <div className="flex items-center gap-2 px-3">
@@ -115,12 +118,25 @@ export function Dashboard() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">
-          {currentFeature === null ? (
-            <div className="flex flex-1 items-center justify-center">
-              <p className="text-muted-foreground text-lg">Select a feature</p>
-            </div>
+          {features.length > 0 ? (
+            currentFeature === null ? (
+              <div className="flex flex-1 items-center justify-center">
+                <p className="text-muted-foreground text-lg">
+                  Select a feature
+                </p>
+              </div>
+            ) : (
+              <FeatureDetails feature={currentFeature} />
+            )
           ) : (
-            <FeatureDetails feature={currentFeature} />
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-muted-foreground text-lg">No feature found</p>
+              <HelpButton
+                className="ms-2"
+                tooltip="How to add features"
+                url="https://github.com/interaction-dynamics/features?tab=readme-ov-file#guidelines"
+              />
+            </div>
           )}
         </div>
       </SidebarInset>

@@ -103,34 +103,36 @@ export function AppSidebar({
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="px-2 pb-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              placeholder="Search features..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-16"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              {searchQuery.trim() ? (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="cursor-pointer inline-flex h-5 w-5 items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Clear search"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              ) : (
-                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                  <span className="text-xs">⌘</span>K
-                </kbd>
-              )}
+        {features.length > 0 && (
+          <div className="px-2 pb-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                ref={searchInputRef}
+                placeholder="Search features..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 pr-16"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {searchQuery.trim() ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="cursor-pointer inline-flex h-5 w-5 items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                ) : (
+                  <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         {isSearching ? (
@@ -168,11 +170,13 @@ export function AppSidebar({
           </SidebarGroup>
         ) : (
           <SidebarMenu>
-            <NavFeatures
-              items={features}
-              onFeatureClick={onFeatureClick}
-              activeFeature={activeFeature}
-            />
+            {activeFeature && (
+              <NavFeatures
+                items={features}
+                onFeatureClick={onFeatureClick}
+                activeFeature={activeFeature}
+              />
+            )}
           </SidebarMenu>
         )}
       </SidebarContent>
