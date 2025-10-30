@@ -1,6 +1,6 @@
 # Features CLI
 
-A CLI tool for discovering and managing features in a feature-based architecture project by detecting README.md or README.mdx files in directories.
+A zero-config CLI tool for discovering and managing features in a feature-based architecture project by detecting README.md or README.mdx files in directories.
 
 ## Getting Started
 
