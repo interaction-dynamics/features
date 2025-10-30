@@ -1,0 +1,29 @@
+{
+  "name": "example-basic",
+  "version": "1.0.0",
+  "description": "A basic example of a feature",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "contributors": [
+    {
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "team": "Rust Team"
+    },
+    {
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "team": "Rust Team"
+    },
+    {
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "team": "Rust Team"
+    }
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
