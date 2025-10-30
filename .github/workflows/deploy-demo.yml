@@ -94,11 +94,11 @@ jobs:
       - name: Generate features data 📊
         working-directory: ./tools/cli
         run: |
-          if [ ! -d "../../examples/javascript-basic/" ]; then
-            echo "Error: javascript-basic example directory not found"
+          if [ ! -d "../../examples/javascript-large/" ]; then
+            echo "Error: javascript-karge example directory not found"
             exit 1
           fi
-          cargo run --release -- ../../examples/javascript-basic/ --json > ../web/public/features.json
+          cargo run --release -- ../../examples/javascript-large/ --json > ../web/public/features.json
           if [ ! -s "../web/public/features.json" ]; then
             echo "Error: features.json was not generated or is empty"
             exit 1
