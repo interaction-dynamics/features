@@ -14,8 +14,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
@@ -43,13 +41,12 @@ function FeatureMenuItem({
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
+          className="cursor-pointer w-full"
           asChild
           isActive={isActive}
           onClick={() => onFeatureClick?.(feature)}
         >
-          <a href={`#${feature.path}`}>
-            <span>{formatFeatureName(feature.name)}</span>
-          </a>
+          <span>{formatFeatureName(feature.name)}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     )
@@ -59,12 +56,13 @@ function FeatureMenuItem({
     <Collapsible
       key={feature.path}
       asChild
-      defaultOpen={isActive}
+      defaultOpen={isActive || activeFeature?.path.includes(feature.path)}
       className="group/collapsible"
     >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton
+            className="cursor-pointer"
             tooltip={formatFeatureName(feature.name)}
             isActive={isActive}
             onClick={() => onFeatureClick?.(feature)}
@@ -74,9 +72,9 @@ function FeatureMenuItem({
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <SidebarMenuSub>
+          <SidebarMenuSub className="me-0 pe-0">
             {feature.features?.map((subFeature) => (
-              <FeatureSubItem
+              <FeatureMenuItem
                 key={subFeature.path}
                 feature={subFeature}
                 onFeatureClick={onFeatureClick}
@@ -90,65 +88,36 @@ function FeatureMenuItem({
   )
 }
 
-function FeatureSubItem({
-  feature,
+function NavFeaturesMenu({
+  items,
   onFeatureClick,
   activeFeature,
-}: {
-  feature: Feature
-  onFeatureClick?: (feature: Feature) => void
-  activeFeature?: Feature | null
-}) {
-  const hasChildren = feature.features && feature.features.length > 0
-  const isActive = activeFeature?.path === feature.path
-
-  if (!hasChildren) {
+}: NavFeaturesProps) {
+  if (items.length === 0) {
     return (
-      <SidebarMenuSubItem>
-        <SidebarMenuSubButton
-          asChild
-          isActive={isActive}
-          onClick={() => onFeatureClick?.(feature)}
-        >
-          <a href={`#${feature.path}`}>
-            <span>{formatFeatureName(feature.name)}</span>
-          </a>
-        </SidebarMenuSubButton>
-      </SidebarMenuSubItem>
+      <div className="px-2 py-4">
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-sm text-muted-foreground">No features available</p>
+          <HelpButton
+            title="How to add a feature"
+            url="https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-a-feature"
+          />
+        </div>
+      </div>
     )
   }
 
   return (
-    <Collapsible
-      key={feature.path}
-      asChild
-      defaultOpen={isActive}
-      className="group/collapsible"
-    >
-      <SidebarMenuSubItem>
-        <CollapsibleTrigger asChild>
-          <SidebarMenuSubButton
-            isActive={isActive}
-            onClick={() => onFeatureClick?.(feature)}
-          >
-            <span>{formatFeatureName(feature.name)}</span>
-            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-          </SidebarMenuSubButton>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarMenuSub>
-            {feature.features?.map((subFeature) => (
-              <FeatureSubItem
-                key={subFeature.path}
-                feature={subFeature}
-                onFeatureClick={onFeatureClick}
-                activeFeature={activeFeature}
-              />
-            ))}
-          </SidebarMenuSub>
-        </CollapsibleContent>
-      </SidebarMenuSubItem>
-    </Collapsible>
+    <>
+      {items.map((item) => (
+        <FeatureMenuItem
+          key={item.path}
+          feature={item}
+          onFeatureClick={onFeatureClick}
+          activeFeature={activeFeature}
+        />
+      ))}
+    </>
   )
 }
 
@@ -157,39 +126,15 @@ export function NavFeatures({
   onFeatureClick,
   activeFeature,
 }: NavFeaturesProps) {
-  if (items.length === 0) {
-    return (
-      <SidebarGroup>
-        <SidebarGroupLabel>All Features</SidebarGroupLabel>
-        <SidebarMenu>
-          <div className="px-2 py-4">
-            <div className="flex flex-col items-start gap-2">
-              <p className="text-sm text-muted-foreground">
-                No features available
-              </p>
-              <HelpButton
-                title="How to add a feature"
-                url="https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-a-feature"
-              />
-            </div>
-          </div>
-        </SidebarMenu>
-      </SidebarGroup>
-    )
-  }
-
   return (
     <SidebarGroup>
       <SidebarGroupLabel>All Features</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <FeatureMenuItem
-            key={item.path}
-            feature={item}
-            onFeatureClick={onFeatureClick}
-            activeFeature={activeFeature}
-          />
-        ))}
+        <NavFeaturesMenu
+          items={items}
+          onFeatureClick={onFeatureClick}
+          activeFeature={activeFeature}
+        />
       </SidebarMenu>
     </SidebarGroup>
   )
