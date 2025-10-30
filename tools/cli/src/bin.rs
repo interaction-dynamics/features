@@ -61,9 +61,9 @@ struct Cli {
     #[arg(long, default_value = "build")]
     build_dir: std::path::PathBuf,
 
-    /// Include changes (git commits and decisions) in the output
+    /// Skip computing changes (git commits and decisions) in the output
     #[arg(long)]
-    changes: bool,
+    skip_changes: bool,
 }
 
 fn flatten_features(features: &[Feature]) -> Vec<Feature> {
@@ -113,10 +113,10 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
 async fn main() -> Result<()> {
     let args = Cli::parse();
 
-    let features = if args.changes {
-        list_files_recursive_with_changes(&args.path)?
-    } else {
+    let features = if args.skip_changes {
         list_files_recursive(&args.path)?
+    } else {
+        list_files_recursive_with_changes(&args.path)?
     };
 
     if args.serve {

@@ -50,6 +50,7 @@ Commands and their descriptions are listed below:
 | `--description` | Include feature descriptions in the output. The description is automatically included in the json format |
 | `--list-owners` | Display only unique list of owners |
 | `--check` | Run validation checks on features (e.g., duplicate names) |
+| `--skip-changes` | Skip computing git commit history (faster for large repos) |
 | `--serve` | Start an HTTP server to serve features and the web dashboard UI |
 | `--serve --port 8080` | Start an HTTP server on specified port |
 | `--build` | Build a static version of the web dashboard UI |
