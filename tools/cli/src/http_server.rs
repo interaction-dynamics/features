@@ -134,6 +134,29 @@ pub async fn serve_features_with_config_and_watching(
             }
         });
 
+    // Route for metadata.json with version info
+    let metadata_route = warp::path("metadata.json")
+        .and(warp::get())
+        .and_then(|| async move {
+            let metadata = serde_json::json!({
+                "version": env!("CARGO_PKG_VERSION")
+            });
+
+            let metadata_json = match serde_json::to_string_pretty(&metadata) {
+                Ok(json) => json,
+                Err(e) => {
+                    eprintln!("Failed to serialize metadata: {}", e);
+                    return Err(warp::reject::custom(SerializationError));
+                }
+            };
+
+            Ok::<_, warp::Rejection>(warp::reply::with_header(
+                metadata_json,
+                "content-type",
+                "application/json",
+            ))
+        });
+
     // Route for root path to serve index.html
     let index_route = warp::path::end().and(warp::get()).and_then(serve_index);
 
@@ -143,6 +166,7 @@ pub async fn serve_features_with_config_and_watching(
         .and_then(serve_static_file);
 
     let routes = features_route
+        .or(metadata_route)
         .or(index_route)
         .or(static_route)
         .with(warp::cors().allow_any_origin())
@@ -363,6 +387,7 @@ fn create_default_index_html() -> String {
         <p>Welcome to the feature-based architecture server!</p>
         <ul class="links">
             <li><a href="/features.json">📊 View Features JSON</a></li>
+            <li><a href="/metadata.json">ℹ️ View Metadata JSON</a></li>
         </ul>
         <p><small>This server provides features data and serves embedded static files from the binary.</small></p>
     </div>

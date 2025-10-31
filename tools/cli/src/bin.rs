@@ -21,9 +21,18 @@ use printer::print_features;
 /// A CLI tool for discovering features in a folder by reading README.md or README.mdx files,
 /// and serving them via HTTP or static builds.
 #[derive(Parser)]
+#[command(name = "features")]
+#[command(author = env!("CARGO_PKG_AUTHORS"))]
+#[command(about = env!("CARGO_PKG_DESCRIPTION"))]
+#[command(arg_required_else_help = true)]
 struct Cli {
     /// The path to the directory to list
-    path: std::path::PathBuf,
+    #[arg(required = false)]
+    path: Option<std::path::PathBuf>,
+
+    /// Print version information
+    #[arg(short = 'V', long)]
+    version: bool,
 
     /// Output features as JSON
     #[arg(long)]
@@ -113,15 +122,33 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
 async fn main() -> Result<()> {
     let args = Cli::parse();
 
+    // Handle version flag
+    if args.version {
+        println!("{}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
+    // If no path is provided and no special flags are used, show help
+    let path = match args.path {
+        Some(p) => p,
+        None => {
+            // If we get here, it means no version/help flag was used
+            // This shouldn't happen with arg_required_else_help, but just in case
+            eprintln!("Error: The path argument is required.");
+            eprintln!("Try 'features --help' for more information.");
+            std::process::exit(1);
+        }
+    };
+
     let features = if args.skip_changes {
-        list_files_recursive(&args.path)?
+        list_files_recursive(&path)?
     } else {
-        list_files_recursive_with_changes(&args.path)?
+        list_files_recursive_with_changes(&path)?
     };
 
     if args.serve {
-        eprintln!("Watching directory: {}", args.path.display());
-        serve_features_with_watching(&features, args.port, args.path.clone()).await?;
+        eprintln!("Watching directory: {}", path.display());
+        serve_features_with_watching(&features, args.port, path.clone()).await?;
     } else if args.build {
         let build_config = BuildConfig::new(args.build_dir);
         create_build(&features, build_config).await?;
@@ -134,7 +161,7 @@ async fn main() -> Result<()> {
             let json = serde_json::to_string_pretty(&unique_owners)?;
             println!("{}", json);
         } else {
-            eprintln!("Unique owners found in {}:", args.path.display());
+            eprintln!("Unique owners found in {}:", path.display());
             for owner in unique_owners {
                 println!("{}", owner);
             }
@@ -150,7 +177,7 @@ async fn main() -> Result<()> {
             let json = serde_json::to_string_pretty(&output_features)?;
             println!("{}", json);
         } else {
-            eprintln!("Features found in {}:", args.path.display());
+            eprintln!("Features found in {}:", path.display());
             if output_features.is_empty() {
                 eprintln!("No features found.");
             } else {

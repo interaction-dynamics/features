@@ -54,3 +54,4 @@ dist-ssr
 *.sw?
 
 tools/web/public/features.json
+tools/web/public/metadata.json

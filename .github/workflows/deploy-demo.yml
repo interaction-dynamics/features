@@ -105,6 +105,14 @@ jobs:
           fi
           echo "Generated features.json with $(wc -l < ../web/public/features.json) lines"
 
+      # Generate metadata.json with version from Cargo.toml
+      - name: Generate metadata.json 📋
+        working-directory: ./tools/cli
+        run: |
+          VERSION=$(grep "^version" Cargo.toml | head -n1 | cut -d'"' -f2)
+          echo "{\"version\": \"$VERSION\"}" > ../web/public/metadata.json
+          echo "Generated metadata.json with version: $VERSION"
+
       # Build web application
       - name: Build web application 🏗️
         working-directory: ./tools/web

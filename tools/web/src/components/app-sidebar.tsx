@@ -19,6 +19,7 @@ import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
 import { ModeToggle } from './mode-toggle'
 import { NavFeatures } from './nav-features'
+import { VersionIndicator } from './version-indicator'
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   activeFeature: Feature | null
@@ -184,9 +185,10 @@ export function AppSidebar({
           </SidebarMenu>
         )}
       </SidebarContent>
-      <SidebarFooter className="relative">
+      <SidebarFooter className="relative flex flex-row justify-between items-center">
         <div className="h-4 absolute top-[-1rem] z-50 inset-x-0 bg-gradient-to-t from-sidebar  to-transparent" />
         <ModeToggle />
+        <VersionIndicator />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
