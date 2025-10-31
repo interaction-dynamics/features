@@ -1,5 +1,5 @@
 import { HelpButton } from './help-button'
-import { MarkdownRenderer } from './markown-renderer'
+import { MarkdownRenderer } from './markdown-renderer'
 import { Card, CardContent } from './ui/card'
 
 interface FeatureDescriptionProps {

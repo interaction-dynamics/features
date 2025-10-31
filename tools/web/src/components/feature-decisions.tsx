@@ -6,7 +6,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { HelpButton } from './help-button'
-import { MarkdownRenderer } from './markown-renderer'
+import { MarkdownRenderer } from './markdown-renderer'
 
 interface FeatureDecisionsProps {
   decisions: string[]
