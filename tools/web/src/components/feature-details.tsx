@@ -1,4 +1,12 @@
-import { FolderTree, HelpCircle, User } from 'lucide-react'
+import {
+  BarChart3,
+  CheckSquare,
+  FileText,
+  FolderTree,
+  GitCommit,
+  HelpCircle,
+  User,
+} from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
@@ -99,13 +107,25 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
 
       <Tabs defaultValue="description" className="mt-4">
         <TabsList>
-          <TabsTrigger value="description">Description</TabsTrigger>
+          <TabsTrigger value="description">
+            <FileText className="h-4 w-4 mr-2" />
+            Description
+          </TabsTrigger>
           {feature.changes.length > 0 && (
-            <TabsTrigger value="changes">Changes</TabsTrigger>
+            <TabsTrigger value="changes">
+              <GitCommit className="h-4 w-4 mr-2" />
+              Changes
+            </TabsTrigger>
           )}
-          <TabsTrigger value="decisions">Decisions</TabsTrigger>
+          <TabsTrigger value="decisions">
+            <CheckSquare className="h-4 w-4 mr-2" />
+            Decisions
+          </TabsTrigger>
           {feature.stats && (
-            <TabsTrigger value="insights">Insights</TabsTrigger>
+            <TabsTrigger value="insights">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Insights
+            </TabsTrigger>
           )}
         </TabsList>
         <TabsContent value="description" className="mt-1">
