@@ -5,7 +5,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::git_helper::get_all_commits_by_path;
-use crate::models::{Change, Feature};
+use crate::models::{Change, Feature, Stats};
 use crate::readme_parser::read_readme_info;
 
 fn is_documentation_directory(dir_path: &Path) -> bool {
@@ -147,6 +147,89 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
     Ok(decisions)
 }
 
+/// Compute statistics from changes for a feature
+fn compute_stats_from_changes(changes: &[Change]) -> Option<Stats> {
+    if changes.is_empty() {
+        return None;
+    }
+
+    let mut commits = HashMap::new();
+
+    // Add total commit count
+    commits.insert(
+        "total_commits".to_string(),
+        serde_json::json!(changes.len()),
+    );
+
+    // Count commits by author
+    let mut authors_count: HashMap<String, usize> = HashMap::new();
+    for change in changes {
+        *authors_count.entry(change.author_name.clone()).or_insert(0) += 1;
+    }
+    commits.insert(
+        "authors_count".to_string(),
+        serde_json::json!(authors_count),
+    );
+
+    // Count commits by conventional commit type
+    let mut count_by_type: HashMap<String, usize> = HashMap::new();
+    for change in changes {
+        let commit_type = extract_commit_type(&change.title);
+        *count_by_type.entry(commit_type).or_insert(0) += 1;
+    }
+    commits.insert(
+        "count_by_type".to_string(),
+        serde_json::json!(count_by_type),
+    );
+
+    // Get first and last commit dates
+    if let Some(first) = changes.first() {
+        commits.insert(
+            "first_commit_date".to_string(),
+            serde_json::json!(first.date.clone()),
+        );
+    }
+    if let Some(last) = changes.last() {
+        commits.insert(
+            "last_commit_date".to_string(),
+            serde_json::json!(last.date.clone()),
+        );
+    }
+
+    Some(Stats { commits })
+}
+
+/// Extract the commit type from a conventional commit title
+fn extract_commit_type(title: &str) -> String {
+    // Common conventional commit types
+    let known_types = [
+        "feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore",
+        "revert",
+    ];
+
+    // Check if the title follows conventional commit format (type: description or type(scope): description)
+    if let Some(colon_pos) = title.find(':') {
+        let prefix = &title[..colon_pos];
+
+        // Remove scope if present (e.g., "feat(auth)" -> "feat")
+        let type_part = if let Some(paren_pos) = prefix.find('(') {
+            &prefix[..paren_pos]
+        } else {
+            prefix
+        };
+
+        let type_part = type_part.trim().to_lowercase();
+
+        // Check if it's a known conventional commit type
+        if known_types.contains(&type_part.as_str()) {
+            return type_part;
+        }
+    }
+
+    // If not a conventional commit, return "other"
+    "other".to_string()
+}
+
 fn process_feature_directory(
     path: &Path,
     name: &str,
@@ -205,6 +288,9 @@ fn process_feature_directory(
         }
     }
 
+    // Compute stats from changes if available
+    let stats = compute_stats_from_changes(&changes);
+
     Ok(Feature {
         name: name.to_string(),
         description,
@@ -214,6 +300,7 @@ fn process_feature_directory(
         meta,
         changes,
         decisions,
+        stats,
     })
 }
 
@@ -276,4 +363,65 @@ fn get_changes_for_path(
         .get(&relative_path_str)
         .cloned()
         .unwrap_or_default())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_commit_type() {
+        // Test standard conventional commit types
+        assert_eq!(extract_commit_type("feat: add new feature"), "feat");
+        assert_eq!(extract_commit_type("fix: resolve bug"), "fix");
+        assert_eq!(extract_commit_type("docs: update README"), "docs");
+        assert_eq!(extract_commit_type("style: format code"), "style");
+        assert_eq!(
+            extract_commit_type("refactor: improve structure"),
+            "refactor"
+        );
+        assert_eq!(extract_commit_type("perf: optimize performance"), "perf");
+        assert_eq!(extract_commit_type("test: add unit tests"), "test");
+        assert_eq!(extract_commit_type("build: update dependencies"), "build");
+        assert_eq!(extract_commit_type("ci: fix CI pipeline"), "ci");
+        assert_eq!(extract_commit_type("chore: update gitignore"), "chore");
+        assert_eq!(
+            extract_commit_type("revert: undo previous commit"),
+            "revert"
+        );
+
+        // Test with scope
+        assert_eq!(extract_commit_type("feat(auth): add login"), "feat");
+        assert_eq!(
+            extract_commit_type("fix(api): resolve endpoint issue"),
+            "fix"
+        );
+        assert_eq!(
+            extract_commit_type("docs(readme): update instructions"),
+            "docs"
+        );
+
+        // Test case insensitivity
+        assert_eq!(extract_commit_type("FEAT: uppercase type"), "feat");
+        assert_eq!(extract_commit_type("Fix: mixed case"), "fix");
+        assert_eq!(extract_commit_type("DOCS: all caps"), "docs");
+
+        // Test non-conventional commits
+        assert_eq!(extract_commit_type("random commit message"), "other");
+        assert_eq!(extract_commit_type("update: not conventional"), "other");
+        assert_eq!(
+            extract_commit_type("feature: close but not standard"),
+            "other"
+        );
+        assert_eq!(extract_commit_type("no colon here"), "other");
+        assert_eq!(extract_commit_type(""), "other");
+
+        // Test edge cases
+        assert_eq!(extract_commit_type("feat:no space after colon"), "feat");
+        assert_eq!(extract_commit_type("feat  : extra spaces"), "feat");
+        assert_eq!(
+            extract_commit_type("feat(scope)(weird): nested parens"),
+            "feat"
+        );
+    }
 }

@@ -11,6 +11,11 @@ pub struct Change {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Stats {
+    pub commits: HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Feature {
     pub name: String,
     pub description: String,
@@ -20,4 +25,6 @@ pub struct Feature {
     pub meta: HashMap<String, serde_json::Value>,
     pub changes: Vec<Change>,
     pub decisions: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stats: Option<Stats>,
 }

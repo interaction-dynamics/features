@@ -5,6 +5,7 @@ import type { Feature } from '@/models/feature'
 import { FeatureChanges } from './feature-changes'
 import { FeatureDecisions } from './feature-decisions'
 import { FeatureDescription } from './feature-description'
+import { FeatureInsights } from './feature-insights'
 import { FeatureMeta } from './feature-meta'
 
 interface FeatureDetailsProps {
@@ -103,6 +104,9 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             <TabsTrigger value="changes">Changes</TabsTrigger>
           )}
           <TabsTrigger value="decisions">Decisions</TabsTrigger>
+          {feature.stats && (
+            <TabsTrigger value="insights">Insights</TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="description" className="mt-1">
           <FeatureDescription description={feature.description} />
@@ -115,6 +119,11 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
         <TabsContent value="decisions" className="mt-1">
           <FeatureDecisions decisions={feature.decisions} />
         </TabsContent>
+        {feature.stats && (
+          <TabsContent value="insights" className="mt-1">
+            <FeatureInsights stats={feature.stats} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )

@@ -9,6 +9,16 @@ export type Change = {
   hash: string
 }
 
+export type Stats = {
+  commits: {
+    total_commits?: number
+    authors_count?: Record<string, number>
+    count_by_type?: Record<string, number>
+    first_commit_date?: string
+    last_commit_date?: string
+  }
+}
+
 export type Feature = {
   name: string
   path: string
@@ -19,6 +29,7 @@ export type Feature = {
   parent?: Feature
   changes: Change[]
   decisions: string[]
+  stats?: Stats
 }
 
 export const ChangeSchema: z.ZodType<Change> = z.object({
@@ -28,6 +39,16 @@ export const ChangeSchema: z.ZodType<Change> = z.object({
   description: z.string(),
   date: z.string(),
   hash: z.string(),
+})
+
+export const StatsSchema: z.ZodType<Stats> = z.object({
+  commits: z.object({
+    total_commits: z.number().optional(),
+    authors_count: z.record(z.string(), z.number()).optional(),
+    count_by_type: z.record(z.string(), z.number()).optional(),
+    first_commit_date: z.string().optional(),
+    last_commit_date: z.string().optional(),
+  }),
 })
 
 export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
@@ -41,5 +62,6 @@ export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
     parent: FeatureSchema.optional(),
     changes: z.array(ChangeSchema),
     decisions: z.array(z.string()),
+    stats: StatsSchema.optional(),
   }),
 )
