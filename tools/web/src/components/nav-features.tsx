@@ -15,6 +15,7 @@ import {
   SidebarMenuSub,
 } from '@/components/ui/sidebar'
 import { formatFeatureName } from '@/lib/format-feature-name'
+import { cn } from '@/lib/utils'
 import type { Feature } from '@/models/feature'
 import { HelpButton } from './help-button'
 
@@ -245,13 +246,15 @@ function TreeNodeItem({
           tooltip={formatNodeName(node.name, isFeature)}
           title={formatNodeName(node.name, isFeature)}
         >
-          <span
-            className="flex items-center gap-2 truncate cursor-pointer"
-            title={formatNodeName(node.name, isFeature)}
-          >
-            {!isFeature && <Folder className="h-4 w-4 opacity-60" />}
-            {formatNodeName(node.name, isFeature)}
-          </span>
+          <div>
+            <span
+              className="flex items-center gap-2 truncate cursor-pointer text-ellipsis"
+              title={formatNodeName(node.name, isFeature)}
+            >
+              {!isFeature && <Folder className="h-4 w-4 opacity-60" />}
+              {formatNodeName(node.name, isFeature)}
+            </span>
+          </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
     )
@@ -275,7 +278,6 @@ function TreeNodeItem({
               if (node.feature) {
                 onFeatureClick?.(node.feature)
               }
-              setIsOpen(!isOpen)
             }}
             title={formatNodeName(node.name, isFeature)}
           >
@@ -291,7 +293,12 @@ function TreeNodeItem({
                 ))}
               {formatNodeName(node.name, isFeature)}
             </span>
-            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+            <ChevronRight
+              className={cn(
+                'ml-auto transition-transform duration-200',
+                isOpen ? 'rotate-90' : '',
+              )}
+            />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent>
