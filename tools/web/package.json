@@ -9,6 +9,7 @@
     "build_for_cli": "WATCH=on rm -rf ../cli/public && pnpm build && rm -rf dist/features.json && cp -r dist ../cli/public",
     "lint": "biome lint .",
     "format": "biome format .",
+    "format:fix": "biome format . --write",
     "preview": "vite preview"
   },
   "dependencies": {
