@@ -51,7 +51,7 @@ interface StatsCardProps {
 
 function StatsCard({ title, value, description, subtitle }: StatsCardProps) {
   return (
-    <Card className="@container/card">
+    <Card className="@container/card flex flex-col justify-between">
       <CardHeader className="pb-3">
         <CardDescription>{title}</CardDescription>
         <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
