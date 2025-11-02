@@ -14,13 +14,60 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
 import type { Stats } from '@/models/feature'
 
 interface FeatureInsightsProps {
   stats: Stats
+}
+
+const chartConfig = {
+  visitors: {
+    label: 'Visitors',
+  },
+  desktop: {
+    label: 'Desktop',
+    color: 'var(--primary)',
+  },
+  mobile: {
+    label: 'Mobile',
+    color: 'var(--primary)',
+  },
+} satisfies ChartConfig
+
+interface StatsCardProps {
+  title: string
+  value: string | number
+  description?: string
+  subtitle?: string
+}
+
+function StatsCard({ title, value, description, subtitle }: StatsCardProps) {
+  return (
+    <Card className="@container/card">
+      <CardHeader className="pb-3">
+        <CardDescription>{title}</CardDescription>
+        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          {value}
+        </CardTitle>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        {subtitle && <div className="text-muted-foreground">{subtitle}</div>}
+        {description && (
+          <div className="text-muted-foreground">{description}</div>
+        )}
+      </CardFooter>
+    </Card>
+  )
 }
 
 // Color palette for commit types
@@ -86,74 +133,38 @@ export function FeatureInsights({ stats }: FeatureInsightsProps) {
   return (
     <div className="space-y-4">
       {/* Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Commits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCommits}</div>
-            <p className="text-xs text-muted-foreground">
-              From {formatDate(commits.first_commit_date)} to{' '}
-              {formatDate(commits.last_commit_date)}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs">
+        <StatsCard
+          title="Total Commits"
+          value={totalCommits}
+          subtitle={`From ${formatDate(commits.first_commit_date)} to ${formatDate(commits.last_commit_date)}`}
+        />
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Contributors</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalAuthors}</div>
-            <p className="text-xs text-muted-foreground">
-              Avg {avgCommitsPerAuthor} commits per author
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Contributors"
+          value={totalAuthors}
+          subtitle={`Avg ${avgCommitsPerAuthor} commits per author`}
+        />
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
-              Most Active Type
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {typesData[0]?.name || 'N/A'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {typesData[0]?.value || 0} commits (
-              {typesData[0]
-                ? Math.round((typesData[0].value / totalCommits) * 100)
-                : 0}
-              %)
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Most Active Type"
+          value={typesData[0]?.name || 'N/A'}
+          subtitle={`${typesData[0]?.value || 0} commits (${
+            typesData[0]
+              ? Math.round((typesData[0].value / totalCommits) * 100)
+              : 0
+          }%)`}
+        />
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
-              Top Contributor
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="text-2xl font-bold truncate"
-              title={authorsData[0]?.fullName}
-            >
-              {authorsData[0]?.name || 'N/A'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {authorsData[0]?.commits || 0} commits (
-              {authorsData[0]
-                ? Math.round((authorsData[0].commits / totalCommits) * 100)
-                : 0}
-              %)
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Top Contributor"
+          value={authorsData[0]?.name || 'N/A'}
+          subtitle={`${authorsData[0]?.commits || 0} commits (${
+            authorsData[0]
+              ? Math.round((authorsData[0].commits / totalCommits) * 100)
+              : 0
+          }%)`}
+        />
       </div>
 
       {/* Charts */}
@@ -168,7 +179,7 @@ export function FeatureInsights({ stats }: FeatureInsightsProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ChartContainer className="w-full h-[300px]" config={chartConfig}>
                 <PieChart>
                   <Pie
                     data={typesData}
@@ -181,15 +192,19 @@ export function FeatureInsights({ stats }: FeatureInsightsProps) {
                     }}
                     outerRadius={80}
                     fill="#8884d8"
+                    strokeWidth={0}
                     dataKey="value"
                   >
                     {typesData.map((entry) => (
                       <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent indicator="dot" />}
+                  />
                 </PieChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
         )}
@@ -204,7 +219,7 @@ export function FeatureInsights({ stats }: FeatureInsightsProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ChartContainer className="w-full h-[300px]" config={chartConfig}>
                 <BarChart
                   data={authorsData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
@@ -222,25 +237,25 @@ export function FeatureInsights({ stats }: FeatureInsightsProps) {
                     tick={{ fontSize: 12 }}
                   />
                   <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload[0]) {
-                        const data = payload[0].payload
-                        return (
-                          <div className="bg-background border rounded p-2 shadow-lg">
-                            <p className="font-semibold text-sm">
-                              {data.fullName}
-                            </p>
-                            <p className="text-sm">Commits: {data.commits}</p>
-                          </div>
-                        )
-                      }
-                      return null
-                    }}
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(value) => {
+                          return value.fullName
+                        }}
+                        indicator="dot"
+                      />
+                    }
                   />
-                  <Bar dataKey="commits" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="commits"
+                    fill="var(--color-desktop)"
+                    stroke="var(--color-mobile)"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
         )}
