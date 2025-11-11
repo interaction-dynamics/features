@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,9 +7,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import type { Feature } from '@/models/feature'
 import { formatFeatureName } from '@/lib/format-feature-name'
-import { Fragment } from 'react'
+import type { Feature } from '@/models/feature'
 
 interface FeatureBreadcrumbProps {
   feature: Feature | null

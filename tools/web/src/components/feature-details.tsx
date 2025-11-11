@@ -3,7 +3,7 @@ import {
   CheckSquare,
   FileText,
   FolderTree,
-  GitCommit,
+  GitCommitVertical,
   HelpCircle,
   User,
 } from 'lucide-react'
@@ -113,7 +113,7 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
           </TabsTrigger>
           {feature.changes.length > 0 && (
             <TabsTrigger value="changes">
-              <GitCommit className="h-4 w-4" />
+              <GitCommitVertical className="h-4 w-4" />
               Changes
             </TabsTrigger>
           )}
