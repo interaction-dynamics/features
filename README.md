@@ -61,6 +61,8 @@ src/
 └── ... # other source code
 ```
 
+> You can read the detailed [guidelines](./docs/guidelines.md) or just jump into trying the CLI with the `--serve` options. The UI will guide you through the methodology.
+
 #### Method 2: Feature flag
 Mark any folder as a feature by adding `feature: true` in its README frontmatter:
 
@@ -75,9 +77,6 @@ This allows features to be organized anywhere in your codebase while still being
 
 > You can find more sophisticated examples in the [examples](./examples) folder.
 
-### Details
-
-> You can read the detailed [guidelines](./docs/guidelines.md) or just jump into trying the CLI with the `--serve` options. The UI will guide you through the methodology.
 ## Tools
 
 - [Rust CLI](./tools/cli): Command-line tool to parse the code, find the features and serve the web dashboard UI
