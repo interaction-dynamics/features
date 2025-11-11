@@ -8,11 +8,11 @@
     <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg" alt="Npm version" /></a>
 </div>
 
-Feature-based architecture organizes the codebase by features rather than technical layers (like components, services, or utils). Each feature lives in its own self-contained folder with everything it needs — making the code more modular, discoverable, and maintainable as the project grows.
+Feature-based architecture organizes the codebase by features rather than technical layers (like components, services, or utils). It is similar to domain-driven development (DDD) but more recursive and a more structured approach. Each feature lives in its own self-contained folder with everything it needs — making the code more modular, discoverable, and maintainable as the project grows.
 
 This approach is not meant to replace other architecture design like hexagonal architecture but rather complement it. It is an approach easier to understand for beginners. It can also be shared with product managers, designers and stakeholders.
 
-This repository includes guidelines and examples of feature-based architecture and tools to boost your productivity with feature-based architecture. Explore a live [demo](http://interaction-dynamics.io/features/) of the dashboard built with these tools.
+This repository includes guidelines, examples and tools to boost your productivity with feature-based architecture. Explore a live [demo](http://interaction-dynamics.io/features/) of the dashboard built with these tools.
 
 > This approach is technology agnostic and can be used with any programming language or framework.
 
