@@ -347,14 +347,6 @@
         "hash": "f62f17baa968224ae013836eaaba446a44241c0c"
       },
       {
-        "title": "--wip-- [skip ci]",
-        "author_name": "Thibault Friedrich",
-        "author_email": "thibault.friedrich@interaction-dynamics.io",
-        "description": "",
-        "date": "2025-11-13 22:12:16",
-        "hash": "63d9fff38342a6e47045bba80057d7ad71596c00"
-      },
-      {
         "title": "feat: add custom feature example",
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
