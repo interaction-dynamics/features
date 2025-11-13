@@ -281,10 +281,18 @@ fn process_feature_directory(
         if entry_path.is_dir()
             && entry_name != "features" // Don't process 'features' folder twice
             && !is_documentation_directory(&entry_path)
-            && has_feature_flag_in_readme(&entry_path)
         {
-            let nested_feature = process_feature_directory(&entry_path, &entry_name, changes_map)?;
-            nested_features.push(nested_feature);
+            if has_feature_flag_in_readme(&entry_path) {
+                // This directory is a feature itself
+                let nested_feature =
+                    process_feature_directory(&entry_path, &entry_name, changes_map)?;
+                nested_features.push(nested_feature);
+            } else {
+                // This directory is not a feature, but might contain features
+                // Recursively search for features inside it
+                let deeper_features = list_files_recursive_impl(&entry_path, changes_map)?;
+                nested_features.extend(deeper_features);
+            }
         }
     }
 

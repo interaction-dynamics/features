@@ -16,7 +16,20 @@
         "hash": "93df7ddd6f35aa91bb722bae53868158b77dbb45"
       }
     ],
-    "decisions": []
+    "decisions": [],
+    "stats": {
+      "commits": {
+        "count_by_type": {
+          "fix": 1
+        },
+        "first_commit_date": "2025-10-22 01:07:46",
+        "total_commits": 1,
+        "authors_count": {
+          "Thibault Friedrich": 1
+        },
+        "last_commit_date": "2025-10-22 01:07:46"
+      }
+    }
   },
   {
     "name": "feature-1",
@@ -49,7 +62,20 @@
             "hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
           }
         ],
-        "decisions": []
+        "decisions": [],
+        "stats": {
+          "commits": {
+            "first_commit_date": "2025-10-08 13:30:08",
+            "total_commits": 2,
+            "authors_count": {
+              "Thibault Friedrich": 2
+            },
+            "count_by_type": {
+              "feat": 2
+            },
+            "last_commit_date": "2025-10-08 11:43:11"
+          }
+        }
       },
       {
         "name": "feature-3",
@@ -68,7 +94,20 @@
             "hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
           }
         ],
-        "decisions": []
+        "decisions": [],
+        "stats": {
+          "commits": {
+            "last_commit_date": "2025-10-08 11:43:11",
+            "count_by_type": {
+              "feat": 1
+            },
+            "total_commits": 1,
+            "authors_count": {
+              "Thibault Friedrich": 1
+            },
+            "first_commit_date": "2025-10-08 11:43:11"
+          }
+        }
       },
       {
         "name": "feature-4",
@@ -98,7 +137,20 @@
             "hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
           }
         ],
-        "decisions": []
+        "decisions": [],
+        "stats": {
+          "commits": {
+            "count_by_type": {
+              "feat": 2
+            },
+            "authors_count": {
+              "Thibault Friedrich": 2
+            },
+            "total_commits": 2,
+            "first_commit_date": "2025-10-10 00:18:07",
+            "last_commit_date": "2025-10-08 11:43:11"
+          }
+        }
       }
     ],
     "meta": {},
@@ -138,7 +190,21 @@
     ],
     "decisions": [
       "# Use Technology 1\n\n## Decision\n\n### Reasoning\n\nThis decision was made to use technology 1 because it provides the best performance and reliability for our application.\n\n### Implementation\n"
-    ]
+    ],
+    "stats": {
+      "commits": {
+        "first_commit_date": "2025-10-22 00:58:27",
+        "authors_count": {
+          "Thibault Friedrich": 4
+        },
+        "total_commits": 4,
+        "count_by_type": {
+          "feat": 3,
+          "test": 1
+        },
+        "last_commit_date": "2025-10-08 11:43:11"
+      }
+    }
   },
   {
     "name": "feature-2",
@@ -184,16 +250,110 @@
     "decisions": [
       "# Database Choice for Feature 2\n\n## Context\n\nFeature 2 requires persistent data storage for user preferences and application state. We need to choose an appropriate database solution that fits our JavaScript application architecture.\n\n## Decision\n\nWe will use IndexedDB as the primary client-side storage solution, with localStorage as a fallback for critical settings.\n\n## Status\n\nAccepted\n\n## Rationale\n\n### Why IndexedDB?\n- Native browser support without external dependencies\n- Asynchronous operations that don't block the UI\n- Supports complex data types and large storage capacity\n- Transaction support for data consistency\n- Better performance for complex queries compared to localStorage\n\n### Why localStorage as fallback?\n- Synchronous API for critical settings that need immediate access\n- Broader browser compatibility\n- Simpler API for basic key-value operations\n- Persistent across browser sessions\n\n## Consequences\n\n### Positive\n- No external database dependencies\n- Works offline by default\n- Fast local access to data\n- No network latency issues\n- Privacy-friendly (data stays on user's device)\n\n### Negative\n- Data is tied to specific browser/device\n- No server-side data synchronization\n- Storage limits imposed by browser\n- Requires data migration strategies for schema changes\n\n## Implementation Guidelines\n\n### IndexedDB Usage\n- Store user preferences and settings\n- Cache application data for offline use\n- Maintain transaction history\n- Store complex objects and relationships\n\n### localStorage Usage\n- Theme preferences\n- Language settings\n- Critical user preferences that need synchronous access\n- Temporary session data\n\n## Migration Strategy\n\nIf we need server-side storage in the future:\n1. Export data from IndexedDB to JSON format\n2. Implement sync mechanism with server\n3. Maintain hybrid approach for offline functionality\n4. Gradual migration of data to server storage",
       "# Architecture Choice for Feature 2\n\n## Context\n\nWe need to decide on the architectural pattern for implementing feature 2 in our JavaScript application.\n\n## Decision\n\nWe will use the Model-View-Controller (MVC) pattern for feature 2.\n\n## Status\n\nAccepted\n\n## Consequences\n\n### Positive\n- Clear separation of concerns\n- Easier to test individual components\n- Better maintainability\n- Familiar pattern to most developers\n\n### Negative\n- Additional abstraction layer\n- Slightly more complex initial setup\n- Potential for over-engineering simple features\n\n## Implementation Notes\n\n- Controllers will handle user input and coordinate between models and views\n- Models will manage data and business logic\n- Views will be responsible for rendering the user interface\n- Event-driven communication between components"
-    ]
+    ],
+    "stats": {
+      "commits": {
+        "total_commits": 4,
+        "last_commit_date": "2025-10-08 11:43:11",
+        "authors_count": {
+          "Thibault Friedrich": 4
+        },
+        "first_commit_date": "2025-10-17 21:56:01",
+        "count_by_type": {
+          "feat": 4
+        }
+      }
+    }
   },
   {
     "name": "route-1",
     "description": "This is the first route.",
     "owner": "John Doe",
     "path": "../../examples/javascript-basic/src/routes/route-1",
-    "features": [],
+    "features": [
+      {
+        "name": "feature-5",
+        "description": "",
+        "owner": "Unknown",
+        "path": "../../examples/javascript-basic/src/routes/route-1/features/feature-5",
+        "features": [],
+        "meta": {},
+        "changes": [
+          {
+            "title": "--wip-- [skip ci]",
+            "author_name": "Thibault Friedrich",
+            "author_email": "thibault.friedrich@interaction-dynamics.io",
+            "description": "",
+            "date": "2025-11-13 22:23:04",
+            "hash": "f62f17baa968224ae013836eaaba446a44241c0c"
+          }
+        ],
+        "decisions": [],
+        "stats": {
+          "commits": {
+            "last_commit_date": "2025-11-13 22:23:04",
+            "authors_count": {
+              "Thibault Friedrich": 1
+            },
+            "count_by_type": {
+              "other": 1
+            },
+            "total_commits": 1,
+            "first_commit_date": "2025-11-13 22:23:04"
+          }
+        }
+      },
+      {
+        "name": "component-1",
+        "description": "",
+        "owner": "John Doe",
+        "path": "../../examples/javascript-basic/src/routes/route-1/components/component-1",
+        "features": [],
+        "meta": {},
+        "changes": [
+          {
+            "title": "--wip-- [skip ci]",
+            "author_name": "Thibault Friedrich",
+            "author_email": "thibault.friedrich@interaction-dynamics.io",
+            "description": "",
+            "date": "2025-11-13 22:12:16",
+            "hash": "63d9fff38342a6e47045bba80057d7ad71596c00"
+          }
+        ],
+        "decisions": [],
+        "stats": {
+          "commits": {
+            "total_commits": 1,
+            "first_commit_date": "2025-11-13 22:12:16",
+            "authors_count": {
+              "Thibault Friedrich": 1
+            },
+            "count_by_type": {
+              "other": 1
+            },
+            "last_commit_date": "2025-11-13 22:12:16"
+          }
+        }
+      }
+    ],
     "meta": {},
     "changes": [
+      {
+        "title": "--wip-- [skip ci]",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-11-13 22:23:04",
+        "hash": "f62f17baa968224ae013836eaaba446a44241c0c"
+      },
+      {
+        "title": "--wip-- [skip ci]",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-11-13 22:12:16",
+        "hash": "63d9fff38342a6e47045bba80057d7ad71596c00"
+      },
       {
         "title": "feat: add custom feature example",
         "author_name": "Thibault Friedrich",
@@ -203,6 +363,20 @@
         "hash": "0c536ebab6a454f3fde160442d6f23599c0bb895"
       }
     ],
-    "decisions": []
+    "decisions": [],
+    "stats": {
+      "commits": {
+        "authors_count": {
+          "Thibault Friedrich": 3
+        },
+        "total_commits": 3,
+        "last_commit_date": "2025-10-30 15:59:38",
+        "count_by_type": {
+          "feat": 1,
+          "other": 2
+        },
+        "first_commit_date": "2025-11-13 22:23:04"
+      }
+    }
   }
 ]

@@ -147,6 +147,64 @@ fn test_javascript_basic_snapshot() {
 }
 
 #[test]
+fn test_deeply_nested_features_with_feature_flag() {
+    // This test verifies that features marked with "feature: true" are detected
+    // even when they are nested inside directories that don't have the feature flag.
+    //
+    // For example:
+    // route-1/ (has feature: true)
+    //   components/ (no feature flag - just a regular directory)
+    //     component-1/ (has feature: true)
+    //
+    // component-1 should be detected as a nested feature of route-1
+
+    let test_path = PathBuf::from("../../examples/javascript-basic/src");
+
+    if !test_path.exists() {
+        println!(
+            "Skipping test - test path does not exist: {}",
+            test_path.display()
+        );
+        return;
+    }
+
+    // Scan the directory
+    let result = list_files_recursive(&test_path);
+    assert!(
+        result.is_ok(),
+        "Failed to scan directory: {:?}",
+        result.err()
+    );
+
+    let features = result.unwrap();
+
+    // Find the route-1 feature
+    let route_1 = features
+        .iter()
+        .find(|f| f.name == "route-1")
+        .expect("route-1 feature should be found");
+
+    // Verify that component-1 is detected as a nested feature
+    let component_1 = route_1
+        .features
+        .iter()
+        .find(|f| f.name == "component-1")
+        .expect("component-1 should be detected as a nested feature of route-1");
+
+    assert_eq!(
+        component_1.owner, "John Doe",
+        "component-1 should have correct owner"
+    );
+
+    // Verify the path contains the components directory
+    assert!(
+        component_1.path.contains("components/component-1"),
+        "component-1 path should go through components directory: {}",
+        component_1.path
+    );
+}
+
+#[test]
 fn test_javascript_basic_snapshot_without_changes() {
     // Path to the test directory (relative to the workspace root when tests run)
     let test_path = PathBuf::from("../../examples/javascript-basic/src");

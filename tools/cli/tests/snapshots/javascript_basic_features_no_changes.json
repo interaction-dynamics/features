@@ -42,8 +42,8 @@
         "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-4",
         "features": [],
         "meta": {
-          "deprecated": true,
-          "figma": "https://www.figma.com/make/OScZLCeO83Z2nPTQkOuC3j/Glass-Material-Editor?fullscreen=1"
+          "figma": "https://www.figma.com/make/OScZLCeO83Z2nPTQkOuC3j/Glass-Material-Editor?fullscreen=1",
+          "deprecated": true
         },
         "changes": [],
         "decisions": []
@@ -73,7 +73,28 @@
     "description": "This is the first route.",
     "owner": "John Doe",
     "path": "../../examples/javascript-basic/src/routes/route-1",
-    "features": [],
+    "features": [
+      {
+        "name": "feature-5",
+        "description": "",
+        "owner": "Unknown",
+        "path": "../../examples/javascript-basic/src/routes/route-1/features/feature-5",
+        "features": [],
+        "meta": {},
+        "changes": [],
+        "decisions": []
+      },
+      {
+        "name": "component-1",
+        "description": "",
+        "owner": "John Doe",
+        "path": "../../examples/javascript-basic/src/routes/route-1/components/component-1",
+        "features": [],
+        "meta": {},
+        "changes": [],
+        "decisions": []
+      }
+    ],
     "meta": {},
     "changes": [],
     "decisions": []
