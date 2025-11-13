@@ -138,8 +138,7 @@ fn find_owner_for_path(target_path: &std::path::Path, features: &[Feature]) -> O
                     // Calculate depth (how many components between feature and target)
                     let depth = target
                         .strip_prefix(&canonical_feature_path)
-                        .ok()
-                        .and_then(|p| Some(p.components().count()))
+                        .ok().map(|p| p.components().count())
                         .unwrap_or(usize::MAX);
 
                     // Check nested features first
