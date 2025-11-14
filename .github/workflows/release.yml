@@ -8,7 +8,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
   SKIP_PUBLISH: "false"
-
+permissions:
+  contents: write
+  id-token: write
 jobs:
   check:
     name: Check version
@@ -119,34 +121,34 @@ jobs:
             target: x86_64-pc-windows-msvc
             code-target: win32-x64
             ext: .exe
-          # - os: windows-latest
-          #   target: aarch64-pc-windows-msvc
-          #   code-target: win32-arm64
-          #   ext: .exe
-          # - os: ubuntu-latest
-          #   target: x86_64-unknown-linux-gnu
-          #   code-target: linux-x64
-          #   ext: ""
-          # - os: ubuntu-latest
-          #   target: aarch64-unknown-linux-gnu
-          #   code-target: linux-arm64
-          #   ext: ""
-          # - os: ubuntu-latest
-          #   target: x86_64-unknown-linux-musl
-          #   code-target: linux-x64-musl
-          #   ext: ""
-          # - os: ubuntu-latest
-          #   target: aarch64-unknown-linux-musl
-          #   code-target: linux-arm64-musl
-          #   ext: ""
-          # - os: macos-latest
-          #   target: x86_64-apple-darwin
-          #   code-target: darwin-x64
-          #   ext: ""
-          # - os: macos-latest
-          #   target: aarch64-apple-darwin
-          #   code-target: darwin-arm64
-          #   ext: ""
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            code-target: win32-arm64
+            ext: .exe
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            code-target: linux-x64
+            ext: ""
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            code-target: linux-arm64
+            ext: ""
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            code-target: linux-x64-musl
+            ext: ""
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            code-target: linux-arm64-musl
+            ext: ""
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            code-target: darwin-x64
+            ext: ""
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            code-target: darwin-arm64
+            ext: ""
 
     name: Build ${{ matrix.code-target }}
     runs-on: ${{ matrix.os }}
@@ -577,17 +579,12 @@ jobs:
         run: |
           for pkg in packages/cli-*; do
             echo "Publishing $pkg..."
-            pnpm publish "$pkg" --access public --tag latest --no-git-checks
+            npm publish "$pkg" --access public --tag latest --no-git-checks
           done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Publish main package
         run: |
           echo "Publishing main package..."
-          pnpm publish "packages/features-cli" --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm publish "packages/features-cli" --access public --no-git-checks
   github-release:
     name: Github Release
     runs-on: ubuntu-latest
