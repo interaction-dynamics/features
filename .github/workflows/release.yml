@@ -391,6 +391,9 @@ jobs:
               "type": "git",
               "url": "https://github.com/interaction-dynamics/features"
             },
+            "publishConfig": {
+                "provenance": true
+            },
             "scripts": {
               "postinstall": "node postinstall.js"
             },
@@ -409,7 +412,7 @@ jobs:
 
           This package contains the Features CLI binary for $platform.
 
-          This package is not meant to be used directly. Install \`features-cli\` instead.
+          This package is not meant to be used directly. Install \`@features/cli\` instead.
           EOF
           }
 
@@ -454,6 +457,9 @@ jobs:
             ],
             "engines": {
               "node": ">=14.0.0"
+            },
+            "publishConfig": {
+                "provenance": true
             },
             "optionalDependencies": {
               "@features-cli/feature-cli-win32-x64": "$VERSION",
