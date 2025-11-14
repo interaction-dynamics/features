@@ -320,9 +320,9 @@ jobs:
           pnpm --version
 
       - name: Install Node.js
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           registry-url: "https://registry.npmjs.org"
 
       - name: Create npm packages structure
@@ -579,12 +579,12 @@ jobs:
         run: |
           for pkg in packages/cli-*; do
             echo "Publishing $pkg..."
-            npm publish "$pkg" --access public --tag latest --no-git-checks
+            pnpm publish "$pkg" --access public --tag latest --no-git-checks
           done
       - name: Publish main package
         run: |
           echo "Publishing main package..."
-          npm publish "packages/features-cli" --access public --no-git-checks
+          pnpm publish "packages/features-cli" --access public --no-git-checks
   github-release:
     name: Github Release
     runs-on: ubuntu-latest
