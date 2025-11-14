@@ -348,7 +348,7 @@ jobs:
             local libc=$5
 
             local pkg_dir="packages/cli-${platform}"
-            local pkg_name="@features-cli/feature-cli-${platform}"
+            local pkg_name="@features-cli/features-cli-${platform}"
 
             # Copy binary
             cp "dist/features-${platform}${binary_name##*features}" "$pkg_dir/features${binary_name##*features}"
@@ -460,14 +460,14 @@ jobs:
                 "provenance": true
             },
             "optionalDependencies": {
-              "@features-cli/feature-cli-win32-x64": "$VERSION",
-              "@features-cli/feature-cli-win32-arm64": "$VERSION",
-              "@features-cli/feature-cli-darwin-x64": "$VERSION",
-              "@features-cli/feature-cli-darwin-arm64": "$VERSION",
-              "@features-cli/feature-cli-linux-x64": "$VERSION",
-              "@features-cli/feature-cli-linux-arm64": "$VERSION",
-              "@features-cli/feature-cli-linux-x64-musl": "$VERSION",
-              "@features-cli/feature-cli-linux-arm64-musl": "$VERSION"
+              "@features-cli/features-cli-win32-x64": "$VERSION",
+              "@features-cli/features-cli-win32-arm64": "$VERSION",
+              "@features-cli/features-cli-darwin-x64": "$VERSION",
+              "@features-cli/features-cli-darwin-arm64": "$VERSION",
+              "@features-cli/features-cli-linux-x64": "$VERSION",
+              "@features-cli/features-cli-linux-arm64": "$VERSION",
+              "@features-cli/features-cli-linux-x64-musl": "$VERSION",
+              "@features-cli/features-cli-linux-arm64-musl": "$VERSION"
             }
           }
           EOF
@@ -500,20 +500,20 @@ jobs:
 
           const PLATFORMS = {
             win32: {
-              x64: "@features-cli/feature-cli-win32-x64/features.exe",
-              arm64: "@features-cli/feature-cli-win32-arm64/features.exe",
+              x64: "@features-cli/features-cli-win32-x64/features.exe",
+              arm64: "@features-cli/features-cli-win32-arm64/features.exe",
             },
             darwin: {
-              x64: "@features-cli/feature-cli-darwin-x64/features",
-              arm64: "@features-cli/feature-cli-darwin-arm64/features",
+              x64: "@features-cli/features-cli-darwin-x64/features",
+              arm64: "@features-cli/features-cli-darwin-arm64/features",
             },
             linux: {
-              x64: "@features-cli/feature-cli-linux-x64/features",
-              arm64: "@features-cli/feature-cli-linux-arm64/features",
+              x64: "@features-cli/features-cli-linux-x64/features",
+              arm64: "@features-cli/features-cli-linux-arm64/features",
             },
             "linux-musl": {
-              x64: "@features-cli/feature-cli-linux-x64-musl/features",
-              arm64: "@features-cli/feature-cli-linux-arm64-musl/features",
+              x64: "@features-cli/features-cli-linux-x64-musl/features",
+              arm64: "@features-cli/features-cli-linux-arm64-musl/features",
             },
           };
 
@@ -579,10 +579,15 @@ jobs:
             echo "Publishing $pkg..."
             pnpm publish "$pkg" --access public --tag latest --no-git-checks
           done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Publish main package
         run: |
           echo "Publishing main package..."
           pnpm publish "packages/features-cli" --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   github-release:
     name: Github Release
     runs-on: ubuntu-latest
