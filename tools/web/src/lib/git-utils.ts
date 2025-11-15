@@ -52,22 +52,3 @@ export function buildCommitUrl(
   // Most follow the GitHub pattern
   return `${normalizedUrl}/commit/${commitHash}`
 }
-
-/**
- * Extracts the repository name from a git URL
- */
-export function getRepositoryName(
-  repositoryUrl: string | undefined,
-): string | null {
-  if (!repositoryUrl) {
-    return null
-  }
-
-  // Extract the last part of the path (repo name)
-  const match = repositoryUrl.match(/\/([^/]+?)(\.git)?$/)
-  if (match) {
-    return match[1]
-  }
-
-  return null
-}

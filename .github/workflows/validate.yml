@@ -44,8 +44,8 @@ jobs:
         run: |
           pnpm format
           pnpm lint
-      # - name: Unit Tests ✔️
-      #   run: pnpm test:ci
+      - name: Unit Tests ✔️
+        run: pnpm test:coverage
 
   validate-cli:
     name: Validate CLI
