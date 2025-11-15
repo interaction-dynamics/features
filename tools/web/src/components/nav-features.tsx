@@ -234,7 +234,10 @@ function TreeNodeItem({
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
-          className="cursor-pointer w-full "
+          className={cn(
+            'cursor-pointer w-full ',
+            isFeature ? 'text-primary' : 'text-muted-foreground',
+          )}
           asChild
           isActive={isActive}
           onClick={() => {
@@ -271,7 +274,10 @@ function TreeNodeItem({
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton
-            className="cursor-pointer"
+            className={cn(
+              'cursor-pointer',
+              isFeature ? 'text-primary' : 'text-muted-foreground',
+            )}
             tooltip={formatNodeName(node.name, isFeature)}
             isActive={isActive}
             onClick={() => {
