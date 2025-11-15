@@ -162,7 +162,7 @@ export function AppSidebar({
                         title={formatFeatureName(feature.name)}
                       >
                         <div className="flex flex-col items-start gap-0.5">
-                          <span className="font-medium">
+                          <span className="font-medium truncate cursor-pointer text-ellipsis">
                             {formatFeatureName(feature.name)}
                           </span>
                         </div>
