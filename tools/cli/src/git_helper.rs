@@ -5,6 +5,21 @@ use std::path::Path;
 
 use crate::models::Change;
 
+/// Get the repository URL from git config.
+/// Tries to get the remote origin URL, returns None if not found.
+pub fn get_repository_url(repo_path: &Path) -> Option<String> {
+    let repo = Repository::discover(repo_path).ok()?;
+
+    // Try to get the remote origin URL
+    if let Ok(remote) = repo.find_remote("origin") {
+        if let Some(url) = remote.url() {
+            return Some(url.to_string());
+        }
+    }
+
+    None
+}
+
 fn format_timestamp(time: git2::Time) -> String {
     let timestamp = time.seconds();
     let datetime = chrono::DateTime::from_timestamp(timestamp, 0)

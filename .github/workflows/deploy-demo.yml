@@ -110,7 +110,7 @@ jobs:
         working-directory: ./tools/cli
         run: |
           VERSION=$(grep "^version" Cargo.toml | head -n1 | cut -d'"' -f2)
-          echo "{\"version\": \"$VERSION\"}" > ../web/public/metadata.json
+          echo "{\"version\": \"$VERSION\", \"repository\": \"git@github.com:interaction-dynamics/features.git\" }" > ../web/public/metadata.json
           echo "Generated metadata.json with version: $VERSION"
 
       # Build web application

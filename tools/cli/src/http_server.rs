@@ -19,6 +19,7 @@ use tokio::time::sleep;
 use warp::{Filter, Reply};
 
 use crate::file_scanner::list_files_recursive_with_changes;
+use crate::git_helper::get_repository_url;
 use crate::models::Feature;
 
 // Embed the public directory at compile time
@@ -76,7 +77,7 @@ pub async fn serve_features_with_watching(
     watch_path: PathBuf,
 ) -> Result<()> {
     let config = ServerConfig::new(port);
-    serve_features_with_config_and_watching(features, config, Some(watch_path)).await
+    serve_features_with_config_and_watching(features, config, Some(watch_path.clone())).await
 }
 
 /// Starts an HTTP server with custom configuration and optional file watching.
@@ -97,6 +98,11 @@ pub async fn serve_features_with_config_and_watching(
 ) -> Result<()> {
     // Create shared state for features
     let features_data = Arc::new(RwLock::new(features.to_vec()));
+
+    // Get repository URL from git config
+    let repository_url = watch_path
+        .as_ref()
+        .and_then(|path| get_repository_url(path));
 
     // Set up file watching if watch_path is provided
     if let Some(ref path) = watch_path {
@@ -134,27 +140,35 @@ pub async fn serve_features_with_config_and_watching(
             }
         });
 
-    // Route for metadata.json with version info
+    // Route for metadata.json with version info and repository URL
     let metadata_route = warp::path("metadata.json")
         .and(warp::get())
-        .and_then(|| async move {
-            let metadata = serde_json::json!({
-                "version": env!("CARGO_PKG_VERSION")
-            });
+        .and_then(move || {
+            let repo_url = repository_url.clone();
+            async move {
+                let mut metadata = serde_json::json!({
+                    "version": env!("CARGO_PKG_VERSION")
+                });
 
-            let metadata_json = match serde_json::to_string_pretty(&metadata) {
-                Ok(json) => json,
-                Err(e) => {
-                    eprintln!("Failed to serialize metadata: {}", e);
-                    return Err(warp::reject::custom(SerializationError));
+                // Add repository URL if available
+                if let Some(url) = repo_url {
+                    metadata["repository"] = serde_json::json!(url);
                 }
-            };
 
-            Ok::<_, warp::Rejection>(warp::reply::with_header(
-                metadata_json,
-                "content-type",
-                "application/json",
-            ))
+                let metadata_json = match serde_json::to_string_pretty(&metadata) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        eprintln!("Failed to serialize metadata: {}", e);
+                        return Err(warp::reject::custom(SerializationError));
+                    }
+                };
+
+                Ok::<_, warp::Rejection>(warp::reply::with_header(
+                    metadata_json,
+                    "content-type",
+                    "application/json",
+                ))
+            }
         });
 
     // Route for root path to serve index.html
