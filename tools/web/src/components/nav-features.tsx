@@ -402,7 +402,7 @@ export function NavFeatures({
   activeFeature,
 }: NavFeaturesProps) {
   const [collapseAll, setCollapseAll] = useState(0)
-  const [openFoldersCount, setOpenFoldersCount] = useState(0)
+  const [openFoldersCount, setOpenFoldersCount] = useState(1)
 
   const handleCollapseAll = () => {
     setCollapseAll((prev) => prev + 1)
