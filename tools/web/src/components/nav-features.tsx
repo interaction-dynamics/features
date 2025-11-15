@@ -1,5 +1,5 @@
-import { ChevronRight, Folder, FolderOpen } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronRight, Folder, FolderOpen, FoldVertical } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 
 import {
   Collapsible,
@@ -23,6 +23,9 @@ interface NavFeaturesProps {
   items: Feature[]
   onFeatureClick?: (feature: Feature) => void
   activeFeature?: Feature | null
+  collapseAll?: number
+  onOpenStateChange?: (isOpen: boolean) => void
+  isFirstLevel?: boolean
 }
 
 interface TreeNode {
@@ -194,12 +197,22 @@ function TreeNodeItem({
   onFeatureClick,
   activeFeature,
   depth = 0,
+  collapseAll = 0,
+  onOpenStateChange,
+  isFirstLevel = false,
 }: {
   node: TreeNode
   onFeatureClick?: (feature: Feature) => void
   activeFeature?: Feature | null
   depth?: number
+  collapseAll?: number
+  onOpenStateChange?: (isOpen: boolean) => void
+  isFirstLevel?: boolean
 }) {
+  const hasChildren = node.children.size > 0
+  const isActive = activeFeature?.path === node.path
+  const isFeature = !!node.feature
+
   const [isOpen, setIsOpen] = useState(() => {
     // Auto-expand if this node is in the active path
     if (activeFeature) {
@@ -209,9 +222,19 @@ function TreeNodeItem({
     return node.isFolder && !node.feature && node.name !== 'features'
   })
 
-  const hasChildren = node.children.size > 0
-  const isActive = activeFeature?.path === node.path
-  const isFeature = !!node.feature
+  // Close all folders when collapseAll changes
+  useEffect(() => {
+    if (collapseAll > 0) {
+      setIsOpen(false)
+    }
+  }, [collapseAll])
+
+  // Notify parent of open state changes (only for first level)
+  useEffect(() => {
+    if (hasChildren && onOpenStateChange && isFirstLevel) {
+      onOpenStateChange(isOpen)
+    }
+  }, [isOpen, hasChildren, onOpenStateChange, isFirstLevel])
 
   // Skip rendering the 'features' folder itself if it has children
   if (node.name === 'features' && !isFeature && hasChildren) {
@@ -224,6 +247,9 @@ function TreeNodeItem({
             onFeatureClick={onFeatureClick}
             activeFeature={activeFeature}
             depth={depth}
+            collapseAll={collapseAll}
+            onOpenStateChange={onOpenStateChange}
+            isFirstLevel={isFirstLevel}
           />
         ))}
       </>
@@ -316,6 +342,9 @@ function TreeNodeItem({
                 onFeatureClick={onFeatureClick}
                 activeFeature={activeFeature}
                 depth={depth + 1}
+                collapseAll={collapseAll}
+                onOpenStateChange={onOpenStateChange}
+                isFirstLevel={false}
               />
             ))}
           </SidebarMenuSub>
@@ -329,6 +358,8 @@ function NavFeaturesMenu({
   items,
   onFeatureClick,
   activeFeature,
+  collapseAll = 0,
+  onOpenStateChange,
 }: NavFeaturesProps) {
   if (items.length === 0) {
     return (
@@ -356,6 +387,9 @@ function NavFeaturesMenu({
           node={node}
           onFeatureClick={onFeatureClick}
           activeFeature={activeFeature}
+          collapseAll={collapseAll}
+          onOpenStateChange={onOpenStateChange}
+          isFirstLevel={true}
         />
       ))}
     </>
@@ -367,14 +401,40 @@ export function NavFeatures({
   onFeatureClick,
   activeFeature,
 }: NavFeaturesProps) {
+  const [collapseAll, setCollapseAll] = useState(0)
+  const [openFoldersCount, setOpenFoldersCount] = useState(1)
+
+  const handleCollapseAll = () => {
+    setCollapseAll((prev) => prev + 1)
+  }
+
+  const handleOpenStateChange = useCallback((isOpen: boolean) => {
+    setOpenFoldersCount((prev) => (isOpen ? prev + 1 : Math.max(0, prev - 1)))
+  }, [])
+
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>All Features</SidebarGroupLabel>
+      <div className="flex items-center justify-between px-2 py-1.5">
+        <SidebarGroupLabel className="flex-1">All Features</SidebarGroupLabel>
+        {openFoldersCount > 0 && (
+          <button
+            type="button"
+            onClick={handleCollapseAll}
+            className="cursor-pointer inline-flex h-6 w-6 items-center justify-center rounded hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground/70 transition-colors"
+            title="Collapse all folders"
+            aria-label="Collapse all folders"
+          >
+            <FoldVertical className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       <SidebarMenu>
         <NavFeaturesMenu
           items={items}
           onFeatureClick={onFeatureClick}
           activeFeature={activeFeature}
+          collapseAll={collapseAll}
+          onOpenStateChange={handleOpenStateChange}
         />
       </SidebarMenu>
     </SidebarGroup>
