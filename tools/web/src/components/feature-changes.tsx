@@ -35,7 +35,9 @@ export function FeatureChanges({ changes }: FeatureChangesProps) {
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                <span>{new Date(change.date).toLocaleDateString()}</span>
+                <span>
+                  {new Date(change.date).toLocaleDateString(navigator.language)}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="bg-secondary text-secondary-foreground rounded-full px-2 py-0.5 text-xs font-mono">
