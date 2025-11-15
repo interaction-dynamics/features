@@ -1,19 +1,9 @@
-import useSWR from 'swr'
-
-type Metadata = {
-  version: string
-}
-
-const fetcher = async (url: string): Promise<Metadata> => {
-  const response = await fetch(url)
-  const data = await response.json()
-  return data
-}
+import { useMetadata } from '@/hooks/use-metadata'
 
 export function VersionIndicator() {
-  const { data } = useSWR<Metadata>('./metadata.json', fetcher)
+  const { metadata } = useMetadata()
 
-  const version = data?.version || ''
+  const version = metadata?.version || ''
 
   if (!version) return null
 

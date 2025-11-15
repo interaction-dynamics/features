@@ -1,5 +1,7 @@
-import { Calendar, GitCommitVertical, User } from 'lucide-react'
+import { Calendar, ExternalLink, GitCommitVertical, User } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { useMetadata } from '@/hooks/use-metadata'
+import { buildCommitUrl } from '@/lib/git-utils'
 import type { Change } from '@/models/feature'
 
 interface FeatureChangesProps {
@@ -7,6 +9,8 @@ interface FeatureChangesProps {
 }
 
 export function FeatureChanges({ changes }: FeatureChangesProps) {
+  const { metadata } = useMetadata()
+
   if (changes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
@@ -40,9 +44,24 @@ export function FeatureChanges({ changes }: FeatureChangesProps) {
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="bg-secondary text-secondary-foreground rounded-full px-2 py-0.5 text-xs font-mono">
-                  #{change.hash.slice(0, 7)}
-                </span>
+                {metadata?.repository ? (
+                  <a
+                    href={
+                      buildCommitUrl(metadata.repository, change.hash) || '#'
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full px-2 py-0.5 text-xs font-mono inline-flex items-center gap-1 transition-colors"
+                    title="View commit in repository"
+                  >
+                    #{change.hash.slice(0, 7)}
+                    <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                ) : (
+                  <span className="bg-secondary text-secondary-foreground rounded-full px-2 py-0.5 text-xs font-mono">
+                    #{change.hash.slice(0, 7)}
+                  </span>
+                )}
               </div>
             </div>
             {change.description && (
