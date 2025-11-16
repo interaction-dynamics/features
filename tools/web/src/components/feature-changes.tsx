@@ -1,11 +1,72 @@
 import { Calendar, ExternalLink, GitCommitVertical, User } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useMetadata } from '@/hooks/use-metadata'
-import { buildCommitUrl } from '@/lib/git-utils'
+import { buildCommitUrl, buildPullRequestUrl } from '@/lib/git-utils'
 import type { Change } from '@/models/feature'
 
 interface FeatureChangesProps {
   changes: Change[]
+}
+
+/**
+ * Parses commit title and replaces PR numbers like (#123) with clickable links
+ */
+function renderTitleWithPRLinks(
+  title: string,
+  repositoryUrl: string | undefined,
+) {
+  if (!repositoryUrl) {
+    return <>{title}</>
+  }
+
+  // Match PR numbers in format (#123) or (PR #123) or (pr #123)
+  const prPattern = /\((pr\s+)?#(\d+)\)/gi
+  const parts: (string | ReactNode)[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  match = prPattern.exec(title)
+  while (match !== null) {
+    const fullMatch = match[0] // e.g., "(#123)" or "(PR #123)"
+    const prNumber = match[2] // e.g., "123"
+    const matchStart = match.index
+
+    // Add text before the match
+    if (matchStart > lastIndex) {
+      parts.push(title.substring(lastIndex, matchStart))
+    }
+
+    // Add the PR link
+    const prUrl = buildPullRequestUrl(repositoryUrl, prNumber)
+    if (prUrl) {
+      parts.push(
+        <a
+          key={`pr-${prNumber}-${matchStart}`}
+          href={prUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline inline-flex items-center gap-0.5"
+          title={`View pull request #${prNumber}`}
+        >
+          {fullMatch}
+          <ExternalLink className="h-3 w-3" />
+        </a>,
+      )
+    } else {
+      parts.push(fullMatch)
+    }
+
+    lastIndex = prPattern.lastIndex
+    match = prPattern.exec(title)
+  }
+
+  // Add remaining text after the last match
+  if (lastIndex < title.length) {
+    parts.push(title.substring(lastIndex))
+  }
+
+  return <>{parts}</>
 }
 
 export function FeatureChanges({ changes }: FeatureChangesProps) {
@@ -27,7 +88,7 @@ export function FeatureChanges({ changes }: FeatureChangesProps) {
           <CardContent className="space-y-3">
             <div className="text-base font-semibold flex items-center gap-2">
               <GitCommitVertical className="h-4 w-4" />
-              {change.title}
+              {renderTitleWithPRLinks(change.title, metadata?.repository)}
             </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
