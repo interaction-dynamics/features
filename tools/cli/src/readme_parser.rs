@@ -3,6 +3,22 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+fn extract_first_title(content: &str) -> Option<String> {
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        // Check if this line is a title (starting with #)
+        if trimmed.starts_with('#') {
+            // Remove all leading # characters and whitespace
+            let title = trimmed.trim_start_matches('#').trim();
+            if !title.is_empty() {
+                return Some(title.to_string());
+            }
+        }
+    }
+    None
+}
+
 fn read_readme_content(content: &str) -> String {
     let mut found_first_title = false;
     let mut lines_after_title: Vec<&str> = Vec::new();
@@ -27,17 +43,24 @@ fn read_readme_content(content: &str) -> String {
 }
 
 /// Reads README information from README.md or README.mdx files
-/// Returns (owner, description, metadata) tuple
+/// Returns (title, owner, description, metadata) tuple
+/// The title is extracted from the first markdown heading (# Title)
 pub fn read_readme_info(
     readme_path: &Path,
-) -> Result<(String, String, HashMap<String, serde_json::Value>)> {
+) -> Result<(
+    Option<String>,
+    String,
+    String,
+    HashMap<String, serde_json::Value>,
+)> {
     if !readme_path.exists() {
-        return Ok(("Unknown".to_string(), "".to_string(), HashMap::new()));
+        return Ok((None, "Unknown".to_string(), "".to_string(), HashMap::new()));
     }
 
     let content = fs::read_to_string(readme_path)
         .with_context(|| format!("could not read README file at `{}`", readme_path.display()))?;
 
+    let mut title: Option<String> = None;
     let mut owner = "Unknown".to_string();
     let mut description = "".to_string();
     let mut meta: HashMap<String, serde_json::Value> = HashMap::new();
@@ -68,11 +91,15 @@ pub fn read_readme_info(
                 }
             }
 
+            // Extract title from markdown content (after frontmatter)
+            title = extract_first_title(&markdown_content);
             description = read_readme_content(&markdown_content)
         }
     } else {
+        // No frontmatter, extract title and description from full content
+        title = extract_first_title(&content);
         description = read_readme_content(&content)
     }
 
-    Ok((owner, description, meta))
+    Ok((title, owner, description, meta))
 }

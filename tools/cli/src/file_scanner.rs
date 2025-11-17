@@ -236,10 +236,11 @@ fn process_feature_directory(
     changes_map: Option<&HashMap<String, Vec<Change>>>,
 ) -> Result<Feature> {
     // Try to find and read README file, use defaults if not found
-    let (owner, description, mut meta) = if let Some(readme_path) = find_readme_file(path) {
+    let (title, owner, description, mut meta) = if let Some(readme_path) = find_readme_file(path) {
         read_readme_info(&readme_path)?
     } else {
         (
+            None,
             "Unknown".to_string(),
             "".to_string(),
             std::collections::HashMap::new(),
@@ -300,7 +301,7 @@ fn process_feature_directory(
     let stats = compute_stats_from_changes(&changes);
 
     Ok(Feature {
-        name: name.to_string(),
+        name: title.unwrap_or_else(|| name.to_string()),
         description,
         owner,
         path: path.to_string_lossy().to_string(),

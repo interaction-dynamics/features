@@ -181,15 +181,15 @@ fn test_deeply_nested_features_with_feature_flag() {
     // Find the route-1 feature
     let route_1 = features
         .iter()
-        .find(|f| f.name == "route-1")
-        .expect("route-1 feature should be found");
+        .find(|f| f.name == "Route 1")
+        .expect("Route 1 feature should be found");
 
     // Verify that component-1 is detected as a nested feature
     let component_1 = route_1
         .features
         .iter()
-        .find(|f| f.name == "component-1")
-        .expect("component-1 should be detected as a nested feature of route-1");
+        .find(|f| f.name == "Component 1")
+        .expect("Component 1 should be detected as a nested feature of Route 1");
 
     assert_eq!(
         component_1.owner, "John Doe",
