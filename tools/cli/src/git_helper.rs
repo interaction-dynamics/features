@@ -12,9 +12,10 @@ pub fn get_repository_url(repo_path: &Path) -> Option<String> {
 
     // Try to get the remote origin URL
     if let Ok(remote) = repo.find_remote("origin")
-        && let Some(url) = remote.url() {
-            return Some(url.to_string());
-        }
+        && let Some(url) = remote.url()
+    {
+        return Some(url.to_string());
+    }
 
     None
 }
