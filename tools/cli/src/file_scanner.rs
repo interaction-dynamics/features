@@ -236,19 +236,20 @@ fn process_feature_directory(
     changes_map: Option<&HashMap<String, Vec<Change>>>,
 ) -> Result<Feature> {
     // Try to find and read README file, use defaults if not found
-    let (title, owner, description, mut meta) = if let Some(readme_path) = find_readme_file(path) {
+    let mut readme_info = if let Some(readme_path) = find_readme_file(path) {
         read_readme_info(&readme_path)?
     } else {
-        (
-            None,
-            "Unknown".to_string(),
-            "".to_string(),
-            std::collections::HashMap::new(),
-        )
+        use crate::readme_parser::ReadmeInfo;
+        ReadmeInfo {
+            title: None,
+            owner: "Unknown".to_string(),
+            description: "".to_string(),
+            meta: std::collections::HashMap::new(),
+        }
     };
 
     // Remove the 'feature' key from meta if it exists (it's redundant since we know it's a feature)
-    meta.remove("feature");
+    readme_info.meta.remove("feature");
 
     let changes = if let Some(map) = changes_map {
         // Convert the absolute path to a repo-relative path and look up changes
@@ -301,12 +302,12 @@ fn process_feature_directory(
     let stats = compute_stats_from_changes(&changes);
 
     Ok(Feature {
-        name: title.unwrap_or_else(|| name.to_string()),
-        description,
-        owner,
+        name: readme_info.title.unwrap_or_else(|| name.to_string()),
+        description: readme_info.description,
+        owner: readme_info.owner,
         path: path.to_string_lossy().to_string(),
         features: nested_features,
-        meta,
+        meta: readme_info.meta,
         changes,
         decisions,
         stats,

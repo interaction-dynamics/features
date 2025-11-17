@@ -3,6 +3,18 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+/// Information extracted from a README file
+pub struct ReadmeInfo {
+    /// Optional title extracted from the first markdown heading
+    pub title: Option<String>,
+    /// Owner of the feature
+    pub owner: String,
+    /// Description content (everything after the first heading)
+    pub description: String,
+    /// Additional metadata from YAML frontmatter
+    pub meta: HashMap<String, serde_json::Value>,
+}
+
 fn extract_first_title(content: &str) -> Option<String> {
     for line in content.lines() {
         let trimmed = line.trim();
@@ -43,18 +55,16 @@ fn read_readme_content(content: &str) -> String {
 }
 
 /// Reads README information from README.md or README.mdx files
-/// Returns (title, owner, description, metadata) tuple
+/// Returns ReadmeInfo containing title, owner, description, and metadata
 /// The title is extracted from the first markdown heading (# Title)
-pub fn read_readme_info(
-    readme_path: &Path,
-) -> Result<(
-    Option<String>,
-    String,
-    String,
-    HashMap<String, serde_json::Value>,
-)> {
+pub fn read_readme_info(readme_path: &Path) -> Result<ReadmeInfo> {
     if !readme_path.exists() {
-        return Ok((None, "Unknown".to_string(), "".to_string(), HashMap::new()));
+        return Ok(ReadmeInfo {
+            title: None,
+            owner: "Unknown".to_string(),
+            description: "".to_string(),
+            meta: HashMap::new(),
+        });
     }
 
     let content = fs::read_to_string(readme_path)
@@ -101,5 +111,10 @@ pub fn read_readme_info(
         description = read_readme_content(&content)
     }
 
-    Ok((title, owner, description, meta))
+    Ok(ReadmeInfo {
+        title,
+        owner,
+        description,
+        meta,
+    })
 }
