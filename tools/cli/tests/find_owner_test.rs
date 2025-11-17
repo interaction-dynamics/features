@@ -78,8 +78,8 @@ fn test_find_owner_with_explicit_owner() {
         output
     );
     assert!(
-        output.contains("Feature: feature-4"),
-        "Output should contain 'Feature: feature-4', got: {}",
+        output.contains("Feature: Feature 4"),
+        "Output should contain 'Feature: Feature 4', got: {}",
         output
     );
     assert!(
@@ -121,8 +121,8 @@ fn test_find_owner_with_inherited_owner() {
         output
     );
     assert!(
-        output.contains("Feature: feature-2"),
-        "Output should contain 'Feature: feature-2', got: {}",
+        output.contains("Feature: Feature 2 Duplicated"),
+        "Output should contain 'Feature: Feature 2 Duplicated', got: {}",
         output
     );
 }
@@ -159,8 +159,8 @@ fn test_find_owner_for_file_inside_feature() {
         output
     );
     assert!(
-        output.contains("Feature: feature-2"),
-        "Output should contain 'Feature: feature-2', got: {}",
+        output.contains("Feature: Feature 2 Duplicated"),
+        "Output should contain 'Feature: Feature 2 Duplicated', got: {}",
         output
     );
 }

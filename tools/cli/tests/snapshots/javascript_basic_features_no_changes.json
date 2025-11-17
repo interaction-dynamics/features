@@ -10,13 +10,13 @@
     "decisions": []
   },
   {
-    "name": "feature-1",
+    "name": "Feature 1",
     "description": "This is a Feature that does something useful.",
     "owner": "team1",
     "path": "../../examples/javascript-basic/src/features/feature-1",
     "features": [
       {
-        "name": "feature-2",
+        "name": "Feature 2 Duplicated",
         "description": "This is a very long description of the feature 2 duplicated.\n\n## Reason of the feature\n\nThis Feature is duplicated because it is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Implementation Details\n\nThis feature is implemented using the following technologies:\n\n- JavaScript\n- HTML\n- CSS\n\n## Conclusion\n\nThis feature is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Future Improvements\n\n- Add more features to the feature\n- Improve the user interface",
         "owner": "Unknown",
         "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-2",
@@ -36,7 +36,7 @@
         "decisions": []
       },
       {
-        "name": "feature-4",
+        "name": "Feature 4",
         "description": "",
         "owner": "team2",
         "path": "../../examples/javascript-basic/src/features/feature-1/features/feature-4",
@@ -56,7 +56,7 @@
     ]
   },
   {
-    "name": "feature-2",
+    "name": "Feature 2",
     "description": "This is a feature that does something very interesting.",
     "owner": "Unknown",
     "path": "../../examples/javascript-basic/src/features/feature-2",
@@ -69,7 +69,7 @@
     ]
   },
   {
-    "name": "route-1",
+    "name": "Route 1",
     "description": "This is the first route.",
     "owner": "John Doe",
     "path": "../../examples/javascript-basic/src/routes/route-1",
@@ -85,7 +85,7 @@
         "decisions": []
       },
       {
-        "name": "component-1",
+        "name": "Component 1",
         "description": "",
         "owner": "John Doe",
         "path": "../../examples/javascript-basic/src/routes/route-1/components/component-1",
