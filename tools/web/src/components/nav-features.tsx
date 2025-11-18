@@ -125,7 +125,7 @@ function buildPathTree(features: Feature[]): TreeNode {
     }
 
     // Add the feature itself
-    const featureName = parts[parts.length - 1]
+    const featureName = feature.name
     const featureNode: TreeNode = {
       name: featureName,
       path: feature.path,
