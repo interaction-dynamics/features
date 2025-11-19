@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { Link } from 'react-router'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -50,10 +51,11 @@ export function FeatureBreadcrumb({
                   </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink
-                    href={`#${item.path}`}
+                    asChild
+                    className="cursor-pointer"
                     onClick={() => onFeatureClick(item)}
                   >
-                    {formatFeatureName(item.name)}
+                    <span>{formatFeatureName(item.name)}</span>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
