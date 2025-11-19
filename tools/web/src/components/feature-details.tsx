@@ -9,29 +9,20 @@ import {
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatFeatureName } from '@/lib/format-feature-name'
+import { resolveOwner } from '@/lib/resolve-owner'
 import type { Feature } from '@/models/feature'
 import { FeatureChanges } from './feature-changes'
 import { FeatureDecisions } from './feature-decisions'
 import { FeatureDescription } from './feature-description'
 import { FeatureInsights } from './feature-insights'
 import { FeatureMeta } from './feature-meta'
+import { FeatureOwner } from './feature-owner'
 
 interface FeatureDetailsProps {
   feature: Feature
 }
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
-  // Recursively find owner by traversing parent chain
-  const resolveOwner = (currentFeature: Feature): string => {
-    if (currentFeature.owner !== 'Unknown') {
-      return currentFeature.owner
-    }
-    if (currentFeature.parent) {
-      return resolveOwner(currentFeature.parent)
-    }
-    return 'Unknown'
-  }
-
   const resolvedOwner = resolveOwner(feature)
   const isInheritedOwner = resolvedOwner !== feature.owner
 
@@ -57,48 +48,7 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
           <div className="flex-1">
             <p className="text-sm font-medium text-foreground mb-1">Owner</p>
             <div className="text-xs font-mono text-muted-foreground">
-              {isInheritedOwner ? (
-                <div className="flex items-center gap-2">
-                  <span>{resolvedOwner}</span>
-                  <span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 rounded text-[10px] font-medium">
-                    inherited
-                  </span>
-                  {resolvedOwner === 'Unknown' && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        window.open(
-                          'https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-an-owner',
-                          '_blank',
-                        )
-                      }
-                      className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                      title="Learn how to add an owner"
-                    >
-                      <HelpCircle className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span>{resolvedOwner}</span>
-                  {resolvedOwner === 'Unknown' && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        window.open(
-                          'https://github.com/interaction-dynamics/features/blob/master/FAQ.md#how-can-i-add-an-owner',
-                          '_blank',
-                        )
-                      }
-                      className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                      title="Learn how to add an owner"
-                    >
-                      <HelpCircle className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              )}
+              <FeatureOwner feature={feature} />
             </div>
           </div>
         </div>

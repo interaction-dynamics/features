@@ -2,6 +2,7 @@ import { Calendar, ExternalLink, GitCommitVertical, User } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useMetadata } from '@/hooks/use-metadata'
+import { formatDate } from '@/lib/format-date'
 import { buildCommitUrl, buildPullRequestUrl } from '@/lib/git-utils'
 import type { Change } from '@/models/feature'
 
@@ -100,9 +101,7 @@ export function FeatureChanges({ changes }: FeatureChangesProps) {
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                <span>
-                  {new Date(change.date).toLocaleDateString(navigator.language)}
-                </span>
+                <span>{formatDate(change.date)}</span>
               </div>
               <div className="flex items-center gap-1">
                 {metadata?.repository ? (

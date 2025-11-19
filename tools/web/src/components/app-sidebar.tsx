@@ -151,20 +151,22 @@ export function AppSidebar({
 
         <SidebarGroup>
           {/*<SidebarGroupLabel>Insights</SidebarGroupLabel>*/}
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <NavLink to="/insights">
-                {({ isActive }) => (
-                  <SidebarMenuButton
-                    className="cursor-pointer"
-                    isActive={isActive}
-                  >
-                    <BarChart3 className="h-4 w-4" /> Insights
-                  </SidebarMenuButton>
-                )}
-              </NavLink>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          {features.length > 0 && (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <NavLink to="/insights">
+                  {({ isActive }) => (
+                    <SidebarMenuButton
+                      className="cursor-pointer"
+                      isActive={isActive}
+                    >
+                      <BarChart3 className="h-4 w-4" /> Insights
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
         </SidebarGroup>
         <div className="flex flex-row justify-between items-center">
           <ModeToggle />

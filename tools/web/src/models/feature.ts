@@ -10,6 +10,8 @@ export type Change = {
 }
 
 export type Stats = {
+  files_count?: number
+  lines_count?: number
   commits: {
     total_commits?: number
     authors_count?: Record<string, number>
@@ -42,6 +44,8 @@ export const ChangeSchema: z.ZodType<Change> = z.object({
 })
 
 export const StatsSchema: z.ZodType<Stats> = z.object({
+  files_count: z.number().optional(),
+  lines_count: z.number().optional(),
   commits: z.object({
     total_commits: z.number().optional(),
     authors_count: z.record(z.string(), z.number()).optional(),

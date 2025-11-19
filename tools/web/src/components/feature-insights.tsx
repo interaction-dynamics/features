@@ -22,7 +22,9 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+import { formatDate } from '@/lib/format-date'
 import type { Stats } from '@/models/feature'
+import { StatsCard } from './stats-card'
 
 interface FeatureInsightsProps {
   stats: Stats
@@ -42,32 +44,6 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-interface StatsCardProps {
-  title: string
-  value: string | number
-  description?: string
-  subtitle?: string
-}
-
-function StatsCard({ title, value, description, subtitle }: StatsCardProps) {
-  return (
-    <Card className="@container/card flex flex-col justify-between">
-      <CardHeader className="pb-3">
-        <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          {value}
-        </CardTitle>
-      </CardHeader>
-      <CardFooter className="flex-col items-start gap-1.5 text-sm">
-        {subtitle && <div className="text-muted-foreground">{subtitle}</div>}
-        {description && (
-          <div className="text-muted-foreground">{description}</div>
-        )}
-      </CardFooter>
-    </Card>
-  )
-}
-
 // Color palette for commit types
 const COMMIT_TYPE_COLORS: Record<string, string> = {
   feat: '#10b981',
@@ -82,17 +58,6 @@ const COMMIT_TYPE_COLORS: Record<string, string> = {
   chore: '#64748b',
   revert: '#f97316',
   other: '#94a3b8',
-}
-
-// Format date string to a more readable format
-const formatDate = (dateString?: string) => {
-  if (!dateString) return 'N/A'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
 }
 
 // Get a consistent color for a commit type
