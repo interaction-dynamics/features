@@ -6,6 +6,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { resolveOwner } from '@/lib/resolve-owner'
 import type { Feature } from '@/models/feature'
 
@@ -15,6 +20,7 @@ interface OwnerStats {
   totalFiles: number
   totalLines: number
   totalCommits: number
+  totalFeat: number
   totalFixes: number
   totalRefactors: number
   features: Feature[]
@@ -45,6 +51,7 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
       totalFiles: 0,
       totalLines: 0,
       totalCommits: 0,
+      totalFeat: 0,
       totalFixes: 0,
       totalRefactors: 0,
       features: [],
@@ -55,6 +62,7 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
     stats.totalFiles += feature.stats?.files_count ?? 0
     stats.totalLines += feature.stats?.lines_count ?? 0
     stats.totalCommits += feature.stats?.commits.total_commits ?? 0
+    stats.totalFeat += feature.stats?.commits.count_by_type?.feat ?? 0
     stats.totalFixes += feature.stats?.commits.count_by_type?.fix ?? 0
     stats.totalRefactors += feature.stats?.commits.count_by_type?.refactor ?? 0
     stats.features.push(feature)
@@ -63,9 +71,9 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
   }
 
   // Convert to array and sort by total commits (most active first)
-  const ownerStats = Array.from(ownerStatsMap.values()).sort(
-    (a, b) => b.totalCommits - a.totalCommits,
-  )
+  const ownerStats = Array.from(ownerStatsMap.values())
+    .sort((a, b) => b.totalCommits - a.totalCommits)
+    .sort((a, b) => a.owner.localeCompare(b.owner))
 
   return (
     <div className="rounded-md border">
@@ -77,8 +85,9 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
             <TableHead className="text-right">Files</TableHead>
             <TableHead className="text-right">Lines</TableHead>
             <TableHead className="text-right">Total Changes</TableHead>
-            <TableHead className="text-right">Fixes</TableHead>
-            <TableHead className="text-right">Refactors</TableHead>
+            <TableHead className="text-right">Feat</TableHead>
+            <TableHead className="text-right">Fix</TableHead>
+            <TableHead className="text-right">Refactor</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -86,7 +95,14 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
             <TableRow key={stat.owner}>
               <TableCell className="font-medium">{stat.owner}</TableCell>
               <TableCell className="text-right tabular-nums">
-                {stat.featuresCount}
+                <Tooltip>
+                  <TooltipTrigger>{stat.featuresCount}</TooltipTrigger>
+                  <TooltipContent>
+                    {stat.features.map((feature) => (
+                      <div key={feature.path}>{feature.name}</div>
+                    ))}
+                  </TooltipContent>
+                </Tooltip>
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {stat.totalFiles}
@@ -96,6 +112,9 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {stat.totalCommits}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {stat.totalFeat}
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {stat.totalFixes}

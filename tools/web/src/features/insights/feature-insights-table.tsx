@@ -44,9 +44,10 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
             <TableHead className="text-right">Files</TableHead>
             <TableHead className="text-right">Lines</TableHead>
             <TableHead className="text-right">Total Changes</TableHead>
-            <TableHead className="text-right">Fixes</TableHead>
-            <TableHead className="text-right">Refactors</TableHead>
-            <TableHead className="w-[100px]">Go to</TableHead>
+            <TableHead className="text-right">Feat</TableHead>
+            <TableHead className="text-right">Fix</TableHead>
+            <TableHead className="text-right">Refactor</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -90,6 +91,9 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {feature.stats?.commits.total_commits}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {feature.stats?.commits.count_by_type?.feat ?? 0}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {feature.stats?.commits.count_by_type?.fix ?? 0}

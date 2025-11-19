@@ -31,7 +31,9 @@ function flattenFeatures(features: Feature[]): Feature[] {
 export function Insights() {
   const { features } = useContext(FeaturesContext)
 
-  const allFeatures = flattenFeatures(features)
+  const allFeatures = flattenFeatures(features).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  )
 
   const featureCount = allFeatures.length
   const ownerCount = [
@@ -100,7 +102,7 @@ export function Insights() {
             <StatsCard
               title="Largest feature"
               value={formatFeatureName(largestFeature.name)}
-              subtitle={largestFeature.stats?.lines_count ?? 'N/A'}
+              subtitle={`${largestFeature.stats?.lines_count ?? 'N/A'} lines`}
             />
             <StatsCard
               title="Most frequent changed feature"
@@ -109,7 +111,7 @@ export function Insights() {
             />
           </div>
         </div>
-        <Tabs defaultValue="feature" className="mt-4">
+        <Tabs defaultValue="feature" className="mt-1">
           <TabsList>
             <TabsTrigger value="feature">Features</TabsTrigger>
             <TabsTrigger value="owner">Ownership</TabsTrigger>
