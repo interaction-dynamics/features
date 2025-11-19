@@ -7,6 +7,7 @@ interface HelpButtonProps {
   title?: string
   tooltip?: string
   url: string
+  size?: 'medium' | 'small'
 }
 
 export function HelpButton({
@@ -14,6 +15,7 @@ export function HelpButton({
   title,
   url,
   tooltip,
+  size = 'medium',
 }: HelpButtonProps) {
   return (
     <Button
@@ -22,10 +24,11 @@ export function HelpButton({
       className={cn(
         'text-muted-foreground text-xs hover:text-foreground transition-colors flex items-center gap-1 p-0 px-0!',
         className,
+        size === 'small' && 'p-0 h-auto',
       )}
       title={tooltip ?? title}
     >
-      <HelpCircle className="h-4 w-4" />
+      <HelpCircle className={cn(size === 'medium' ? 'h-4 w-4' : 'h-3 w-3')} />
       <span className="text-sm">{title}</span>
     </Button>
   )

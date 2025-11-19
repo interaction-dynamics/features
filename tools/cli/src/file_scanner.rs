@@ -147,8 +147,61 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
     Ok(decisions)
 }
 
+/// Count the number of files in a feature directory (excluding documentation)
+fn count_files(feature_path: &Path) -> usize {
+    let mut file_count = 0;
+
+    if let Ok(entries) = fs::read_dir(feature_path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+
+            // Skip documentation directories
+            if is_documentation_directory(&path) {
+                continue;
+            }
+
+            if path.is_file() {
+                file_count += 1;
+            } else if path.is_dir() {
+                // Recursively count files in subdirectories
+                file_count += count_files(&path);
+            }
+        }
+    }
+
+    file_count
+}
+
+/// Count the total number of lines in all files in a feature directory (excluding documentation)
+fn count_lines(feature_path: &Path) -> usize {
+    let mut line_count = 0;
+
+    if let Ok(entries) = fs::read_dir(feature_path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+
+            // Skip documentation directories
+            if is_documentation_directory(&path) {
+                continue;
+            }
+
+            if path.is_file() {
+                // Try to read the file and count lines
+                if let Ok(content) = fs::read_to_string(&path) {
+                    line_count += content.lines().count();
+                }
+            } else if path.is_dir() {
+                // Recursively count lines in subdirectories
+                line_count += count_lines(&path);
+            }
+        }
+    }
+
+    line_count
+}
+
 /// Compute statistics from changes for a feature
-fn compute_stats_from_changes(changes: &[Change]) -> Option<Stats> {
+fn compute_stats_from_changes(changes: &[Change], feature_path: &Path) -> Option<Stats> {
     if changes.is_empty() {
         return None;
     }
@@ -196,7 +249,15 @@ fn compute_stats_from_changes(changes: &[Change]) -> Option<Stats> {
         );
     }
 
-    Some(Stats { commits })
+    // Count files and lines in the feature directory
+    let files_count = count_files(feature_path);
+    let lines_count = count_lines(feature_path);
+
+    Some(Stats {
+        files_count: Some(files_count),
+        lines_count: Some(lines_count),
+        commits,
+    })
 }
 
 /// Extract the commit type from a conventional commit title
@@ -299,7 +360,7 @@ fn process_feature_directory(
     }
 
     // Compute stats from changes if available
-    let stats = compute_stats_from_changes(&changes);
+    let stats = compute_stats_from_changes(&changes, path);
 
     Ok(Feature {
         name: readme_info.title.unwrap_or_else(|| name.to_string()),
