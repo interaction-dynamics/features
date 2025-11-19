@@ -1,13 +1,6 @@
-import { MessageSquare } from 'lucide-react'
 import { useContext, useEffect, useState } from 'react'
 import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { FeatureSelectedContext } from '@/lib/feature-selected-context'
 import { FeaturesContext } from '@/lib/features-context'
 import type { Feature } from '@/models/feature'

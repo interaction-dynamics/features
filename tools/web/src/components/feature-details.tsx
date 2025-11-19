@@ -4,12 +4,10 @@ import {
   FileText,
   FolderTree,
   GitCommitVertical,
-  HelpCircle,
   User,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatFeatureName } from '@/lib/format-feature-name'
-import { resolveOwner } from '@/lib/resolve-owner'
 import type { Feature } from '@/models/feature'
 import { FeatureChanges } from './feature-changes'
 import { FeatureDecisions } from './feature-decisions'
@@ -23,9 +21,6 @@ interface FeatureDetailsProps {
 }
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
-  const resolvedOwner = resolveOwner(feature)
-  const isInheritedOwner = resolvedOwner !== feature.owner
-
   return (
     <div className="flex flex-col gap-4">
       <div>
