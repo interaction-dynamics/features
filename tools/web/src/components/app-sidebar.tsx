@@ -1,7 +1,8 @@
-import { Search, X } from 'lucide-react'
+import { BarChart3 } from 'lucide-react'
 import type * as React from 'react'
-import { useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { Input } from '@/components/ui/input'
+import { useContext, useMemo, useState } from 'react'
+import { Link, NavLink } from 'react-router'
+
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +18,7 @@ import {
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
+import { AppSidebarSearchInput } from './app-sidebar-search-input'
 import { ModeToggle } from './mode-toggle'
 import { NavFeatures } from './nav-features'
 import { VersionIndicator } from './version-indicator'
@@ -50,7 +52,6 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const { features } = useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
-  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Filter features based on search query
   const filteredFeatures = useMemo(() => {
@@ -71,26 +72,13 @@ export function AppSidebar({
 
   const isSearching = searchQuery.trim().length > 0
 
-  // Handle Meta+K shortcut to focus search
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey && event.key === 'k') {
-        event.preventDefault()
-        searchInputRef.current?.focus()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
   return (
     <Sidebar {...props}>
       <SidebarHeader className="relative">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="./">
+              <Link to={'/'}>
                 <img
                   src="./feature-icon.svg"
                   alt="Feature Icon"
@@ -98,40 +86,17 @@ export function AppSidebar({
                 />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-medium">Features</span>
-                  {/*<span className="">v1.0.0</span>*/}
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
         {features.length > 0 && (
           <div className="px-2 pb-2">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                ref={searchInputRef}
-                placeholder="Search features..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-16"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {searchQuery.trim() ? (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="cursor-pointer inline-flex h-5 w-5 items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                ) : (
-                  <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                    <span className="text-xs">⌘</span>K
-                  </kbd>
-                )}
-              </div>
-            </div>
+            <AppSidebarSearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
           </div>
         )}
         <div className="h-4 absolute bottom-[-1rem] z-50 inset-x-0 bg-gradient-to-b from-sidebar  to-transparent" />
@@ -156,17 +121,13 @@ export function AppSidebar({
                       asChild
                       isActive={activeFeature?.path === feature.path}
                       onClick={() => onFeatureClick(feature)}
+                      title={formatFeatureName(feature.name)}
                     >
-                      <a
-                        href={`#${feature.path}`}
-                        title={formatFeatureName(feature.name)}
-                      >
-                        <div className="flex flex-col items-start gap-0.5">
-                          <span className="font-medium truncate cursor-pointer text-ellipsis">
-                            {formatFeatureName(feature.name)}
-                          </span>
-                        </div>
-                      </a>
+                      <div className="flex flex-col items-start gap-0.5">
+                        <span className="font-medium truncate cursor-pointer text-ellipsis">
+                          {formatFeatureName(feature.name)}
+                        </span>
+                      </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))
@@ -175,7 +136,7 @@ export function AppSidebar({
           </SidebarGroup>
         ) : (
           <SidebarMenu>
-            {activeFeature && (
+            {features.length > 0 && (
               <NavFeatures
                 items={features}
                 onFeatureClick={onFeatureClick}
@@ -185,10 +146,30 @@ export function AppSidebar({
           </SidebarMenu>
         )}
       </SidebarContent>
-      <SidebarFooter className="relative flex flex-row justify-between items-center">
+      <SidebarFooter className="relative flex flex-col items-stretch">
         <div className="h-4 absolute top-[-1rem] z-50 inset-x-0 bg-gradient-to-t from-sidebar  to-transparent" />
-        <ModeToggle />
-        <VersionIndicator />
+
+        <SidebarGroup>
+          {/*<SidebarGroupLabel>Insights</SidebarGroupLabel>*/}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <NavLink to="/insights">
+                {({ isActive }) => (
+                  <SidebarMenuButton
+                    className="cursor-pointer"
+                    isActive={isActive}
+                  >
+                    <BarChart3 className="h-4 w-4" /> Insights
+                  </SidebarMenuButton>
+                )}
+              </NavLink>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        <div className="flex flex-row justify-between items-center">
+          <ModeToggle />
+          <VersionIndicator />
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -1,9 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { HashRouter, Route, Routes } from 'react-router'
+
 import './index.css'
 import { FeaturesProvider } from './components/features-provider'
+import { MainLayout } from './components/main-layout'
 import { ThemeProvider } from './components/theme-provider'
-import { Dashboard } from './Dashboard'
+import { Features } from './routes/features'
+import { Insights } from './routes/insights'
 
 const root = document.getElementById('root')
 
@@ -15,7 +19,14 @@ createRoot(root).render(
   <StrictMode>
     <ThemeProvider>
       <FeaturesProvider>
-        <Dashboard />
+        <HashRouter>
+          <Routes>
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Features />} />
+              <Route path="/insights" element={<Insights />} />
+            </Route>
+          </Routes>
+        </HashRouter>
       </FeaturesProvider>
     </ThemeProvider>
   </StrictMode>,
