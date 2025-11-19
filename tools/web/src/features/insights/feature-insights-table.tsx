@@ -69,8 +69,10 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                       {formatFeatureName(feature.name)}
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{formatFeatureName(feature.name)}</p>
-                      <p>{feature.path}</p>
+                      <p className="font-semibold">
+                        {formatFeatureName(feature.name)}
+                      </p>
+                      <p className="font-mono">{feature.path}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TableCell>
