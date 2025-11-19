@@ -55,9 +55,9 @@ export function Insights() {
     return actualLines(prev) > actualLines(curr) ? prev : curr
   }, allFeatures[0])
 
-  const featuresWithoutOwners = features
-    .filter((feature) => resolveOwner(feature))
-    .filter((feature) => feature.owner === 'Unknown')
+  const featuresWithoutOwners = features.filter(
+    (feature) => resolveOwner(feature) === 'Unknown',
+  )
 
   return (
     <>
