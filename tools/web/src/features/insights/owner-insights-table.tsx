@@ -84,10 +84,10 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
             <TableHead className="text-right">Features</TableHead>
             <TableHead className="text-right">Files</TableHead>
             <TableHead className="text-right">Lines</TableHead>
-            <TableHead className="text-right">Total Changes</TableHead>
+            {/*<TableHead className="text-right">Total Changes</TableHead>
             <TableHead className="text-right">Feat</TableHead>
             <TableHead className="text-right">Fix</TableHead>
-            <TableHead className="text-right">Refactor</TableHead>
+            <TableHead className="text-right">Refactor</TableHead>*/}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -110,7 +110,7 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
               <TableCell className="text-right tabular-nums">
                 {stat.totalLines}
               </TableCell>
-              <TableCell className="text-right tabular-nums">
+              {/*<TableCell className="text-right tabular-nums">
                 {stat.totalCommits}
               </TableCell>
               <TableCell className="text-right tabular-nums">
@@ -121,7 +121,7 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {stat.totalRefactors}
-              </TableCell>
+              </TableCell>*/}
             </TableRow>
           ))}
         </TableBody>
