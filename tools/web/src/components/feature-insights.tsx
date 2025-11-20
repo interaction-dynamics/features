@@ -109,13 +109,9 @@ export function FeatureInsights({ stats }: FeatureInsightsProps) {
         />
 
         <StatsCard
-          title="Most Active Type"
-          value={typesData[0]?.name || 'N/A'}
-          subtitle={`${typesData[0]?.value || 0} commits (${
-            typesData[0]
-              ? Math.round((typesData[0].value / totalCommits) * 100)
-              : 0
-          }%)`}
+          title="Number of Todos"
+          value={stats.todos_count ?? 'N/A'}
+          subtitle={`Out of ${stats.files_count} files and ${stats.lines_count} lines`}
         />
 
         <StatsCard

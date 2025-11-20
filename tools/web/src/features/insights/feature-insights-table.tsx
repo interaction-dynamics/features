@@ -43,6 +43,7 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
             <TableHead>Last changed</TableHead>
             <TableHead className="text-right">Files</TableHead>
             <TableHead className="text-right">Lines</TableHead>
+            <TableHead className="text-right">TODOs</TableHead>
             <TableHead className="text-right">Total Changes</TableHead>
             <TableHead className="text-right">Feat</TableHead>
             <TableHead className="text-right">Fix</TableHead>
@@ -54,7 +55,7 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
           {features.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={10}
+                colSpan={11}
                 className="text-center text-muted-foreground"
               >
                 No feature data available
@@ -90,6 +91,9 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {feature.stats?.lines_count ?? 0}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {feature.stats?.todos_count ?? 0}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {feature.stats?.commits.total_commits}

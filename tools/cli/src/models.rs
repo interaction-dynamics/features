@@ -16,6 +16,8 @@ pub struct Stats {
     pub files_count: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lines_count: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub todos_count: Option<usize>,
     pub commits: HashMap<String, serde_json::Value>,
 }
 

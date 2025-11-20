@@ -180,7 +180,7 @@
         "hash": "2ee99f72d940ff1c2ce53753ecbdcc69e8b7b86e"
       },
       {
-        "title": "feat: add more examples",
+        "title": "feat: add more example",
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
         "description": "",
@@ -286,6 +286,14 @@
             "description": "",
             "date": "2025-11-13 22:37:23",
             "hash": "03776f7d9e77c0753d0915eaf9dfd9e8f58d6b97"
+          },
+          {
+            "title": "fix: recursive feature discovery when the feature is not in a features folder",
+            "author_name": "Thibault Friedrich",
+            "author_email": "thibault.friedrich@interaction-dynamics.io",
+            "description": "",
+            "date": "2025-11-13 22:37:23",
+            "hash": "03776f7d9e77c0753d0915eaf9dfd9e8f58d6b97"
           }
         ],
         "decisions": [],
@@ -345,6 +353,14 @@
         "description": "",
         "date": "2025-11-13 22:37:23",
         "hash": "03776f7d9e77c0753d0915eaf9dfd9e8f58d6b97"
+      },
+      {
+        "title": "feat: add custom feature example",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2025-10-30 15:59:38",
+        "hash": "0c536ebab6a454f3fde160442d6f23599c0bb895"
       },
       {
         "title": "feat: add custom feature example",
