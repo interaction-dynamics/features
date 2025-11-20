@@ -74,7 +74,9 @@ export function MainLayout() {
           onFeatureClick={onSelectFeature}
         />
         <SidebarInset>
-          <Outlet />
+          <div className="h-screen relative">
+            <Outlet />
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </FeatureSelectedContext.Provider>

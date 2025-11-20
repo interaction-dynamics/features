@@ -10,7 +10,7 @@ export function Features() {
   const { selectFeature, selectedFeature } = useContext(FeatureSelectedContext)
   const { features } = useContext(FeaturesContext)
   return (
-    <>
+    <div className="absolute inset-0 overflow-auto">
       <Header>
         <FeatureBreadcrumb
           feature={selectedFeature}
@@ -37,6 +37,6 @@ export function Features() {
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }
