@@ -109,7 +109,7 @@ export function FeatureInsights({ stats }: FeatureInsightsProps) {
         />
 
         <StatsCard
-          title="Number of Todos"
+          title="Number of TODOs"
           value={stats.todos_count ?? 'N/A'}
           subtitle={`Out of ${stats.files_count} files and ${stats.lines_count} lines`}
         />

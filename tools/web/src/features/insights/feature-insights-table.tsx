@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/tooltip'
 import { formatDate } from '@/lib/format-date'
 import { formatFeatureName } from '@/lib/format-feature-name'
+import { cn } from '@/lib/utils'
 import type { Feature } from '@/models/feature'
 
 type FeatureInsightsTableProps = {
@@ -92,19 +93,47 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 <TableCell className="text-right tabular-nums">
                   {feature.stats?.lines_count ?? 0}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell
+                  className={cn(
+                    'text-right tabular-nums',
+                    (feature.stats?.todos_count ?? 0) === 0
+                      ? 'text-muted-foreground/50'
+                      : '',
+                  )}
+                >
                   {feature.stats?.todos_count ?? 0}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {feature.stats?.commits.total_commits}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell
+                  className={cn(
+                    'text-right tabular-nums',
+                    (feature.stats?.commits.count_by_type?.feat ?? 0) === 0
+                      ? 'text-muted-foreground/50'
+                      : '',
+                  )}
+                >
                   {feature.stats?.commits.count_by_type?.feat ?? 0}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell
+                  className={cn(
+                    'text-right tabular-nums',
+                    (feature.stats?.commits.count_by_type?.fix ?? 0) === 0
+                      ? 'text-muted-foreground/50'
+                      : '',
+                  )}
+                >
                   {feature.stats?.commits.count_by_type?.fix ?? 0}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell
+                  className={cn(
+                    'text-right tabular-nums',
+                    (feature.stats?.commits.count_by_type?.refactor ?? 0) === 0
+                      ? 'text-muted-foreground/50'
+                      : '',
+                  )}
+                >
                   {feature.stats?.commits.count_by_type?.refactor ?? 0}
                 </TableCell>
                 <TableCell>

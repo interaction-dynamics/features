@@ -70,7 +70,7 @@ export function Insights() {
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="space-y-4">
           {/* Overview Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs">
             <StatsCard title="Total Features" value={featureCount} />
             <StatsCard title="Total Owners" value={ownerCount} />
             <StatsCard
@@ -82,7 +82,6 @@ export function Insights() {
               title="Number of features without owners"
               value={featuresWithoutOwners.length}
             />
-            <StatsCard title="Total TODOs" value={totalTodos} />
           </div>
         </div>
         <Tabs defaultValue="feature" className="mt-1">
