@@ -291,6 +291,12 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Handle serve flag
+    if args.serve {
+        eprintln!("🚀 Features CLI v{} starting...", env!("CARGO_PKG_VERSION"));
+        eprintln!("Searching for features in directory {}", path.display());
+    }
+
     let features = if args.skip_changes {
         list_files_recursive(&path)?
     } else {
@@ -298,7 +304,6 @@ async fn main() -> Result<()> {
     };
 
     if args.serve {
-        eprintln!("Watching directory: {}", path.display());
         serve_features_with_watching(&features, args.port, path.clone()).await?;
     } else if args.build {
         let build_config = BuildConfig::new(args.build_dir);

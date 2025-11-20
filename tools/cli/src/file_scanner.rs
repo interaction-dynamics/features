@@ -148,15 +148,24 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
 }
 
 /// Count the number of files in a feature directory (excluding documentation)
-fn count_files(feature_path: &Path) -> usize {
+fn count_files(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
     let mut file_count = 0;
 
     if let Ok(entries) = fs::read_dir(feature_path) {
         for entry in entries.flatten() {
             let path = entry.path();
+            let path_str = path.to_string_lossy().to_string();
 
             // Skip documentation directories
             if is_documentation_directory(&path) {
+                continue;
+            }
+
+            // Skip nested feature directories
+            if nested_feature_paths
+                .iter()
+                .any(|nfp| path_str.starts_with(nfp))
+            {
                 continue;
             }
 
@@ -164,7 +173,7 @@ fn count_files(feature_path: &Path) -> usize {
                 file_count += 1;
             } else if path.is_dir() {
                 // Recursively count files in subdirectories
-                file_count += count_files(&path);
+                file_count += count_files(&path, nested_feature_paths);
             }
         }
     }
@@ -173,15 +182,24 @@ fn count_files(feature_path: &Path) -> usize {
 }
 
 /// Count the total number of lines in all files in a feature directory (excluding documentation)
-fn count_lines(feature_path: &Path) -> usize {
+fn count_lines(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
     let mut line_count = 0;
 
     if let Ok(entries) = fs::read_dir(feature_path) {
         for entry in entries.flatten() {
             let path = entry.path();
+            let path_str = path.to_string_lossy().to_string();
 
             // Skip documentation directories
             if is_documentation_directory(&path) {
+                continue;
+            }
+
+            // Skip nested feature directories
+            if nested_feature_paths
+                .iter()
+                .any(|nfp| path_str.starts_with(nfp))
+            {
                 continue;
             }
 
@@ -192,7 +210,7 @@ fn count_lines(feature_path: &Path) -> usize {
                 }
             } else if path.is_dir() {
                 // Recursively count lines in subdirectories
-                line_count += count_lines(&path);
+                line_count += count_lines(&path, nested_feature_paths);
             }
         }
     }
@@ -200,23 +218,220 @@ fn count_lines(feature_path: &Path) -> usize {
     line_count
 }
 
+/// Count the total number of TODO comments in all files in a feature directory (excluding documentation)
+fn count_todos(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
+    let mut todo_count = 0;
+
+    if let Ok(entries) = fs::read_dir(feature_path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let path_str = path.to_string_lossy().to_string();
+
+            // Skip documentation directories
+            if is_documentation_directory(&path) {
+                continue;
+            }
+
+            // Skip nested feature directories
+            if nested_feature_paths
+                .iter()
+                .any(|nfp| path_str.starts_with(nfp))
+            {
+                continue;
+            }
+
+            if path.is_file() {
+                // Try to read the file and count TODO comments
+                if let Ok(content) = fs::read_to_string(&path) {
+                    for line in content.lines() {
+                        // Look for TODO in comments (case-insensitive)
+                        let line_upper = line.to_uppercase();
+                        if line_upper.contains("TODO") {
+                            todo_count += 1;
+                        }
+                    }
+                }
+            } else if path.is_dir() {
+                // Recursively count TODOs in subdirectories
+                todo_count += count_todos(&path, nested_feature_paths);
+            }
+        }
+    }
+
+    todo_count
+}
+
+/// Get the paths affected by a specific commit
+fn get_commit_affected_paths(repo: &Repository, commit_hash: &str) -> Vec<String> {
+    let Ok(oid) = git2::Oid::from_str(commit_hash) else {
+        return Vec::new();
+    };
+
+    let Ok(commit) = repo.find_commit(oid) else {
+        return Vec::new();
+    };
+
+    let mut paths = Vec::new();
+
+    // For the first commit (no parents), get all files in the tree
+    if commit.parent_count() == 0 {
+        if let Ok(tree) = commit.tree() {
+            collect_all_tree_paths(repo, &tree, "", &mut paths);
+        }
+        return paths;
+    }
+
+    // For commits with parents, check the diff
+    let Ok(tree) = commit.tree() else {
+        return Vec::new();
+    };
+
+    let Ok(parent) = commit.parent(0) else {
+        return Vec::new();
+    };
+
+    let Ok(parent_tree) = parent.tree() else {
+        return Vec::new();
+    };
+
+    if let Ok(diff) = repo.diff_tree_to_tree(Some(&parent_tree), Some(&tree), None) {
+        let _ = diff.foreach(
+            &mut |delta, _| {
+                if let Some(path) = delta.new_file().path()
+                    && let Some(path_str) = path.to_str()
+                {
+                    paths.push(path_str.to_string());
+                }
+                if let Some(path) = delta.old_file().path()
+                    && let Some(path_str) = path.to_str()
+                    && !paths.contains(&path_str.to_string())
+                {
+                    paths.push(path_str.to_string());
+                }
+                true
+            },
+            None,
+            None,
+            None,
+        );
+    }
+
+    paths
+}
+
+/// Collect all file paths in a tree (helper for get_commit_affected_paths)
+fn collect_all_tree_paths(
+    repo: &Repository,
+    tree: &git2::Tree,
+    prefix: &str,
+    paths: &mut Vec<String>,
+) {
+    for entry in tree.iter() {
+        if let Some(name) = entry.name() {
+            let path = if prefix.is_empty() {
+                name.to_string()
+            } else {
+                format!("{}/{}", prefix, name)
+            };
+
+            paths.push(path.clone());
+
+            if entry.kind() == Some(git2::ObjectType::Tree)
+                && let Ok(obj) = entry.to_object(repo)
+                && let Ok(subtree) = obj.peel_to_tree()
+            {
+                collect_all_tree_paths(repo, &subtree, &path, paths);
+            }
+        }
+    }
+}
+
 /// Compute statistics from changes for a feature
-fn compute_stats_from_changes(changes: &[Change], feature_path: &Path) -> Option<Stats> {
+fn compute_stats_from_changes(
+    changes: &[Change],
+    feature_path: &Path,
+    nested_features: &[Feature],
+) -> Option<Stats> {
     if changes.is_empty() {
         return None;
     }
+
+    // Collect paths of nested features to exclude from commit counts
+    let nested_feature_paths: Vec<String> =
+        nested_features.iter().map(|f| f.path.clone()).collect();
+
+    // Get repository to check commit details
+    let repo = Repository::discover(feature_path).ok();
+
+    // Get the feature's relative path from repo root
+    let feature_relative_path = if let Some(ref r) = repo {
+        if let Ok(canonical_path) = std::fs::canonicalize(feature_path) {
+            if let Some(workdir) = r.workdir() {
+                canonical_path
+                    .strip_prefix(workdir)
+                    .ok()
+                    .map(|p| p.to_string_lossy().to_string())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    // Filter changes to only include those that affect files in this feature
+    // (not exclusively in nested features)
+    let filtered_changes: Vec<&Change> = changes
+        .iter()
+        .filter(|change| {
+            // If we don't have repo access, include all changes
+            let Some(ref r) = repo else {
+                return true;
+            };
+
+            let Some(ref feature_rel_path) = feature_relative_path else {
+                return true;
+            };
+
+            // Get the files affected by this commit
+            let affected_files = get_commit_affected_paths(r, &change.hash);
+
+            // Check if any affected file is in this feature but not in a nested feature
+            affected_files.iter().any(|file_path| {
+                // File must be in this feature
+                let in_feature = file_path.starts_with(feature_rel_path);
+
+                // File must not be exclusively in a nested feature
+                let in_nested = nested_feature_paths.iter().any(|nested_path| {
+                    // Convert nested absolute path to relative path
+                    if let Ok(nested_canonical) = std::fs::canonicalize(nested_path)
+                        && let Some(workdir) = r.workdir()
+                        && let Ok(nested_rel) = nested_canonical.strip_prefix(workdir)
+                    {
+                        let nested_rel_str = nested_rel.to_string_lossy();
+                        return file_path.starts_with(nested_rel_str.as_ref());
+                    }
+                    false
+                });
+
+                in_feature && !in_nested
+            })
+        })
+        .collect();
 
     let mut commits = HashMap::new();
 
     // Add total commit count
     commits.insert(
         "total_commits".to_string(),
-        serde_json::json!(changes.len()),
+        serde_json::json!(filtered_changes.len()),
     );
 
     // Count commits by author
     let mut authors_count: HashMap<String, usize> = HashMap::new();
-    for change in changes {
+    for change in &filtered_changes {
         *authors_count.entry(change.author_name.clone()).or_insert(0) += 1;
     }
     commits.insert(
@@ -226,7 +441,7 @@ fn compute_stats_from_changes(changes: &[Change], feature_path: &Path) -> Option
 
     // Count commits by conventional commit type
     let mut count_by_type: HashMap<String, usize> = HashMap::new();
-    for change in changes {
+    for change in &filtered_changes {
         let commit_type = extract_commit_type(&change.title);
         *count_by_type.entry(commit_type).or_insert(0) += 1;
     }
@@ -236,26 +451,28 @@ fn compute_stats_from_changes(changes: &[Change], feature_path: &Path) -> Option
     );
 
     // Get first and last commit dates
-    if let Some(first) = changes.first() {
+    if let Some(first) = filtered_changes.first() {
         commits.insert(
             "first_commit_date".to_string(),
             serde_json::json!(first.date.clone()),
         );
     }
-    if let Some(last) = changes.last() {
+    if let Some(last) = filtered_changes.last() {
         commits.insert(
             "last_commit_date".to_string(),
             serde_json::json!(last.date.clone()),
         );
     }
 
-    // Count files and lines in the feature directory
-    let files_count = count_files(feature_path);
-    let lines_count = count_lines(feature_path);
+    // Count files and lines in the feature directory (excluding nested features)
+    let files_count = count_files(feature_path, &nested_feature_paths);
+    let lines_count = count_lines(feature_path, &nested_feature_paths);
+    let todos_count = count_todos(feature_path, &nested_feature_paths);
 
     Some(Stats {
         files_count: Some(files_count),
         lines_count: Some(lines_count),
+        todos_count: Some(todos_count),
         commits,
     })
 }
@@ -360,7 +577,7 @@ fn process_feature_directory(
     }
 
     // Compute stats from changes if available
-    let stats = compute_stats_from_changes(&changes, path);
+    let stats = compute_stats_from_changes(&changes, path, &nested_features);
 
     Ok(Feature {
         name: readme_info.title.unwrap_or_else(|| name.to_string()),
