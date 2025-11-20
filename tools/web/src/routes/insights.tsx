@@ -59,11 +59,6 @@ export function Insights() {
     (feature) => resolveOwner(feature) === 'Unknown',
   )
 
-  const totalTodos = allFeatures.reduce(
-    (acc, feature) => acc + (feature.stats?.todos_count ?? 0),
-    0,
-  )
-
   return (
     <div className="absolute inset-0 overflow-auto">
       <Header>Insights</Header>
