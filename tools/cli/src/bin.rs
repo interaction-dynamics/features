@@ -121,9 +121,11 @@ struct OwnerInfo {
     feature_path: String,
 }
 
-fn find_owner_for_path(target_path: &std::path::Path, features: &[Feature]) -> Option<OwnerInfo> {
-    use std::path::PathBuf;
-
+fn find_owner_for_path(
+    target_path: &std::path::Path,
+    features: &[Feature],
+    base_path: &std::path::Path,
+) -> Option<OwnerInfo> {
     // Canonicalize the target path
     let canonical_target = std::fs::canonicalize(target_path).ok()?;
 
@@ -132,12 +134,13 @@ fn find_owner_for_path(target_path: &std::path::Path, features: &[Feature]) -> O
         target: &std::path::Path,
         features: &[Feature],
         parent_owner: Option<&str>,
+        base_path: &std::path::Path,
     ) -> Option<OwnerInfo> {
         let mut best_match: Option<OwnerInfo> = None;
         let mut best_match_depth = usize::MAX;
 
         for feature in features {
-            let feature_path = PathBuf::from(&feature.path);
+            let feature_path = base_path.join(&feature.path);
             if let Ok(canonical_feature_path) = std::fs::canonicalize(&feature_path) {
                 // Check if target is within this feature's directory
                 if target.starts_with(&canonical_feature_path) {
@@ -149,9 +152,12 @@ fn find_owner_for_path(target_path: &std::path::Path, features: &[Feature]) -> O
                         .unwrap_or(usize::MAX);
 
                     // Check nested features first
-                    if let Some(nested_match) =
-                        find_closest_feature(target, &feature.features, Some(&feature.owner))
-                    {
+                    if let Some(nested_match) = find_closest_feature(
+                        target,
+                        &feature.features,
+                        Some(&feature.owner),
+                        base_path,
+                    ) {
                         if best_match.is_none() || depth < best_match_depth {
                             best_match = Some(nested_match);
                             best_match_depth = depth;
@@ -204,7 +210,7 @@ fn find_owner_for_path(target_path: &std::path::Path, features: &[Feature]) -> O
         best_match
     }
 
-    find_closest_feature(&canonical_target, features, None)
+    find_closest_feature(&canonical_target, features, None, base_path)
 }
 
 /// Add coverage data from .coverage and coverage directories to features
@@ -333,7 +339,7 @@ async fn main() -> Result<()> {
             list_files_recursive_with_changes(&base_path)?
         };
 
-        match find_owner_for_path(&target_path, &features) {
+        match find_owner_for_path(&target_path, &features, &base_path) {
             Some(owner_info) => {
                 if args.json {
                     let json = serde_json::to_string_pretty(&owner_info)?;
