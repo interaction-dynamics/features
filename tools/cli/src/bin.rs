@@ -4,6 +4,7 @@ use std::collections::HashSet;
 
 mod build;
 mod checker;
+mod coverage_parser;
 mod file_scanner;
 mod git_helper;
 mod http_server;
@@ -13,6 +14,7 @@ mod readme_parser;
 
 use build::{BuildConfig, create_build};
 use checker::run_checks;
+use coverage_parser::{map_coverage_to_features, parse_coverage_reports};
 use file_scanner::{list_files_recursive, list_files_recursive_with_changes};
 use http_server::serve_features_with_watching;
 use models::Feature;
@@ -201,6 +203,57 @@ fn find_owner_for_path(target_path: &std::path::Path, features: &[Feature]) -> O
     find_closest_feature(&canonical_target, features, None)
 }
 
+/// Add coverage data from .coverage and coverage directories to features
+fn add_coverage_to_features(features: &mut [Feature], base_path: &std::path::Path) {
+    let mut combined_coverage_map = std::collections::HashMap::new();
+
+    // Check both .coverage and coverage directories
+    let coverage_dirs = [base_path.join(".coverage"), base_path.join("coverage")];
+
+    for coverage_dir in &coverage_dirs {
+        // Parse coverage reports if the directory exists
+        if let Ok(coverage_map) = parse_coverage_reports(coverage_dir) {
+            // Merge coverage data (later entries will override earlier ones if there are conflicts)
+            combined_coverage_map.extend(coverage_map);
+        }
+    }
+
+    // Only process if we found any coverage data
+    if !combined_coverage_map.is_empty() {
+        // Map coverage to features
+        let feature_coverage = map_coverage_to_features(features, combined_coverage_map, base_path);
+
+        // Update features with coverage data
+        update_features_with_coverage(features, &feature_coverage);
+    }
+}
+
+/// Recursively update features with coverage data
+fn update_features_with_coverage(
+    features: &mut [Feature],
+    feature_coverage: &std::collections::HashMap<String, coverage_parser::CoverageStats>,
+) {
+    for feature in features {
+        if let Some(coverage) = feature_coverage.get(&feature.name) {
+            // Update or create stats
+            if let Some(ref mut stats) = feature.stats {
+                stats.coverage = Some(coverage.clone());
+            } else {
+                feature.stats = Some(models::Stats {
+                    files_count: None,
+                    lines_count: None,
+                    todos_count: None,
+                    commits: std::collections::HashMap::new(),
+                    coverage: Some(coverage.clone()),
+                });
+            }
+        }
+
+        // Recursively update nested features
+        update_features_with_coverage(&mut feature.features, feature_coverage);
+    }
+}
+
 fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
     let mut owners_set = HashSet::new();
 
@@ -297,11 +350,14 @@ async fn main() -> Result<()> {
         eprintln!("Searching for features in directory {}", path.display());
     }
 
-    let features = if args.skip_changes {
+    let mut features = if args.skip_changes {
         list_files_recursive(&path)?
     } else {
         list_files_recursive_with_changes(&path)?
     };
+
+    // Add coverage data from .coverage directory
+    add_coverage_to_features(&mut features, &path);
 
     if args.serve {
         serve_features_with_watching(&features, args.port, path.clone()).await?;

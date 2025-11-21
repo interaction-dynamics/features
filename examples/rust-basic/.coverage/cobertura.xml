@@ -1,0 +1,123 @@
+<?xml version="1.0" ?>
+<coverage version="1.0" timestamp="1704067200000" lines-valid="150" lines-covered="118" line-rate="0.787" branches-valid="32" branches-covered="24" branch-rate="0.75" complexity="0">
+	<sources>
+		<source>/path/to/rust-basic</source>
+	</sources>
+	<packages>
+		<package name="feature-1" line-rate="0.85" branch-rate="0.80" complexity="0">
+			<classes>
+				<class name="lib.rs" filename="src/features/feature-1/lib.rs" line-rate="0.90" branch-rate="0.85" complexity="0">
+					<methods/>
+					<lines>
+						<line number="1" hits="25"/>
+						<line number="2" hits="25"/>
+						<line number="3" hits="25"/>
+						<line number="5" hits="25"/>
+						<line number="6" hits="25"/>
+						<line number="7" hits="25"/>
+						<line number="8" hits="25"/>
+						<line number="10" hits="20"/>
+						<line number="11" hits="20"/>
+						<line number="12" hits="20" branch="true" condition-coverage="100% (2/2)">
+							<conditions>
+								<condition number="0" type="jump" coverage="100%"/>
+							</conditions>
+						</line>
+						<line number="13" hits="15"/>
+						<line number="14" hits="15"/>
+						<line number="15" hits="5"/>
+						<line number="16" hits="20"/>
+						<line number="18" hits="18"/>
+						<line number="19" hits="18"/>
+						<line number="20" hits="18" branch="true" condition-coverage="50% (1/2)">
+							<conditions>
+								<condition number="0" type="jump" coverage="50%"/>
+							</conditions>
+						</line>
+						<line number="21" hits="10"/>
+						<line number="22" hits="0"/>
+						<line number="23" hits="18"/>
+					</lines>
+				</class>
+				<class name="mod.rs" filename="src/features/feature-1/mod.rs" line-rate="0.80" branch-rate="0.75" complexity="0">
+					<methods/>
+					<lines>
+						<line number="1" hits="30"/>
+						<line number="2" hits="30"/>
+						<line number="4" hits="28"/>
+						<line number="5" hits="28"/>
+						<line number="6" hits="28" branch="true" condition-coverage="75% (3/4)">
+							<conditions>
+								<condition number="0" type="jump" coverage="75%"/>
+							</conditions>
+						</line>
+						<line number="7" hits="20"/>
+						<line number="8" hits="20"/>
+						<line number="9" hits="8"/>
+						<line number="10" hits="0"/>
+						<line number="12" hits="28"/>
+					</lines>
+				</class>
+			</classes>
+		</package>
+		<package name="feature-2" line-rate="0.65" branch-rate="0.60" complexity="0">
+			<classes>
+				<class name="lib.rs" filename="src/features/feature-2/lib.rs" line-rate="0.65" branch-rate="0.60" complexity="0">
+					<methods/>
+					<lines>
+						<line number="1" hits="12"/>
+						<line number="2" hits="12"/>
+						<line number="4" hits="12"/>
+						<line number="5" hits="12"/>
+						<line number="6" hits="12"/>
+						<line number="8" hits="10"/>
+						<line number="9" hits="10"/>
+						<line number="10" hits="10" branch="true" condition-coverage="50% (1/2)">
+							<conditions>
+								<condition number="0" type="jump" coverage="50%"/>
+							</conditions>
+						</line>
+						<line number="11" hits="5"/>
+						<line number="12" hits="0"/>
+						<line number="13" hits="10"/>
+						<line number="15" hits="8"/>
+						<line number="16" hits="8" branch="true" condition-coverage="50% (2/4)">
+							<conditions>
+								<condition number="0" type="jump" coverage="50%"/>
+							</conditions>
+						</line>
+						<line number="17" hits="4"/>
+						<line number="18" hits="0"/>
+						<line number="19" hits="0"/>
+						<line number="20" hits="4"/>
+						<line number="22" hits="8"/>
+						<line number="24" hits="5"/>
+						<line number="25" hits="0"/>
+						<line number="26" hits="5"/>
+					</lines>
+				</class>
+			</classes>
+		</package>
+		<package name="main" line-rate="0.92" branch-rate="1.0" complexity="0">
+			<classes>
+				<class name="main.rs" filename="src/main.rs" line-rate="0.92" branch-rate="1.0" complexity="0">
+					<methods/>
+					<lines>
+						<line number="1" hits="1"/>
+						<line number="2" hits="1"/>
+						<line number="3" hits="1"/>
+						<line number="5" hits="1"/>
+						<line number="6" hits="1"/>
+						<line number="7" hits="1"/>
+						<line number="8" hits="1"/>
+						<line number="9" hits="1"/>
+						<line number="10" hits="1"/>
+						<line number="11" hits="1"/>
+						<line number="12" hits="0"/>
+						<line number="13" hits="1"/>
+					</lines>
+				</class>
+			</classes>
+		</package>
+	</packages>
+</coverage>

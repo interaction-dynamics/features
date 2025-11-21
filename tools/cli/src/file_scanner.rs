@@ -474,6 +474,7 @@ fn compute_stats_from_changes(
         lines_count: Some(lines_count),
         todos_count: Some(todos_count),
         commits,
+        coverage: None,
     })
 }
 

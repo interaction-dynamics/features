@@ -9,6 +9,27 @@ export type Change = {
   hash: string
 }
 
+export type FileCoverageStats = {
+  lines_total: number
+  lines_covered: number
+  lines_missed: number
+  line_coverage_percent: number
+  branches_total?: number
+  branches_covered?: number
+  branch_coverage_percent?: number
+}
+
+export type CoverageStats = {
+  lines_total: number
+  lines_covered: number
+  lines_missed: number
+  line_coverage_percent: number
+  branches_total?: number
+  branches_covered?: number
+  branch_coverage_percent?: number
+  files?: Record<string, FileCoverageStats>
+}
+
 export type Stats = {
   files_count?: number
   lines_count?: number
@@ -20,6 +41,7 @@ export type Stats = {
     first_commit_date?: string
     last_commit_date?: string
   }
+  coverage?: CoverageStats
 }
 
 export type Feature = {
@@ -44,6 +66,27 @@ export const ChangeSchema: z.ZodType<Change> = z.object({
   hash: z.string(),
 })
 
+export const FileCoverageStatsSchema: z.ZodType<FileCoverageStats> = z.object({
+  lines_total: z.number(),
+  lines_covered: z.number(),
+  lines_missed: z.number(),
+  line_coverage_percent: z.number(),
+  branches_total: z.number().optional(),
+  branches_covered: z.number().optional(),
+  branch_coverage_percent: z.number().optional(),
+})
+
+export const CoverageStatsSchema: z.ZodType<CoverageStats> = z.object({
+  lines_total: z.number(),
+  lines_covered: z.number(),
+  lines_missed: z.number(),
+  line_coverage_percent: z.number(),
+  branches_total: z.number().optional(),
+  branches_covered: z.number().optional(),
+  branch_coverage_percent: z.number().optional(),
+  files: z.record(z.string(), FileCoverageStatsSchema).optional(),
+})
+
 export const StatsSchema: z.ZodType<Stats> = z.object({
   files_count: z.number().optional(),
   lines_count: z.number().optional(),
@@ -55,6 +98,7 @@ export const StatsSchema: z.ZodType<Stats> = z.object({
     first_commit_date: z.string().optional(),
     last_commit_date: z.string().optional(),
   }),
+  coverage: CoverageStatsSchema.optional(),
 })
 
 export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
