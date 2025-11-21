@@ -114,15 +114,26 @@ export function FeatureInsights({ stats }: FeatureInsightsProps) {
           subtitle={`Out of ${stats.files_count} files and ${stats.lines_count} lines`}
         />
 
-        <StatsCard
-          title="Top Contributor"
-          value={authorsData[0]?.name || 'N/A'}
-          subtitle={`${authorsData[0]?.commits || 0} commits (${
-            authorsData[0]
-              ? Math.round((authorsData[0].commits / totalCommits) * 100)
-              : 0
-          }%)`}
-        />
+        {stats.coverage ? (
+          <StatsCard
+            title="Test Coverage"
+            value={
+              `${Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(stats.coverage.line_coverage_percent)}%` ||
+              'N/A'
+            }
+            subtitle={`${stats.coverage?.lines_covered} lines out of ${stats.coverage?.lines_total}`}
+          />
+        ) : (
+          <StatsCard
+            title="Top Contributor"
+            value={authorsData[0]?.name || 'N/A'}
+            subtitle={`${authorsData[0]?.commits || 0} commits (${
+              authorsData[0]
+                ? Math.round((authorsData[0].commits / totalCommits) * 100)
+                : 0
+            }%)`}
+          />
+        )}
       </div>
 
       {/* Charts */}

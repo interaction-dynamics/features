@@ -6,6 +6,7 @@
 - [How can I add a feature description?](#how-can-i-add-a-feature-description)
 - [How can I add an owner?](#how-can-i-add-an-owner)
 - [How can I add a decision?](#how-can-i-add-a-decision)
+- [How can I add a test coverage report?](#how-can-i-add-a-test-coverage-report)
 
 ## How can I add a feature?
 
@@ -48,3 +49,9 @@ Do you see the message "No decisions available"? You can add one by following th
 The decision will automatically appear in the web interface under the feature's decisions section.
 
 This decision template is inspired by the [MADR](https://adr.github.io/madr/) initiative.
+
+## How can I add a test coverage report?
+
+Do you see the message "No test coverage reports available"? 
+
+Generate a test coverage report by running your tests with the `--coverage` flag. For example, if you're using Jest, you can run `npx jest --coverage`. Ensure the report is generated in the folder `coverage` or `.coverage` at the root of the folder you will run `features-cli`. The supported report format is [LCOV](https://wiki.documentfoundation.org/Development/Lcov).

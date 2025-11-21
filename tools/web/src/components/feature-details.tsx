@@ -2,6 +2,7 @@ import {
   BarChart3,
   CheckSquare,
   FileText,
+  FlaskConical,
   FolderTree,
   GitCommitVertical,
   User,
@@ -15,6 +16,7 @@ import { FeatureDescription } from './feature-description'
 import { FeatureInsights } from './feature-insights'
 import { FeatureMeta } from './feature-meta'
 import { FeatureOwner } from './feature-owner'
+import { FeatureTests } from './feature-tests'
 
 interface FeatureDetailsProps {
   feature: Feature
@@ -62,6 +64,12 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
               Changes
             </TabsTrigger>
           )}
+          {feature.stats && (
+            <TabsTrigger value="tests">
+              <FlaskConical className="h-4 w-4" />
+              Tests
+            </TabsTrigger>
+          )}
           <TabsTrigger value="decisions">
             <CheckSquare className="h-4 w-4" />
             Decisions
@@ -79,6 +87,11 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
         {feature.changes.length > 0 && (
           <TabsContent value="changes" className="mt-1">
             <FeatureChanges changes={feature.changes} />
+          </TabsContent>
+        )}
+        {feature.stats && (
+          <TabsContent value="tests" className="mt-1">
+            <FeatureTests stats={feature.stats} />
           </TabsContent>
         )}
         <TabsContent value="decisions" className="mt-1">
