@@ -92,6 +92,21 @@ impl Default for CoverageStats {
 }
 
 impl CoverageStats {
+    // used by tests
+    #[allow(dead_code)]
+    pub fn new() -> Self {
+        Self {
+            lines_total: 0,
+            lines_covered: 0,
+            lines_missed: 0,
+            line_coverage_percent: 0.0,
+            branches_total: None,
+            branches_covered: None,
+            branch_coverage_percent: None,
+            files: HashMap::new(),
+        }
+    }
+
     pub fn calculate_percentages(&mut self) {
         if self.lines_total > 0 {
             self.line_coverage_percent =
