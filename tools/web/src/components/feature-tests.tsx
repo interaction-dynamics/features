@@ -1,12 +1,5 @@
-import { FileCode, TestTube } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -17,7 +10,6 @@ import {
 } from '@/components/ui/table'
 import type { Stats } from '@/models/feature'
 import { HelpButton } from './help-button'
-import { StatsCard } from './stats-card'
 
 interface FeatureTestsProps {
   stats: Stats
@@ -37,12 +29,6 @@ function getCoverageColor(percent: number): string {
   if (percent >= 80) return 'text-green-600 dark:text-green-400'
   if (percent >= 60) return 'text-yellow-600 dark:text-yellow-400'
   return 'text-red-600 dark:text-red-400'
-}
-
-function getCoverageBgColor(percent: number): string {
-  if (percent >= 80) return 'bg-green-100 dark:bg-green-950'
-  if (percent >= 60) return 'bg-yellow-100 dark:bg-yellow-950'
-  return 'bg-red-100 dark:bg-red-950'
 }
 
 function getFileName(filePath: string): string {
