@@ -7,16 +7,19 @@ import {
   GitCommitVertical,
   User,
 } from 'lucide-react'
+import { lazy } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
-import { FeatureChanges } from './feature-changes'
-import { FeatureDecisions } from './feature-decisions'
-import { FeatureDescription } from './feature-description'
-import { FeatureInsights } from './feature-insights'
+
 import { FeatureMeta } from './feature-meta'
 import { FeatureOwner } from './feature-owner'
-import { FeatureTests } from './feature-tests'
+
+const FeatureChanges = lazy(() => import('./feature-changes'))
+const FeatureDecisions = lazy(() => import('./feature-decisions'))
+const FeatureDescription = lazy(() => import('./feature-description'))
+const FeatureInsights = lazy(() => import('./feature-insights'))
+const FeatureTests = lazy(() => import('./feature-tests'))
 
 interface FeatureDetailsProps {
   feature: Feature

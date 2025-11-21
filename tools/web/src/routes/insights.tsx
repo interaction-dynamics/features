@@ -39,7 +39,7 @@ const actualLines = (feature: Feature) => {
   return lines - childrenLinesCount
 }
 
-export function Insights() {
+export default function Insights() {
   const { features } = useContext(FeaturesContext)
 
   const allFeatures = flattenFeatures(features).sort((a, b) =>

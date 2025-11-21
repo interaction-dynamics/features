@@ -6,7 +6,9 @@ interface FeatureDescriptionProps {
   description?: string
 }
 
-export function FeatureDescription({ description }: FeatureDescriptionProps) {
+export default function FeatureDescription({
+  description,
+}: FeatureDescriptionProps) {
   if (!description) {
     return (
       <Card>

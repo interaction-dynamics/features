@@ -70,7 +70,7 @@ function renderTitleWithPRLinks(
   return <>{parts}</>
 }
 
-export function FeatureChanges({ changes }: FeatureChangesProps) {
+export default function FeatureChanges({ changes }: FeatureChangesProps) {
   const { metadata } = useMetadata()
 
   if (changes.length === 0) {

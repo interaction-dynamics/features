@@ -6,7 +6,7 @@ import { HelpButton } from '@/components/help-button'
 import { FeatureSelectedContext } from '@/lib/feature-selected-context'
 import { FeaturesContext } from '@/lib/features-context'
 
-export function Features() {
+export default function Features() {
   const { selectFeature, selectedFeature } = useContext(FeatureSelectedContext)
   const { features } = useContext(FeaturesContext)
   return (

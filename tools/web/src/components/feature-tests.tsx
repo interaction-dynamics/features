@@ -43,7 +43,7 @@ function getFileDirectory(filePath: string): string {
   return parts.join('/')
 }
 
-export function FeatureTests({ stats }: FeatureTestsProps) {
+export default function FeatureTests({ stats }: FeatureTestsProps) {
   const [sortKey, setSortKey] = useState<SortKey>('linePercent')
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
 

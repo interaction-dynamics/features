@@ -12,7 +12,7 @@ interface FeatureDecisionsProps {
   decisions: string[]
 }
 
-export function FeatureDecisions({ decisions }: FeatureDecisionsProps) {
+export default function FeatureDecisions({ decisions }: FeatureDecisionsProps) {
   if (decisions.length === 0) {
     return (
       <Card>

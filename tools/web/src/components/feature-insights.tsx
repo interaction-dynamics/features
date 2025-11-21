@@ -64,7 +64,7 @@ const getCommitTypeColor = (type: string) => {
   return COMMIT_TYPE_COLORS[type] || COMMIT_TYPE_COLORS.other
 }
 
-export function FeatureInsights({ stats }: FeatureInsightsProps) {
+export default function FeatureInsights({ stats }: FeatureInsightsProps) {
   const { commits } = stats
 
   // Prepare data for authors chart
