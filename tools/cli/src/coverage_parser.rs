@@ -19,6 +19,20 @@ pub struct FileCoverageStats {
     pub branch_coverage_percent: Option<f64>,
 }
 
+impl Default for FileCoverageStats {
+    fn default() -> Self {
+        Self {
+            lines_total: 0,
+            lines_covered: 0,
+            lines_missed: 0,
+            line_coverage_percent: 0.0,
+            branches_total: None,
+            branches_covered: None,
+            branch_coverage_percent: None,
+        }
+    }
+}
+
 impl FileCoverageStats {
     pub fn new() -> Self {
         Self {
@@ -38,10 +52,10 @@ impl FileCoverageStats {
                 (self.lines_covered as f64 / self.lines_total as f64) * 100.0;
         }
 
-        if let (Some(total), Some(covered)) = (self.branches_total, self.branches_covered) {
-            if total > 0 {
-                self.branch_coverage_percent = Some((covered as f64 / total as f64) * 100.0);
-            }
+        if let (Some(total), Some(covered)) = (self.branches_total, self.branches_covered)
+            && total > 0
+        {
+            self.branch_coverage_percent = Some((covered as f64 / total as f64) * 100.0);
         }
     }
 }
@@ -62,8 +76,8 @@ pub struct CoverageStats {
     pub files: HashMap<String, FileCoverageStats>,
 }
 
-impl CoverageStats {
-    pub fn new() -> Self {
+impl Default for CoverageStats {
+    fn default() -> Self {
         Self {
             lines_total: 0,
             lines_covered: 0,
@@ -75,17 +89,19 @@ impl CoverageStats {
             files: HashMap::new(),
         }
     }
+}
 
+impl CoverageStats {
     pub fn calculate_percentages(&mut self) {
         if self.lines_total > 0 {
             self.line_coverage_percent =
                 (self.lines_covered as f64 / self.lines_total as f64) * 100.0;
         }
 
-        if let (Some(total), Some(covered)) = (self.branches_total, self.branches_covered) {
-            if total > 0 {
-                self.branch_coverage_percent = Some((covered as f64 / total as f64) * 100.0);
-            }
+        if let (Some(total), Some(covered)) = (self.branches_total, self.branches_covered)
+            && total > 0
+        {
+            self.branch_coverage_percent = Some((covered as f64 / total as f64) * 100.0);
         }
     }
 
@@ -141,14 +157,14 @@ pub fn parse_coverage_reports(coverage_dir: &Path) -> Result<HashMap<String, Cov
             let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
             // Detect file type and parse accordingly
-            if file_name.ends_with(".xml") || file_name.contains("cobertura") {
-                if let Ok(file_coverage) = parse_cobertura_xml(&path) {
-                    merge_file_coverage(&mut coverage_map, file_coverage);
-                }
-            } else if file_name.ends_with(".info") || file_name.contains("lcov") {
-                if let Ok(file_coverage) = parse_lcov(&path) {
-                    merge_file_coverage(&mut coverage_map, file_coverage);
-                }
+            if (file_name.ends_with(".xml") || file_name.contains("cobertura"))
+                && let Ok(file_coverage) = parse_cobertura_xml(&path)
+            {
+                merge_file_coverage(&mut coverage_map, file_coverage);
+            } else if (file_name.ends_with(".info") || file_name.contains("lcov"))
+                && let Ok(file_coverage) = parse_lcov(&path)
+            {
+                merge_file_coverage(&mut coverage_map, file_coverage);
             }
         }
     }
@@ -164,9 +180,7 @@ fn merge_file_coverage(
     for fc in file_coverage {
         let path_str = fc.path.to_string_lossy().to_string();
 
-        let stats = coverage_map
-            .entry(path_str.clone())
-            .or_insert_with(CoverageStats::new);
+        let stats = coverage_map.entry(path_str.clone()).or_default();
 
         // Create individual file stats
         let mut file_stats = FileCoverageStats::new();
@@ -300,7 +314,7 @@ fn parse_lcov(path: &Path) -> Result<Vec<FileCoverage>> {
     let content = fs::read_to_string(path).context("Failed to read Lcov file")?;
 
     let mut file_coverage = Vec::new();
-    let mut current_file: Option<String> = None;
+    let mut current_file: Option<&str> = None;
     let mut lines_total = 0;
     let mut lines_covered = 0;
     let mut branches_total = 0;
@@ -324,7 +338,7 @@ fn parse_lcov(path: &Path) -> Result<Vec<FileCoverage>> {
                 branches_total = 0;
                 branches_covered = 0;
             }
-            current_file = Some(trimmed[3..].to_string());
+            current_file = trimmed.strip_prefix("SF:");
         } else if trimmed.starts_with("DA:")
             && let Some(comma_pos) = trimmed.find(',')
             && let Ok(count) = trimmed[comma_pos + 1..].parse::<usize>()
@@ -439,9 +453,7 @@ pub fn map_coverage_to_features(
         if let Some(feature_name) =
             find_feature_for_file(&file_path, features, canonical_base.as_deref())
         {
-            let stats = feature_coverage
-                .entry(feature_name.clone())
-                .or_insert_with(CoverageStats::new);
+            let stats = feature_coverage.entry(feature_name.clone()).or_default();
 
             // Add each file's coverage to the feature
             for (individual_file_path, file_stats) in &coverage.files {
