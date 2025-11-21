@@ -79,6 +79,10 @@ struct Cli {
     /// Find the owner of a specific file or folder
     #[arg(long)]
     find_owner: Option<String>,
+
+    /// Path to the coverage directory (overrides default search)
+    #[arg(long)]
+    coverage_dir: Option<std::path::PathBuf>,
 }
 
 fn flatten_features(features: &[Feature]) -> Vec<Feature> {
@@ -204,15 +208,40 @@ fn find_owner_for_path(target_path: &std::path::Path, features: &[Feature]) -> O
 }
 
 /// Add coverage data from .coverage and coverage directories to features
-fn add_coverage_to_features(features: &mut [Feature], base_path: &std::path::Path) {
+fn add_coverage_to_features(
+    features: &mut [Feature],
+    base_path: &std::path::Path,
+    coverage_dir_override: Option<&std::path::Path>,
+    current_dir: &std::path::Path,
+) {
     let mut combined_coverage_map = std::collections::HashMap::new();
 
-    // Check both .coverage and coverage directories
-    let coverage_dirs = [base_path.join(".coverage"), base_path.join("coverage")];
+    let coverage_dirs = if let Some(override_dir) = coverage_dir_override {
+        // If override is provided, only use that directory
+        vec![override_dir.to_path_buf()]
+    } else {
+        // Check multiple locations:
+        // 1. .coverage and coverage in base_path
+        // 2. .coverage and coverage in current directory (where executable is run)
+        let mut dirs = vec![base_path.join(".coverage"), base_path.join("coverage")];
+
+        // Add current directory coverage folders if different from base_path
+        let current_coverage = current_dir.join(".coverage");
+        let current_coverage_plain = current_dir.join("coverage");
+
+        if current_coverage != base_path.join(".coverage") {
+            dirs.push(current_coverage);
+        }
+        if current_coverage_plain != base_path.join("coverage") {
+            dirs.push(current_coverage_plain);
+        }
+
+        dirs
+    };
 
     for coverage_dir in &coverage_dirs {
         // Parse coverage reports if the directory exists
-        if let Ok(coverage_map) = parse_coverage_reports(coverage_dir) {
+        if let Ok(coverage_map) = parse_coverage_reports(coverage_dir, base_path) {
             // Merge coverage data (later entries will override earlier ones if there are conflicts)
             combined_coverage_map.extend(coverage_map);
         }
@@ -356,8 +385,14 @@ async fn main() -> Result<()> {
         list_files_recursive_with_changes(&path)?
     };
 
-    // Add coverage data from .coverage directory
-    add_coverage_to_features(&mut features, &path);
+    // Add coverage data from .coverage and coverage directories
+    let current_dir = std::env::current_dir()?;
+    add_coverage_to_features(
+        &mut features,
+        &path,
+        args.coverage_dir.as_deref(),
+        &current_dir,
+    );
 
     if args.serve {
         serve_features_with_watching(&features, args.port, path.clone()).await?;

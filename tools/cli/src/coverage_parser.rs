@@ -154,12 +154,19 @@ struct FileCoverage {
 }
 
 /// Detects and parses coverage reports from the .coverage directory
-pub fn parse_coverage_reports(coverage_dir: &Path) -> Result<HashMap<String, CoverageStats>> {
+pub fn parse_coverage_reports(
+    coverage_dir: &Path,
+    base_path: &Path,
+) -> Result<HashMap<String, CoverageStats>> {
     let mut coverage_map: HashMap<String, CoverageStats> = HashMap::new();
 
     if !coverage_dir.exists() {
         return Ok(coverage_map);
     }
+
+    // Find the project root (common path between coverage_dir and base_path)
+    let project_root =
+        find_common_ancestor(coverage_dir, base_path).unwrap_or_else(|| base_path.to_path_buf());
 
     // Find all coverage files in the directory
     let entries = fs::read_dir(coverage_dir).context("Failed to read coverage directory")?;
@@ -175,11 +182,11 @@ pub fn parse_coverage_reports(coverage_dir: &Path) -> Result<HashMap<String, Cov
             if (file_name.ends_with(".xml") || file_name.contains("cobertura"))
                 && let Ok(file_coverage) = parse_cobertura_xml(&path)
             {
-                merge_file_coverage(&mut coverage_map, file_coverage);
+                merge_file_coverage(&mut coverage_map, file_coverage, &project_root, base_path);
             } else if (file_name.ends_with(".info") || file_name.contains("lcov"))
                 && let Ok(file_coverage) = parse_lcov(&path)
             {
-                merge_file_coverage(&mut coverage_map, file_coverage);
+                merge_file_coverage(&mut coverage_map, file_coverage, &project_root, base_path);
             }
         }
     }
@@ -187,15 +194,43 @@ pub fn parse_coverage_reports(coverage_dir: &Path) -> Result<HashMap<String, Cov
     Ok(coverage_map)
 }
 
+/// Find the common ancestor path between two paths
+fn find_common_ancestor(path1: &Path, path2: &Path) -> Option<PathBuf> {
+    // Try to canonicalize both paths
+    let canon1 = std::fs::canonicalize(path1).ok()?;
+    let canon2 = std::fs::canonicalize(path2).ok()?;
+
+    let mut common = PathBuf::new();
+    let components1: Vec<_> = canon1.components().collect();
+    let components2: Vec<_> = canon2.components().collect();
+
+    for (c1, c2) in components1.iter().zip(components2.iter()) {
+        if c1 == c2 {
+            common.push(c1);
+        } else {
+            break;
+        }
+    }
+
+    if common.as_os_str().is_empty() {
+        None
+    } else {
+        Some(common)
+    }
+}
+
 /// Merge file coverage data into the coverage map
 fn merge_file_coverage(
     coverage_map: &mut HashMap<String, CoverageStats>,
     file_coverage: Vec<FileCoverage>,
+    project_root: &Path,
+    base_path: &Path,
 ) {
     for fc in file_coverage {
-        let path_str = fc.path.to_string_lossy().to_string();
+        // Normalize the path: try to make it relative to base_path
+        let normalized_path = normalize_coverage_path(&fc.path, project_root, base_path);
 
-        let stats = coverage_map.entry(path_str.clone()).or_default();
+        let stats = coverage_map.entry(normalized_path.clone()).or_default();
 
         // Create individual file stats
         let mut file_stats = FileCoverageStats::new();
@@ -211,7 +246,7 @@ fn merge_file_coverage(
         file_stats.calculate_percentages();
 
         // Store file-level coverage
-        stats.files.insert(path_str, file_stats.clone());
+        stats.files.insert(normalized_path, file_stats.clone());
 
         // Update aggregate stats
         stats.lines_total += fc.lines_total;
@@ -225,6 +260,33 @@ fn merge_file_coverage(
         }
 
         stats.calculate_percentages();
+    }
+}
+
+/// Normalize a coverage file path to be relative to base_path
+fn normalize_coverage_path(file_path: &Path, project_root: &Path, base_path: &Path) -> String {
+    // First, try to resolve the file path relative to project_root
+    let resolved_path = if file_path.is_absolute() {
+        file_path.to_path_buf()
+    } else {
+        project_root.join(file_path)
+    };
+
+    // Try to canonicalize paths for accurate comparison
+    let canon_resolved = std::fs::canonicalize(&resolved_path).unwrap_or(resolved_path.clone());
+    let canon_base = std::fs::canonicalize(base_path).unwrap_or_else(|_| base_path.to_path_buf());
+
+    // Make the path relative to base_path
+    if let Ok(relative) = canon_resolved.strip_prefix(&canon_base) {
+        relative.to_string_lossy().to_string()
+    } else {
+        // If we can't make it relative, try with the original paths
+        if let Ok(relative) = resolved_path.strip_prefix(base_path) {
+            relative.to_string_lossy().to_string()
+        } else {
+            // Last resort: use the original file path as string
+            file_path.to_string_lossy().to_string()
+        }
     }
 }
 

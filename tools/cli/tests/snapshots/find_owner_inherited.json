@@ -2,5 +2,5 @@
   "owner": "team1",
   "inherited": true,
   "feature_name": "Feature 2 Duplicated",
-  "feature_path": "../../examples/javascript-basic/src/features/feature-1/features/feature-2"
+  "feature_path": "features/feature-1/features/feature-2"
 }

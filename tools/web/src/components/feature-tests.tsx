@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table'
 import type { Stats } from '@/models/feature'
 import { HelpButton } from './help-button'
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
 interface FeatureTestsProps {
   stats: Stats
@@ -242,15 +243,31 @@ export function FeatureTests({ stats }: FeatureTestsProps) {
               <TableBody>
                 {fileDataIncludeTotal.map((file) => (
                   <TableRow key={file.path}>
-                    <TableCell className="font-mono text-xs">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{file.fileName}</span>
-                        {file.directory && (
-                          <span className="text-muted-foreground text-[0.65rem]">
-                            {file.directory}
-                          </span>
-                        )}
-                      </div>
+                    <TableCell className="font-mono text-xs w-2xs">
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div className="flex flex-col w-full items-start text-overflow-ellipsis">
+                            <span className="font-medium max-w-2xs truncate">
+                              {file.fileName}
+                            </span>
+                            {file.directory && (
+                              <span className="text-muted-foreground text-[0.65rem] max-w-2xs truncate">
+                                {file.directory}
+                              </span>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent align="start">
+                          <div>
+                            <div className="font-medium">{file.fileName}</div>
+                            {file.directory && (
+                              <div className="text-muted-foreground text-[0.65rem]">
+                                {file.directory}
+                              </div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">

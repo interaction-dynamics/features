@@ -96,13 +96,13 @@ fn is_feature_directory(dir_path: &Path) -> bool {
 }
 
 pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
-    list_files_recursive_impl(dir, None)
+    list_files_recursive_impl(dir, dir, None)
 }
 
 pub fn list_files_recursive_with_changes(dir: &Path) -> Result<Vec<Feature>> {
     // Get all commits once at the beginning for efficiency
     let all_commits = get_all_commits_by_path(dir).unwrap_or_default();
-    list_files_recursive_impl(dir, Some(&all_commits))
+    list_files_recursive_impl(dir, dir, Some(&all_commits))
 }
 
 fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
@@ -511,6 +511,7 @@ fn extract_commit_type(title: &str) -> String {
 
 fn process_feature_directory(
     path: &Path,
+    base_path: &Path,
     name: &str,
     changes_map: Option<&HashMap<String, Vec<Change>>>,
 ) -> Result<Feature> {
@@ -543,7 +544,7 @@ fn process_feature_directory(
     // Check if this feature has nested features in a 'features' subdirectory
     let nested_features_path = path.join("features");
     let mut nested_features = if nested_features_path.exists() && nested_features_path.is_dir() {
-        list_files_recursive_impl(&nested_features_path, changes_map).unwrap_or_default()
+        list_files_recursive_impl(&nested_features_path, base_path, changes_map).unwrap_or_default()
     } else {
         Vec::new()
     };
@@ -566,12 +567,13 @@ fn process_feature_directory(
             if has_feature_flag_in_readme(&entry_path) {
                 // This directory is a feature itself
                 let nested_feature =
-                    process_feature_directory(&entry_path, &entry_name, changes_map)?;
+                    process_feature_directory(&entry_path, base_path, &entry_name, changes_map)?;
                 nested_features.push(nested_feature);
             } else {
                 // This directory is not a feature, but might contain features
                 // Recursively search for features inside it
-                let deeper_features = list_files_recursive_impl(&entry_path, changes_map)?;
+                let deeper_features =
+                    list_files_recursive_impl(&entry_path, base_path, changes_map)?;
                 nested_features.extend(deeper_features);
             }
         }
@@ -580,11 +582,18 @@ fn process_feature_directory(
     // Compute stats from changes if available
     let stats = compute_stats_from_changes(&changes, path, &nested_features);
 
+    // Make path relative to base_path
+    let relative_path = path
+        .strip_prefix(base_path)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .to_string();
+
     Ok(Feature {
         name: readme_info.title.unwrap_or_else(|| name.to_string()),
         description: readme_info.description,
         owner: readme_info.owner,
-        path: path.to_string_lossy().to_string(),
+        path: relative_path,
         features: nested_features,
         meta: readme_info.meta,
         changes,
@@ -595,6 +604,7 @@ fn process_feature_directory(
 
 fn list_files_recursive_impl(
     dir: &Path,
+    base_path: &Path,
     changes_map: Option<&HashMap<String, Vec<Change>>>,
 ) -> Result<Vec<Feature>> {
     let entries = fs::read_dir(dir)
@@ -611,13 +621,13 @@ fn list_files_recursive_impl(
 
         if path.is_dir() {
             if is_feature_directory(&path) {
-                let feature = process_feature_directory(&path, &name, changes_map)?;
+                let feature = process_feature_directory(&path, base_path, &name, changes_map)?;
                 features.push(feature);
             } else if !is_documentation_directory(&path)
                 && !is_inside_documentation_directory(&path)
             {
                 // Recursively search for features in non-documentation subdirectories
-                let new_features = list_files_recursive_impl(&path, changes_map)?;
+                let new_features = list_files_recursive_impl(&path, base_path, changes_map)?;
                 features.extend(new_features);
             }
         }

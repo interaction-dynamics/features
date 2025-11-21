@@ -1,5 +1,5 @@
 {
   "owner": "team2",
   "feature_name": "Feature 4",
-  "feature_path": "../../examples/javascript-basic/src/features/feature-1/features/feature-4"
+  "feature_path": "features/feature-1/features/feature-4"
 }

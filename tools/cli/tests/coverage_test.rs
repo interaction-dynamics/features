@@ -105,7 +105,7 @@ fn test_parse_cobertura_xml() {
     fs::write(&cobertura_path, create_cobertura_xml()).unwrap();
 
     // Parse coverage
-    let coverage_map = parse_coverage_reports(coverage_dir).unwrap();
+    let coverage_map = parse_coverage_reports(coverage_dir, coverage_dir).unwrap();
 
     // Verify feature-1 coverage
     let feature1_file = "src/features/feature-1/lib.rs";
@@ -136,7 +136,7 @@ fn test_parse_lcov() {
     fs::write(&lcov_path, create_lcov_info()).unwrap();
 
     // Parse coverage
-    let coverage_map = parse_coverage_reports(coverage_dir).unwrap();
+    let coverage_map = parse_coverage_reports(coverage_dir, coverage_dir).unwrap();
 
     // Verify feature-1 coverage
     let feature1_file = "src/features/feature-1/lib.rs";
@@ -169,7 +169,7 @@ fn test_merge_multiple_coverage_files() {
     fs::write(&lcov_path, create_lcov_info()).unwrap();
 
     // Parse coverage
-    let coverage_map = parse_coverage_reports(coverage_dir).unwrap();
+    let coverage_map = parse_coverage_reports(coverage_dir, coverage_dir).unwrap();
 
     // Coverage should be merged for the same file
     let feature1_file = "src/features/feature-1/lib.rs";
@@ -275,7 +275,7 @@ fn test_empty_coverage_directory() {
     fs::create_dir(&coverage_dir).unwrap();
 
     // Parse empty directory
-    let coverage_map = parse_coverage_reports(&coverage_dir).unwrap();
+    let coverage_map = parse_coverage_reports(&coverage_dir, &coverage_dir).unwrap();
 
     // Should be empty
     assert!(coverage_map.is_empty());
@@ -287,7 +287,7 @@ fn test_nonexistent_coverage_directory() {
     let coverage_dir = temp_dir.path().join(".coverage");
 
     // Parse non-existent directory
-    let coverage_map = parse_coverage_reports(&coverage_dir).unwrap();
+    let coverage_map = parse_coverage_reports(&coverage_dir, &coverage_dir).unwrap();
 
     // Should return empty map, not error
     assert!(coverage_map.is_empty());
