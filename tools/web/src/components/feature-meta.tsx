@@ -25,7 +25,7 @@ export function FeatureMeta({ feature }: FeatureMetaProps) {
   const creationDate = findCreationDate(feature)
 
   const metas = [
-    creationDate ? ['creation_date', formatDate(creationDate)] : null,
+    ...(creationDate ? [['creation_date', formatDate(creationDate)]] : []),
     ...Object.entries(feature?.meta ?? {}).filter(
       ([key]) => key !== 'creation_date',
     ),
