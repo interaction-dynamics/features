@@ -107,6 +107,27 @@ function getColorScheme(metaKey: string, value: unknown): ColorScheme {
   }
 }
 
+type BadgeProps = {
+  colorScheme: {
+    bg: string
+    hoverBg: string
+    text: string
+    border: string
+  }
+  children: React.ReactNode
+  className?: string
+}
+
+function Badge({ children, colorScheme }: BadgeProps) {
+  return (
+    <div
+      className={`${colorScheme.bg} ${colorScheme.text} ${colorScheme.border} border rounded-md px-2 py-1 text-xs`}
+    >
+      {children}
+    </div>
+  )
+}
+
 export function MetaValue({ metaKey, value }: MetaValueProps) {
   const isUrl = (value: string): boolean => {
     if (typeof value !== 'string' || value.length < 4) {
@@ -151,19 +172,15 @@ export function MetaValue({ metaKey, value }: MetaValueProps) {
   // For arrays, show as comma-separated list
   if (Array.isArray(value)) {
     return (
-      <div
-        className={`${colorScheme.bg} ${colorScheme.text} ${colorScheme.border} border rounded-md px-2 py-1 text-xs`}
-      >
+      <Badge colorScheme={colorScheme}>
         <span className="font-semibold">{metaKey}:</span> {value.join(', ')}
-      </div>
+      </Badge>
     )
   }
 
   return (
-    <div
-      className={`${colorScheme.bg} ${colorScheme.text} ${colorScheme.border} border rounded-md px-2 py-1 text-xs`}
-    >
+    <Badge colorScheme={colorScheme}>
       <span className="font-semibold">{metaKey}:</span> {stringValue}
-    </div>
+    </Badge>
   )
 }

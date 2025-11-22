@@ -52,7 +52,7 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             </div>
           </div>
         </div>
-        <FeatureMeta meta={feature.meta} />
+        <FeatureMeta feature={feature} />
       </div>
 
       <Tabs defaultValue="description" className="mt-4">
