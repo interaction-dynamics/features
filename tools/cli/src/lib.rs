@@ -1,5 +1,6 @@
 pub mod build;
 pub mod checker;
+pub mod codeowners;
 pub mod coverage_parser;
 pub mod file_scanner;
 pub mod git_helper;
