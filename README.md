@@ -2,13 +2,16 @@
     <img width="100" src="./tools/web/public/feature-icon.svg" alt="feature logo" />
 </div>
 <h1 align="center">Feature</h1>
+<p align="center">
+    The only tool you need to support your <a href="./FAQ.md#what-is-a-feature-based-architecture">feature-based architecture</a>
+</p>
    
 <div align="center">
     <a href="https://crates.io/crates/features-cli"><img src="https://img.shields.io/crates/v/features-cli.svg" alt="Crates.io version" /></a>
     <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg" alt="Npm version" /></a>
 </div>   
     
-The only tool you need to support your [feature-based architecture](./FAQ.md#what-is-a-feature-based-architecture)
+
 
 
 
