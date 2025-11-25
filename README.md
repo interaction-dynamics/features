@@ -2,9 +2,6 @@
     <img width="100" src="./tools/web/public/feature-icon.svg" alt="feature logo" />
 </div>
 <h1 align="center">Feature</h1>
-<p align="center">
-    The only tool you need to support your <a href="./FAQ.md#what-is-a-feature-based-architecture">feature-based architecture</a>
-</p>
    
 <div align="center">
     <a href="https://crates.io/crates/features-cli"><img src="https://img.shields.io/crates/v/features-cli.svg" alt="Crates.io version" /></a>
@@ -15,9 +12,10 @@
 
 
 
-Explore a live [demo](http://interaction-dynamics.io/features/) of the dashboard built with `Feature`.
 
-`Feature` is a CLI tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework. 
+`Feature` is a CLI and Web tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
+
+Explore a live [demo](http://interaction-dynamics.io/features/) of the dashboard built with `Feature`.
 
 You can with a CLI or with a Web GUI:
 
