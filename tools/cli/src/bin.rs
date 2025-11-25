@@ -290,13 +290,13 @@ fn add_coverage_to_features(
 
     for coverage_dir in &coverage_dirs {
         // Parse coverage reports if the directory exists
-        if let Ok(coverage_map) = parse_coverage_reports(coverage_dir, base_path) {
-            if !coverage_map.is_empty() {
-                // Use coverage from the first directory found
-                let feature_coverage = map_coverage_to_features(features, coverage_map, base_path);
-                update_features_with_coverage(features, &feature_coverage);
-                break; // Stop after finding coverage in one directory
-            }
+        if let Ok(coverage_map) = parse_coverage_reports(coverage_dir, base_path)
+            && !coverage_map.is_empty()
+        {
+            // Use coverage from the first directory found
+            let feature_coverage = map_coverage_to_features(features, coverage_map, base_path);
+            update_features_with_coverage(features, &feature_coverage);
+            break; // Stop after finding coverage in one directory
         }
     }
 }
