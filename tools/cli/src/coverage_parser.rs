@@ -556,64 +556,34 @@ pub fn map_coverage_to_features(
 fn find_feature_for_file(
     file_path: &str,
     features: &[Feature],
-    canonical_base: Option<&Path>,
+    _canonical_base: Option<&Path>,
 ) -> Option<String> {
-    let file_path_buf = PathBuf::from(file_path);
-
-    // Try to canonicalize the file path, or use as-is if it fails
-    let canonical_file = std::fs::canonicalize(&file_path_buf)
-        .or_else(|_| {
-            // If absolute path fails, try relative to base
-            if let Some(base) = canonical_base {
-                std::fs::canonicalize(base.join(&file_path_buf))
-            } else {
-                Err(std::io::Error::new(std::io::ErrorKind::NotFound, ""))
-            }
-        })
-        .ok();
-
-    // Normalize file path by removing leading ./ and converting to string
     let normalized_file = normalize_path(file_path);
 
-    fn search_features(
-        canonical_file: Option<&Path>,
-        normalized_file: &str,
-        features: &[Feature],
-    ) -> Option<String> {
+    fn search_features(normalized_file: &str, features: &[Feature]) -> Option<String> {
         for feature in features {
-            let feature_path = PathBuf::from(&feature.path);
-
-            // Try canonical comparison first
-            if let Some(cf) = canonical_file
-                && let Ok(canonical_feature) = std::fs::canonicalize(&feature_path)
-                && cf.starts_with(&canonical_feature)
-            {
-                // Check nested features first (more specific)
-                if let Some(nested) =
-                    search_features(canonical_file, normalized_file, &feature.features)
-                {
-                    return Some(nested);
-                }
-                return Some(feature.name.clone());
-            }
-
-            // Fallback to normalized string comparison
             let normalized_feature = normalize_path(&feature.path);
 
+            // Check if file is in this feature's folder (with proper path boundary)
             if normalized_file.starts_with(&normalized_feature) {
-                // Check nested features first (more specific)
-                if let Some(nested) =
-                    search_features(canonical_file, normalized_file, &feature.features)
-                {
-                    return Some(nested);
+                let is_exact_match = normalized_file.len() == normalized_feature.len();
+                let has_path_separator = normalized_file
+                    .get(normalized_feature.len()..normalized_feature.len() + 1)
+                    == Some("/");
+
+                if is_exact_match || has_path_separator {
+                    // Recursively check nested features first (more specific)
+                    if let Some(nested) = search_features(normalized_file, &feature.features) {
+                        return Some(nested);
+                    }
+                    return Some(feature.name.clone());
                 }
-                return Some(feature.name.clone());
             }
         }
         None
     }
 
-    search_features(canonical_file.as_deref(), &normalized_file, features)
+    search_features(&normalized_file, features)
 }
 
 /// Normalize a path by removing leading ./ and converting to forward slashes
@@ -621,4 +591,188 @@ fn normalize_path(path: &str) -> String {
     let path = path.trim_start_matches("./");
     let path = path.replace('\\', "/");
     path.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_feature_for_file_path_boundary() {
+        // Test that a feature path doesn't match files in similarly-named directories
+        let features = vec![
+            Feature {
+                name: "OffersRoute".to_string(),
+                description: String::new(),
+                owner: String::new(),
+                path: "airline/routes/OffersRoute".to_string(),
+                features: vec![],
+                meta: HashMap::new(),
+                changes: vec![],
+                decisions: vec![],
+                stats: None,
+            },
+            Feature {
+                name: "CruiseOffersRoute".to_string(),
+                description: String::new(),
+                owner: String::new(),
+                path: "cruise/routes/OffersRoute".to_string(),
+                features: vec![],
+                meta: HashMap::new(),
+                changes: vec![],
+                decisions: vec![],
+                stats: None,
+            },
+        ];
+
+        // File in cruise/routes/OffersRoute should match CruiseOffersRoute, not OffersRoute
+        let result =
+            find_feature_for_file("cruise/routes/OffersRoute/BidCard.tsx", &features, None);
+        assert_eq!(result, Some("CruiseOffersRoute".to_string()));
+
+        // File in airline/routes/OffersRoute should match OffersRoute
+        let result = find_feature_for_file("airline/routes/OffersRoute/index.tsx", &features, None);
+        assert_eq!(result, Some("OffersRoute".to_string()));
+    }
+
+    #[test]
+    fn test_find_feature_for_file_no_false_prefix_match() {
+        // Test that "routes/OffersRoute" doesn't match "routes/OffersRouteExtra"
+        let features = vec![
+            Feature {
+                name: "OffersRoute".to_string(),
+                description: String::new(),
+                owner: String::new(),
+                path: "routes/OffersRoute".to_string(),
+                features: vec![],
+                meta: HashMap::new(),
+                changes: vec![],
+                decisions: vec![],
+                stats: None,
+            },
+            Feature {
+                name: "OffersRouteExtra".to_string(),
+                description: String::new(),
+                owner: String::new(),
+                path: "routes/OffersRouteExtra".to_string(),
+                features: vec![],
+                meta: HashMap::new(),
+                changes: vec![],
+                decisions: vec![],
+                stats: None,
+            },
+        ];
+
+        // File in routes/OffersRouteExtra should match OffersRouteExtra
+        let result =
+            find_feature_for_file("routes/OffersRouteExtra/Component.tsx", &features, None);
+        assert_eq!(result, Some("OffersRouteExtra".to_string()));
+
+        // File in routes/OffersRoute should match OffersRoute
+        let result = find_feature_for_file("routes/OffersRoute/Component.tsx", &features, None);
+        assert_eq!(result, Some("OffersRoute".to_string()));
+    }
+
+    #[test]
+    fn test_find_feature_for_file_exact_match() {
+        // Test that exact path matches work
+        let features = vec![Feature {
+            name: "MyFeature".to_string(),
+            description: String::new(),
+            owner: String::new(),
+            path: "src/features/MyFeature".to_string(),
+            features: vec![],
+            meta: HashMap::new(),
+            changes: vec![],
+            decisions: vec![],
+            stats: None,
+        }];
+
+        // Exact match (file IS the feature directory)
+        let result = find_feature_for_file("src/features/MyFeature", &features, None);
+        assert_eq!(result, Some("MyFeature".to_string()));
+
+        // File inside the feature
+        let result = find_feature_for_file("src/features/MyFeature/index.tsx", &features, None);
+        assert_eq!(result, Some("MyFeature".to_string()));
+    }
+
+    #[test]
+    fn test_find_feature_for_file_no_match() {
+        // Test that unrelated paths don't match
+        let features = vec![Feature {
+            name: "MyFeature".to_string(),
+            description: String::new(),
+            owner: String::new(),
+            path: "src/features/MyFeature".to_string(),
+            features: vec![],
+            meta: HashMap::new(),
+            changes: vec![],
+            decisions: vec![],
+            stats: None,
+        }];
+
+        // Unrelated path
+        let result = find_feature_for_file("src/other/Component.tsx", &features, None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_find_feature_for_file_nested_features() {
+        // Test that nested features are matched recursively and the most specific one is returned
+        let features = vec![Feature {
+            name: "ParentFeature".to_string(),
+            description: String::new(),
+            owner: String::new(),
+            path: "src/features/ParentFeature".to_string(),
+            features: vec![
+                Feature {
+                    name: "SubFeatureA".to_string(),
+                    description: String::new(),
+                    owner: String::new(),
+                    path: "src/features/ParentFeature/SubFeatureA".to_string(),
+                    features: vec![],
+                    meta: HashMap::new(),
+                    changes: vec![],
+                    decisions: vec![],
+                    stats: None,
+                },
+                Feature {
+                    name: "SubFeatureB".to_string(),
+                    description: String::new(),
+                    owner: String::new(),
+                    path: "src/features/ParentFeature/SubFeatureB".to_string(),
+                    features: vec![],
+                    meta: HashMap::new(),
+                    changes: vec![],
+                    decisions: vec![],
+                    stats: None,
+                },
+            ],
+            meta: HashMap::new(),
+            changes: vec![],
+            decisions: vec![],
+            stats: None,
+        }];
+
+        // File in SubFeatureA should match SubFeatureA (most specific)
+        let result = find_feature_for_file(
+            "src/features/ParentFeature/SubFeatureA/Component.tsx",
+            &features,
+            None,
+        );
+        assert_eq!(result, Some("SubFeatureA".to_string()));
+
+        // File in SubFeatureB should match SubFeatureB (most specific)
+        let result = find_feature_for_file(
+            "src/features/ParentFeature/SubFeatureB/index.tsx",
+            &features,
+            None,
+        );
+        assert_eq!(result, Some("SubFeatureB".to_string()));
+
+        // File in ParentFeature but not in any sub-feature should match ParentFeature
+        let result = find_feature_for_file("src/features/ParentFeature/utils.tsx", &features, None);
+        assert_eq!(result, Some("ParentFeature".to_string()));
+    }
 }
