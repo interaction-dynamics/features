@@ -25,6 +25,7 @@ You can with a CLI or with a Web GUI:
 - share the list of features with product managers and stakeholders
 - find the code related to a feature
 - find the documentation related to the feature
+- codeowners generation
 
 > If you see an other use case, feel free to contribute to this repository.
 
