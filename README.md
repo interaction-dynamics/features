@@ -1,26 +1,20 @@
 <div align="center">
     <img width="100" src="./tools/web/public/feature-icon.svg" alt="feature logo" />
 </div>
-<h1 align="center">Feature-based architecture</h1>
+<h1 align="center">Feature</h1>
+    
+The only tool you need to support your [feature-based architecture](./FAQ.md#what-is-a-feature-based-architecture)
 
 <div align="center">
     <a href="https://crates.io/crates/features-cli"><img src="https://img.shields.io/crates/v/features-cli.svg" alt="Crates.io version" /></a>
     <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg" alt="Npm version" /></a>
 </div>
 
-Feature-based architecture organizes the codebase by features rather than technical layers (like components, services, or utils). It is similar to domain-driven development (DDD) but more recursive and a more structured approach. Each feature lives in its own self-contained folder with everything it needs — making the code more modular, discoverable, and maintainable as the project grows.
+Explore a live [demo](http://interaction-dynamics.io/features/) of the dashboard built with `Feature`.
 
-This approach is not meant to replace other architecture design like hexagonal architecture but rather complement it. It is an approach easier to understand for beginners. It can also be shared with product managers, designers and stakeholders.
+`Feature` is a CLI tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework. 
 
-This repository includes guidelines, examples and tools to boost your productivity with feature-based architecture. Explore a live [demo](http://interaction-dynamics.io/features/) of the dashboard built with these tools.
-
-> This approach is technology agnostic and can be used with any programming language or framework.
-
-## The benefits
-
-This architecture brings a clear separation of concerns and makes it easier to understand and maintain the codebase.
-
-You can also easier:
+You can with a CLI or with a Web GUI:
 
 - list all the features in a project
 - find the team 'owning' a specific feature
@@ -33,7 +27,7 @@ You can also easier:
 
 ## Guidelines
 
-By following specific guidelines and conventions, it becomes easier to add toolings around this approach and automatize the use cases above.
+By following specific guidelines and conventions, it becomes easier for `features` to explore your feature:
 
 ### Folder structure
 
@@ -98,6 +92,7 @@ Check [here](https://github.com/orgs/interaction-dynamics/projects/18/views/4).
 
 > Feature based architecture shouldn't be confused with feature-based design.
 
+- [FAQ](./FAQ.md)
 - [Scalable React Projects with Feature-Based Architecture](https://dev.to/naserrasouli/scalable-react-projects-with-feature-based-architecture-117c)
 - [Reddit discussion about feature-based architecture](https://www.reddit.com/r/reactjs/comments/1afywy4/codebase_examples_of_featuredriven_or_vertical/)
 - [Why I Recommend a Feature-Driven Approach to Software Design](https://khalilstemmler.com/articles/software-design-architecture/feature-driven/): global vision of feature oriented development

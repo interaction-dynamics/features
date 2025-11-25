@@ -2,11 +2,18 @@
 
 ## Table of Contents
 
+- [What is a feature-based architecture?](#what-is-a-feature-based-architecture)
 - [How can I add a feature?](#how-can-i-add-a-feature)
 - [How can I add a feature description?](#how-can-i-add-a-feature-description)
 - [How can I add an owner?](#how-can-i-add-an-owner)
 - [How can I add a decision?](#how-can-i-add-a-decision)
 - [How can I add a test coverage report?](#how-can-i-add-a-test-coverage-report)
+
+## What is a feature-based architecture?
+
+Feature-based architecture is a software development approach that organizes code and folders around features or business capabilities rather than technical layers (like components, services, or utils). It is similar to domain-driven development (DDD) but more recursive and more structured. Each feature lives in its own self-contained folder with everything it needs. It promotes modularity, maintainability, and scalability by breaking down complex systems into smaller, more manageable components.
+
+This approach is not meant to replace other architecture design like hexagonal architecture but rather complement it. It is an approach easier to understand for beginners. It can also be shared with product managers, designers and stakeholders.
 
 ## How can I add a feature?
 
