@@ -4,6 +4,7 @@ use std::collections::HashSet;
 
 mod build;
 mod checker;
+mod codeowners;
 mod coverage_parser;
 mod file_scanner;
 mod git_helper;
@@ -14,6 +15,7 @@ mod readme_parser;
 
 use build::{BuildConfig, create_build};
 use checker::run_checks;
+use codeowners::generate_codeowners;
 use coverage_parser::{map_coverage_to_features, parse_coverage_reports};
 use file_scanner::{list_files_recursive, list_files_recursive_with_changes};
 use http_server::serve_features_with_watching;
@@ -83,6 +85,14 @@ struct Cli {
     /// Path to the coverage directory (overrides default search)
     #[arg(long)]
     coverage_dir: Option<std::path::PathBuf>,
+
+    /// Generate or update CODEOWNERS file
+    #[arg(long)]
+    generate_codeowners: bool,
+
+    /// Project directory for CODEOWNERS file generation
+    #[arg(long)]
+    project_dir: Option<std::path::PathBuf>,
 }
 
 fn flatten_features(features: &[Feature]) -> Vec<Feature> {
@@ -214,11 +224,37 @@ fn find_owner_for_path(
 }
 
 /// Add coverage data from .coverage and coverage directories to features
+/// Add coverage data to features by searching for coverage reports in multiple locations.
+///
+/// This function searches for coverage reports in the following priority order:
+/// 1. If `coverage_dir_override` is provided, only that directory is checked
+/// 2. Otherwise, searches in this order (stops at first directory with coverage data):
+///    - `base_path/.coverage`
+///    - `base_path/coverage`
+///    - `current_dir/.coverage`
+///    - `current_dir/coverage`
+///    - `project_dir/.coverage` (if project_dir is provided)
+///    - `project_dir/coverage` (if project_dir is provided)
+///
+/// # Arguments
+///
+/// * `features` - Mutable reference to features that will be updated with coverage data
+/// * `base_path` - Base path of the project being analyzed
+/// * `coverage_dir_override` - Optional explicit coverage directory (takes precedence over all)
+/// * `current_dir` - Current working directory where the CLI is executed
+/// * `project_dir` - Optional project directory for additional coverage locations
+///
+/// # Behavior
+///
+/// - Stops searching after finding coverage data in the first valid directory
+/// - Only processes directories that contain actual coverage files
+/// - Updates feature stats with coverage information (line/branch coverage percentages)
 fn add_coverage_to_features(
     features: &mut [Feature],
     base_path: &std::path::Path,
     coverage_dir_override: Option<&std::path::Path>,
     current_dir: &std::path::Path,
+    project_dir: Option<&std::path::Path>,
 ) {
     let coverage_dirs = if let Some(override_dir) = coverage_dir_override {
         // If override is provided, only use that directory
@@ -227,19 +263,36 @@ fn add_coverage_to_features(
         // Check multiple locations:
         // 1. .coverage and coverage in base_path
         // 2. .coverage and coverage in current directory (where executable is run)
-        let dirs = vec![
+        // 3. .coverage and coverage in project_dir (if provided)
+        let mut dirs = vec![
             base_path.join(".coverage"),
             base_path.join("coverage"),
             current_dir.join(".coverage"),
             current_dir.join("coverage"),
         ];
 
+        // Add project_dir coverage directories if provided
+        if let Some(proj_dir) = project_dir {
+            let proj_coverage = proj_dir.join(".coverage");
+            let proj_coverage_plain = proj_dir.join("coverage");
+
+            // Only add if different from already added paths
+            if !dirs.contains(&proj_coverage) {
+                dirs.push(proj_coverage);
+            }
+            if !dirs.contains(&proj_coverage_plain) {
+                dirs.push(proj_coverage_plain);
+            }
+        }
+
         dirs
     };
 
     for coverage_dir in &coverage_dirs {
         // Parse coverage reports if the directory exists
-        if let Ok(coverage_map) = parse_coverage_reports(coverage_dir, base_path) {
+        if let Ok(coverage_map) = parse_coverage_reports(coverage_dir, base_path)
+            && !coverage_map.is_empty()
+        {
             // Use coverage from the first directory found
             let feature_coverage = map_coverage_to_features(features, coverage_map, base_path);
             update_features_with_coverage(features, &feature_coverage);
@@ -383,8 +436,16 @@ async fn main() -> Result<()> {
         &path,
         args.coverage_dir.as_deref(),
         &current_dir,
+        args.project_dir.as_deref(),
     );
 
+    // Generate CODEOWNERS file if requested
+    if args.generate_codeowners {
+        let output_dir = args.project_dir.as_deref().unwrap_or(&current_dir);
+        generate_codeowners(&features, &path, args.project_dir.as_deref(), output_dir)?;
+    }
+
+    // Handle main actions - these can be combined with generate-codeowners
     if args.serve {
         serve_features_with_watching(&features, args.port, path.clone()).await?;
     } else if args.build {
@@ -392,6 +453,9 @@ async fn main() -> Result<()> {
         create_build(&features, build_config).await?;
     } else if args.check {
         run_checks(&features)?;
+    } else if args.generate_codeowners {
+        // If only generate-codeowners flag is set, we've already done the work above
+        // No additional output needed
     } else if args.list_owners {
         let unique_owners = extract_unique_owners(&features);
 
