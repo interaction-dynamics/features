@@ -221,15 +221,15 @@ fn test_map_coverage_to_features() {
     let feature_coverage = map_coverage_to_features(&features, coverage_map, base_path);
 
     // Verify Feature 1 coverage
-    assert!(feature_coverage.contains_key("Feature 1"));
-    let f1_cov = &feature_coverage["Feature 1"];
+    assert!(feature_coverage.contains_key("./src/features/feature-1"));
+    let f1_cov = &feature_coverage["./src/features/feature-1"];
     assert_eq!(f1_cov.lines_total, 100);
     assert_eq!(f1_cov.lines_covered, 85);
     assert_eq!(f1_cov.line_coverage_percent, 85.0);
 
     // Verify Feature 2 coverage
-    assert!(feature_coverage.contains_key("Feature 2"));
-    let f2_cov = &feature_coverage["Feature 2"];
+    assert!(feature_coverage.contains_key("./src/features/feature-2"));
+    let f2_cov = &feature_coverage["./src/features/feature-2"];
     assert_eq!(f2_cov.lines_total, 50);
     assert_eq!(f2_cov.lines_covered, 40);
     assert_eq!(f2_cov.line_coverage_percent, 80.0);
@@ -336,12 +336,12 @@ fn test_nested_features_coverage() {
     let feature_coverage = map_coverage_to_features(&features, coverage_map, base_path);
 
     // Verify both parent and child have separate coverage
-    assert!(feature_coverage.contains_key("Parent Feature"));
-    assert!(feature_coverage.contains_key("Child Feature"));
+    assert!(feature_coverage.contains_key("./src/features/parent"));
+    assert!(feature_coverage.contains_key("./src/features/parent/features/child"));
 
-    let parent_stats = &feature_coverage["Parent Feature"];
+    let parent_stats = &feature_coverage["./src/features/parent"];
     assert_eq!(parent_stats.lines_total, 100);
 
-    let child_stats = &feature_coverage["Child Feature"];
+    let child_stats = &feature_coverage["./src/features/parent/features/child"];
     assert_eq!(child_stats.lines_total, 50);
 }

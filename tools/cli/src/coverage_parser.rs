@@ -628,12 +628,12 @@ mod tests {
         // File in cruise/routes/OffersRoute should match CruiseOffersRoute, not OffersRoute
         let result =
             find_feature_for_file("cruise/routes/OffersRoute/BidCard.tsx", &features, None);
-        assert_eq!(result, Some("CruiseOffersRoute".to_string()));
+        assert_eq!(result, Some("cruise/routes/OffersRoute".to_string()));
 
         // File in airline/routes/OffersRoute should match OffersRoute
         let result =
             find_feature_for_file("airline/routes/OffersRoute/BidCard.tsx", &features, None);
-        assert_eq!(result, Some("OffersRoute".to_string()));
+        assert_eq!(result, Some("airline/routes/OffersRoute".to_string()));
     }
 
     #[test]
@@ -667,11 +667,11 @@ mod tests {
         // File in routes/OffersRouteExtra should match OffersRouteExtra
         let result =
             find_feature_for_file("routes/OffersRouteExtra/Component.tsx", &features, None);
-        assert_eq!(result, Some("OffersRouteExtra".to_string()));
+        assert_eq!(result, Some("routes/OffersRouteExtra".to_string()));
 
         // File in routes/OffersRoute should match OffersRoute
         let result = find_feature_for_file("routes/OffersRoute/Component.tsx", &features, None);
-        assert_eq!(result, Some("OffersRoute".to_string()));
+        assert_eq!(result, Some("routes/OffersRoute".to_string()));
     }
 
     #[test]
@@ -691,11 +691,11 @@ mod tests {
 
         // Exact match (file IS the feature directory)
         let result = find_feature_for_file("src/features/MyFeature", &features, None);
-        assert_eq!(result, Some("MyFeature".to_string()));
+        assert_eq!(result, Some("src/features/MyFeature".to_string()));
 
         // File inside the feature
         let result = find_feature_for_file("src/features/MyFeature/index.tsx", &features, None);
-        assert_eq!(result, Some("MyFeature".to_string()));
+        assert_eq!(result, Some("src/features/MyFeature".to_string()));
     }
 
     #[test]
@@ -762,7 +762,10 @@ mod tests {
             &features,
             None,
         );
-        assert_eq!(result, Some("SubFeatureA".to_string()));
+        assert_eq!(
+            result,
+            Some("src/features/ParentFeature/SubFeatureA".to_string())
+        );
 
         // File in SubFeatureB should match SubFeatureB (most specific)
         let result = find_feature_for_file(
@@ -770,10 +773,13 @@ mod tests {
             &features,
             None,
         );
-        assert_eq!(result, Some("SubFeatureB".to_string()));
+        assert_eq!(
+            result,
+            Some("src/features/ParentFeature/SubFeatureB".to_string())
+        );
 
         // File in ParentFeature but not in any sub-feature should match ParentFeature
         let result = find_feature_for_file("src/features/ParentFeature/utils.tsx", &features, None);
-        assert_eq!(result, Some("ParentFeature".to_string()));
+        assert_eq!(result, Some("src/features/ParentFeature".to_string()));
     }
 }
