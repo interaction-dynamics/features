@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createFeature3 } from '../feature-3'
+import { createFeature3 } from '../feature-4'
 
 describe('Feature 3', () => {
   it('should be created', () => {

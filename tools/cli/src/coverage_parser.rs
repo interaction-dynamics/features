@@ -527,17 +527,17 @@ pub fn map_coverage_to_features(
 
     for (file_path, coverage) in coverage_map {
         // Find which feature this file belongs to
-        if let Some(feature_name) =
+        if let Some(feature_path) =
             find_feature_for_file(&file_path, features, canonical_base.as_deref())
         {
-            let stats = feature_coverage.entry(feature_name.clone()).or_default();
+            let stats = feature_coverage.entry(feature_path.clone()).or_default();
 
             // Add each file's coverage to the feature
             for (individual_file_path, file_stats) in &coverage.files {
                 // Check if this individual file belongs to the current feature
                 if let Some(file_feature) =
                     find_feature_for_file(individual_file_path, features, canonical_base.as_deref())
-                    && file_feature == feature_name
+                    && file_feature == feature_path
                 {
                     stats
                         .files
@@ -576,7 +576,7 @@ fn find_feature_for_file(
                     if let Some(nested) = search_features(normalized_file, &feature.features) {
                         return Some(nested);
                     }
-                    return Some(feature.name.clone());
+                    return Some(feature.path.clone());
                 }
             }
         }
@@ -631,7 +631,8 @@ mod tests {
         assert_eq!(result, Some("CruiseOffersRoute".to_string()));
 
         // File in airline/routes/OffersRoute should match OffersRoute
-        let result = find_feature_for_file("airline/routes/OffersRoute/index.tsx", &features, None);
+        let result =
+            find_feature_for_file("airline/routes/OffersRoute/BidCard.tsx", &features, None);
         assert_eq!(result, Some("OffersRoute".to_string()));
     }
 

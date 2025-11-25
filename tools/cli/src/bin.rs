@@ -220,8 +220,6 @@ fn add_coverage_to_features(
     coverage_dir_override: Option<&std::path::Path>,
     current_dir: &std::path::Path,
 ) {
-    let mut combined_coverage_map = std::collections::HashMap::new();
-
     let coverage_dirs = if let Some(override_dir) = coverage_dir_override {
         // If override is provided, only use that directory
         vec![override_dir.to_path_buf()]
@@ -229,18 +227,12 @@ fn add_coverage_to_features(
         // Check multiple locations:
         // 1. .coverage and coverage in base_path
         // 2. .coverage and coverage in current directory (where executable is run)
-        let mut dirs = vec![base_path.join(".coverage"), base_path.join("coverage")];
-
-        // Add current directory coverage folders if different from base_path
-        let current_coverage = current_dir.join(".coverage");
-        let current_coverage_plain = current_dir.join("coverage");
-
-        if current_coverage != base_path.join(".coverage") {
-            dirs.push(current_coverage);
-        }
-        if current_coverage_plain != base_path.join("coverage") {
-            dirs.push(current_coverage_plain);
-        }
+        let dirs = vec![
+            base_path.join(".coverage"),
+            base_path.join("coverage"),
+            current_dir.join(".coverage"),
+            current_dir.join("coverage"),
+        ];
 
         dirs
     };
@@ -248,18 +240,11 @@ fn add_coverage_to_features(
     for coverage_dir in &coverage_dirs {
         // Parse coverage reports if the directory exists
         if let Ok(coverage_map) = parse_coverage_reports(coverage_dir, base_path) {
-            // Merge coverage data (later entries will override earlier ones if there are conflicts)
-            combined_coverage_map.extend(coverage_map);
+            // Use coverage from the first directory found
+            let feature_coverage = map_coverage_to_features(features, coverage_map, base_path);
+            update_features_with_coverage(features, &feature_coverage);
+            break; // Stop after finding coverage in one directory
         }
-    }
-
-    // Only process if we found any coverage data
-    if !combined_coverage_map.is_empty() {
-        // Map coverage to features
-        let feature_coverage = map_coverage_to_features(features, combined_coverage_map, base_path);
-
-        // Update features with coverage data
-        update_features_with_coverage(features, &feature_coverage);
     }
 }
 
@@ -269,7 +254,7 @@ fn update_features_with_coverage(
     feature_coverage: &std::collections::HashMap<String, coverage_parser::CoverageStats>,
 ) {
     for feature in features {
-        if let Some(coverage) = feature_coverage.get(&feature.name) {
+        if let Some(coverage) = feature_coverage.get(&feature.path) {
             // Update or create stats
             if let Some(ref mut stats) = feature.stats {
                 stats.coverage = Some(coverage.clone());

@@ -18,7 +18,7 @@ function findCreationDate(feature: Feature): string {
     return creation_date
   }
 
-  return feature.changes[0].date
+  return feature.changes[0]?.date
 }
 
 export function FeatureMeta({ feature }: FeatureMetaProps) {
