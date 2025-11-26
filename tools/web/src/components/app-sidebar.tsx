@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/sidebar'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
+import { filterByQuery, parseQuery } from '@/lib/smart-query-parser'
 import type { Feature } from '@/models/feature'
 import { AppSidebarSearchInput } from './app-sidebar-search-input'
 import { ModeToggle } from './mode-toggle'
@@ -53,21 +54,23 @@ export function AppSidebar({
   const { features } = useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Filter features based on search query
+  // Filter features based on search query using smart query parser
   const filteredFeatures = useMemo(() => {
     if (!searchQuery.trim()) {
       return features
     }
 
-    const query = searchQuery.toLowerCase().trim()
     const flatFeatures = flattenFeatures(features)
+    const parsedQuery = parseQuery(searchQuery)
 
-    return flatFeatures.filter(
-      (feature) =>
-        feature.name.toLowerCase().includes(query) ||
-        feature.owner.toLowerCase().includes(query) ||
-        feature.description?.toLowerCase().includes(query),
-    )
+    // Define searchable fields for the smart query parser
+    const searchableFields = ['name', 'owner', 'description']
+
+    return filterByQuery(
+      flatFeatures as unknown as Record<string, unknown>[],
+      parsedQuery,
+      searchableFields,
+    ) as Feature[]
   }, [features, searchQuery])
 
   const isSearching = searchQuery.trim().length > 0
