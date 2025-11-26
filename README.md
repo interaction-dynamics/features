@@ -2,13 +2,15 @@
     <img width="100" src="./tools/web/public/feature-icon.svg" alt="feature logo" />
 </div>
 <h1 align="center">Feature</h1>
+
    
 <div align="center">
     <a href="https://crates.io/crates/features-cli"><img src="https://img.shields.io/crates/v/features-cli.svg" alt="Crates.io version" /></a>
     <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg" alt="Npm version" /></a>
-</div>   
-    
+</div>
 
+<img src="https://github.com/user-attachments/assets/809cf34b-58e6-4c9c-8297-2e8960961635" width="100%" alt="screenshot" />
+    
 `Feature` is a CLI and Web tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
 
 ```bash
