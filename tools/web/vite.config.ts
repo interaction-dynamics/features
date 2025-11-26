@@ -11,7 +11,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  base: process.env.BASE_URL ?? '/',
+  base: process.env.BASE_URL ?? './',
   build: {
     rolldownOptions: {
       // it seems this property doesn't work yet
