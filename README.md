@@ -9,9 +9,10 @@
     <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg" alt="Npm version" /></a>
 </div>
 
+`Feature` is a CLI and Web tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
+
 <img src="https://github.com/user-attachments/assets/809cf34b-58e6-4c9c-8297-2e8960961635" width="100%" alt="screenshot" />
     
-`Feature` is a CLI and Web tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
 
 ```bash
 npx features-cli@latest ./src
