@@ -61,7 +61,7 @@ pub fn read_readme_info(readme_path: &Path) -> Result<ReadmeInfo> {
     if !readme_path.exists() {
         return Ok(ReadmeInfo {
             title: None,
-            owner: "Unknown".to_string(),
+            owner: "".to_string(),
             description: "".to_string(),
             meta: HashMap::new(),
         });
@@ -71,7 +71,7 @@ pub fn read_readme_info(readme_path: &Path) -> Result<ReadmeInfo> {
         .with_context(|| format!("could not read README file at `{}`", readme_path.display()))?;
 
     let mut title: Option<String> = None;
-    let mut owner = "Unknown".to_string();
+    let mut owner = "".to_string();
     let mut description = "".to_string();
     let mut meta: HashMap<String, serde_json::Value> = HashMap::new();
 

@@ -119,10 +119,13 @@ fn collect_entries(
             format!("/{}", path_str)
         };
 
-        // Add owner with @ prefix
-        let owner = format_owner(&feature.owner);
-
-        entries.push(format!("{} {}", path_str, owner));
+        // Add owner with @ prefix, but skip if owner is empty
+        if feature.owner.is_empty() {
+            entries.push(format!("{} @Unknown", path_str));
+        } else {
+            let owner = format_owner(&feature.owner);
+            entries.push(format!("{} {}", path_str, owner));
+        }
 
         // Recursively collect from nested features
         collect_entries(&feature.features, base_path, project_dir, entries);

@@ -48,6 +48,7 @@ export type Feature = {
   name: string
   path: string
   owner: string
+  is_owner_inherited: boolean
   description?: string
   features?: Feature[]
   meta?: Record<string, unknown>
@@ -106,6 +107,7 @@ export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
     name: z.string(),
     path: z.string(),
     owner: z.string(),
+    is_owner_inherited: z.boolean(),
     description: z.string().optional(),
     features: z.array(FeatureSchema).optional(),
     meta: z.record(z.string(), z.unknown()).optional(),

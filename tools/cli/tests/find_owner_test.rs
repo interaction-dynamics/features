@@ -311,10 +311,10 @@ fn test_find_owner_with_unknown_owner() {
 
     let output = result.unwrap();
 
-    // Verify output contains Unknown owner (with no inheritance since no parent)
+    // Verify output contains empty owner (with no inheritance since no parent)
     assert!(
-        output.contains("Owner: Unknown"),
-        "Output should contain 'Owner: Unknown', got: {}",
+        output.contains("Owner: \nFeature:") || output.contains("Owner:\nFeature:"),
+        "Output should contain empty owner, got: {}",
         output
     );
     assert!(

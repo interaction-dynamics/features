@@ -30,6 +30,8 @@ pub struct Feature {
     pub name: String,
     pub description: String,
     pub owner: String,
+    #[serde(rename = "is_owner_inherited")]
+    pub is_owner_inherited: bool,
     pub path: String,
     pub features: Vec<Feature>,
     pub meta: HashMap<String, serde_json::Value>,

@@ -11,7 +11,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { resolveOwner } from '@/lib/resolve-owner'
 import type { Feature } from '@/models/feature'
 
 interface OwnerStats {
@@ -43,7 +42,7 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
   const ownerStatsMap = new Map<string, OwnerStats>()
 
   for (const feature of features) {
-    const owner = resolveOwner(feature)
+    const owner = feature.owner ?? 'Unknown'
 
     const stats = {
       owner,
