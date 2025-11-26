@@ -1,4 +1,4 @@
-import { ArrowUpRight, Filter } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { FeatureOwner } from '@/components/feature-owner'
@@ -30,7 +30,7 @@ type FeatureInsightsTableProps = {
 }
 
 export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
-  const [showSearch, setShowSearch] = useState(true)
+  const [showSearch] = useState(true)
 
   // Define searchable fields for the smart filter
   const searchableFields = [
