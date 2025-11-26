@@ -119,7 +119,7 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
             <TableRow>
               <SortableTableHeader
                 field="name"
-                label="Feature"
+                label={`Feature (${sortedData.length})`}
                 sortConfig={sortConfig}
                 onSort={requestSort}
                 className="w-[300px]"
