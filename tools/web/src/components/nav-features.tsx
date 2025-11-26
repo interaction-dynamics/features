@@ -301,7 +301,9 @@ function TreeNodeItem({
               {!isFeature && <Folder className="h-4 w-4 opacity-60" />}
               {formatNodeName(node.name, isFeature)}
             </span>
-            {shouldShowOwnerDot && <OwnerDot owner={node.feature.owner} />}
+            {shouldShowOwnerDot && node.feature?.owner && (
+              <OwnerDot owner={node.feature.owner} />
+            )}
             {/* Reserve space for chevron to align with collapsible items */}
             <div className="w-4 shrink-0" />
           </div>
@@ -346,7 +348,9 @@ function TreeNodeItem({
                 ))}
               {formatNodeName(node.name, isFeature)}
             </span>
-            {shouldShowOwnerDot && <OwnerDot owner={node.feature.owner} />}
+            {shouldShowOwnerDot && node.feature?.owner && (
+              <OwnerDot owner={node.feature.owner} />
+            )}
             <ChevronRight
               className={cn(
                 'ml-auto transition-transform duration-200',
