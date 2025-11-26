@@ -98,7 +98,7 @@ jobs:
             echo "Error: javascript-karge example directory not found"
             exit 1
           fi
-          cargo run --release -- ../../examples/javascript-large/ --json > ../web/public/features.json
+          cargo run --release -- ../../examples/javascript-large/src --project-dir ../../examples/javascript-large --json > ../web/public/features.json
           if [ ! -s "../web/public/features.json" ]; then
             echo "Error: features.json was not generated or is empty"
             exit 1

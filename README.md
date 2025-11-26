@@ -12,9 +12,9 @@
 `Feature` is a CLI and Web tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
 
 ```bash
-npx features-cli@latest src/
+npx features-cli@latest ./src
 
-Features found in .:
+Features found in ./src:
 feature-1 [team1] -> coverage/lcov-report/libs/features/feature-1
   feature-3 [team1] -> coverage/lcov-report/libs/features/feature-1/features/feature-3
 feature-4 [] -> coverage/lcov-report/routes/route-3/features/feature-4
