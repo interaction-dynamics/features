@@ -62,7 +62,7 @@ pub fn get_all_commits_by_path(repo_path: &Path) -> Result<HashMap<String, Vec<C
 
         let change = Change {
             title,
-            author_name: author.name().unwrap_or("Unknown").to_string(),
+            author_name: author.name().unwrap_or("").to_string(),
             author_email: author.email().unwrap_or("").to_string(),
             description,
             date: format_timestamp(commit.time()),

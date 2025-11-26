@@ -104,6 +104,7 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
             name: feature.name.clone(),
             description: feature.description.clone(),
             owner: feature.owner.clone(),
+            is_owner_inherited: feature.is_owner_inherited,
             path: feature.path.clone(),
             features: Vec::new(), // Empty for flat structure
             meta: feature.meta.clone(),
@@ -143,7 +144,7 @@ fn find_owner_for_path(
     fn find_closest_feature(
         target: &std::path::Path,
         features: &[Feature],
-        parent_owner: Option<&str>,
+        _parent_owner: Option<&str>,
         base_path: &std::path::Path,
     ) -> Option<OwnerInfo> {
         let mut best_match: Option<OwnerInfo> = None;
@@ -175,39 +176,11 @@ fn find_owner_for_path(
                     } else {
                         // This is the closest feature so far
                         if depth < best_match_depth {
-                            let owner = if feature.owner == "Unknown" {
-                                // Try to inherit from parent
-                                if let Some(parent) = parent_owner {
-                                    if parent != "Unknown" {
-                                        OwnerInfo {
-                                            owner: parent.to_string(),
-                                            inherited: true,
-                                            feature_name: feature.name.clone(),
-                                            feature_path: feature.path.clone(),
-                                        }
-                                    } else {
-                                        OwnerInfo {
-                                            owner: "Unknown".to_string(),
-                                            inherited: false,
-                                            feature_name: feature.name.clone(),
-                                            feature_path: feature.path.clone(),
-                                        }
-                                    }
-                                } else {
-                                    OwnerInfo {
-                                        owner: "Unknown".to_string(),
-                                        inherited: false,
-                                        feature_name: feature.name.clone(),
-                                        feature_path: feature.path.clone(),
-                                    }
-                                }
-                            } else {
-                                OwnerInfo {
-                                    owner: feature.owner.clone(),
-                                    inherited: false,
-                                    feature_name: feature.name.clone(),
-                                    feature_path: feature.path.clone(),
-                                }
+                            let owner = OwnerInfo {
+                                owner: feature.owner.clone(),
+                                inherited: feature.is_owner_inherited,
+                                feature_name: feature.name.clone(),
+                                feature_path: feature.path.clone(),
                             };
                             best_match = Some(owner);
                             best_match_depth = depth;

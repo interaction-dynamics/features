@@ -7,7 +7,6 @@ import { OwnerInsightsTable } from '@/features/insights/owner-insights-table'
 
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
-import { resolveOwner } from '@/lib/resolve-owner'
 import type { Feature } from '@/models/feature'
 
 // Recursively flatten all features into a single array
@@ -47,16 +46,15 @@ export default function Insights() {
   )
 
   const featureCount = allFeatures.length
-  const ownerCount = [
-    ...new Set(allFeatures.map((feature) => resolveOwner(feature))),
-  ].length
+  const ownerCount = [...new Set(allFeatures.map((feature) => feature.owner))]
+    .length
 
   const largestFeature = allFeatures.reduce((prev, curr) => {
     return actualLines(prev) > actualLines(curr) ? prev : curr
   }, allFeatures[0])
 
   const featuresWithoutOwners = allFeatures.filter(
-    (feature) => resolveOwner(feature) === 'Unknown',
+    (feature) => feature.owner === '',
   )
 
   return (

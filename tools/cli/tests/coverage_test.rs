@@ -13,6 +13,7 @@ fn create_test_feature(name: &str, path: &str) -> Feature {
         name: name.to_string(),
         description: String::new(),
         owner: "Test Owner".to_string(),
+        is_owner_inherited: false,
         path: path.to_string(),
         features: Vec::new(),
         meta: HashMap::new(),
