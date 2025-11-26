@@ -22,6 +22,7 @@ import type { Feature } from '@/models/feature'
 import { AppSidebarSearchInput } from './app-sidebar-search-input'
 import { ModeToggle } from './mode-toggle'
 import { NavFeatures } from './nav-features'
+import { OwnerDot } from './owner-dot'
 import { VersionIndicator } from './version-indicator'
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -118,22 +119,31 @@ export function AppSidebar({
                   </p>
                 </div>
               ) : (
-                filteredFeatures.map((feature) => (
-                  <SidebarMenuItem key={feature.path}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={activeFeature?.path === feature.path}
-                      onClick={() => onFeatureClick(feature)}
-                      title={formatFeatureName(feature.name)}
-                    >
-                      <div className="flex flex-col items-start gap-0.5">
-                        <span className="font-medium truncate cursor-pointer text-ellipsis">
-                          {formatFeatureName(feature.name)}
-                        </span>
-                      </div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))
+                filteredFeatures.map((feature) => {
+                  // Only show owner dot if the owner differs from parent
+                  const shouldShowOwnerDot =
+                    !feature.parent || feature.owner !== feature.parent.owner
+
+                  return (
+                    <SidebarMenuItem key={feature.path}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={activeFeature?.path === feature.path}
+                        onClick={() => onFeatureClick(feature)}
+                        title={formatFeatureName(feature.name)}
+                      >
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span className="font-medium truncate cursor-pointer text-ellipsis flex-1">
+                            {formatFeatureName(feature.name)}
+                          </span>
+                          {shouldShowOwnerDot && (
+                            <OwnerDot owner={feature.owner} />
+                          )}
+                        </div>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })
               )}
             </SidebarMenu>
           </SidebarGroup>
