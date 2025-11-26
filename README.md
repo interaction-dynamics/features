@@ -9,25 +9,72 @@
 </div>   
     
 
-
-
-
-
 `Feature` is a CLI and Web tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
 
-Explore a live [demo](http://interaction-dynamics.io/features/) of the dashboard built with `Feature`.
+```bash
+npx features-cli@latest src/
 
-You can with a CLI or with a Web GUI:
+Features found in .:
+feature-1 [team1] -> coverage/lcov-report/libs/features/feature-1
+  feature-3 [team1] -> coverage/lcov-report/libs/features/feature-1/features/feature-3
+feature-4 [] -> coverage/lcov-report/routes/route-3/features/feature-4
+Route 2 [John Doe] -> src/routes/route-2
+  Feature 20 [John Doe] -> src/routes/route-2/features/feature-20
+Route 3 [John Doe] -> src/routes/route-3
+  Feature 4 [team2] -> src/routes/route-3/features/feature-4
+    Coverage: 20.0% lines (1/5)
+             0.0% branches (0/2)
+```
+
+It also provides a UI to explore the feature. Check a live [demo](http://interaction-dynamics.io/features/).
+
+With both the CLI and Web GUI, you can:
 
 - list all the features in a project
 - find the team 'owning' a specific feature
-- get the history of a feature
+- get the history of a feature (git log)
 - share the list of features with product managers and stakeholders
 - find the code related to a feature
 - find the documentation related to the feature
-- codeowners generation
+- list the test coverage by feature
+- check [the technical debt by feature](./FAQ.md#what-is-the-technical-debt-of-a-feature)
+- see statistics about the features
+- generate CODEOWNERS file
 
 > If you see an other use case, feel free to contribute to this repository.
+
+## Getting started 
+
+```bash
+npx features-cli@latest /path/to/project
+
+features /path/to/project # list all features in the directory and subdirectories
+
+
+# or with installation
+npm install -g features-cli
+# or
+cargo binstall features-cli
+```
+
+Commands and their descriptions are listed below:
+
+| Command | Description |
+| ------- | ----------- |
+| `--json` | Output features as JSON |
+| `--flat` | Output features as a flat array instead of nested structure |
+| `--description` | Include feature descriptions in the output. The description is automatically included in the json format |
+| `--list-owners` | Display only unique list of owners |
+| `--find-owner <path>` | Find the owner of a specific file or folder |
+| `--check` | Run validation checks on features (e.g., duplicate names) |
+| `--skip-changes` | Skip computing git commit history (faster for large repos) |
+| `--serve` | Start an HTTP server to serve features and the web dashboard UI |
+| `--port <port>` | Change the port (default: 8080). Should be used with `--serve` |
+| `--build` | Build a static version of the web dashboard UI |
+| `--build-dir <path>` | Output directory for the static build (default: `build`) |
+| `--coverage-dir <path>` | Specify a custom coverage directory (overrides automatic search) |
+| `--generate-codeowners` | Generate or update a CODEOWNERS file with feature ownership information |
+| `--project-dir <path>` | Project directory for CODEOWNERS generation and additional coverage search locations |
 
 ## Guidelines
 
@@ -59,7 +106,7 @@ src/
 └── ... # other source code
 ```
 
-> You can read the detailed [guidelines](./docs/guidelines.md) or just jump into trying the CLI with the `--serve` options. The UI will guide you through the methodology.
+> You can read the detailed [guidelines](./docs/folder-architecture-guidelines.md) or just jump into trying the CLI with the `--serve` options. The UI will guide you through the methodology.
 
 #### Method 2: Feature flag
 Mark any folder as a feature by adding `feature: true` in its README frontmatter:
@@ -74,11 +121,6 @@ owner: backend-team
 This allows features to be organized anywhere in your codebase while still being discoverable by the tools.
 
 > You can find more sophisticated examples in the [examples](./examples) folder.
-
-## Tools
-
-- [Rust CLI](./tools/cli): Command-line tool to parse the code, find the features and serve the web dashboard UI
-- [Web UI](./tools/web): Dashboard to visualize the features in your project. Try the demo [here](http://interaction-dynamics.io/features/). A watch mode version and a static build version are integrated into the CLI.
 
 ## License
 
