@@ -18,6 +18,7 @@ import { formatFeatureName } from '@/lib/format-feature-name'
 import { cn } from '@/lib/utils'
 import type { Feature } from '@/models/feature'
 import { HelpButton } from './help-button'
+import { OwnerDot } from './owner-dot'
 
 interface NavFeaturesProps {
   items: Feature[]
@@ -34,6 +35,7 @@ interface TreeNode {
   isFolder: boolean
   feature?: Feature
   children: Map<string, TreeNode>
+  parentOwner?: string
 }
 
 function formatNodeName(name: string, isFeature: boolean) {
@@ -94,7 +96,11 @@ function buildPathTree(features: Feature[]): TreeNode {
   }
 
   // Add all features to the tree
-  function addFeatureToTree(feature: Feature, node: TreeNode) {
+  function addFeatureToTree(
+    feature: Feature,
+    node: TreeNode,
+    parentOwner?: string,
+  ) {
     const relativePath = commonAncestor
       ? feature.path.slice(commonAncestor.length + 1)
       : feature.path
@@ -117,6 +123,7 @@ function buildPathTree(features: Feature[]): TreeNode {
           path: folderPath,
           isFolder: true,
           children: new Map(),
+          parentOwner,
         })
       }
       if (currentNode) {
@@ -132,6 +139,7 @@ function buildPathTree(features: Feature[]): TreeNode {
       isFolder: false,
       feature: feature,
       children: new Map(),
+      parentOwner,
     }
 
     // Add nested features as children
@@ -146,11 +154,16 @@ function buildPathTree(features: Feature[]): TreeNode {
             false,
           feature: nestedFeature,
           children: new Map(),
+          parentOwner: feature.owner,
         }
 
         // Recursively add nested features
         if (nestedFeature.features && nestedFeature.features.length > 0) {
-          function addNested(features: Feature[], parent: TreeNode) {
+          function addNested(
+            features: Feature[],
+            parent: TreeNode,
+            parentOwner: string,
+          ) {
             for (const f of features) {
               const child: TreeNode = {
                 name: f.name,
@@ -158,14 +171,15 @@ function buildPathTree(features: Feature[]): TreeNode {
                 isFolder: (f.features && f.features.length > 0) ?? false,
                 feature: f,
                 children: new Map(),
+                parentOwner,
               }
               parent.children.set(f.name, child)
               if (f.features && f.features.length > 0) {
-                addNested(f.features, child)
+                addNested(f.features, child, f.owner)
               }
             }
           }
-          addNested(nestedFeature.features, nestedNode)
+          addNested(nestedFeature.features, nestedNode, nestedFeature.owner)
         }
 
         featureNode.children.set(nestedFeature.name, nestedNode)
@@ -212,6 +226,10 @@ function TreeNodeItem({
   const hasChildren = node.children.size > 0
   const isActive = activeFeature?.path === node.path
   const isFeature = !!node.feature
+
+  // Only show owner dot if the owner differs from parent
+  const shouldShowOwnerDot =
+    isFeature && node.feature && node.feature.owner !== node.parentOwner
 
   const [isOpen, setIsOpen] = useState(() => {
     // Auto-expand if this node is in the active path
@@ -275,14 +293,17 @@ function TreeNodeItem({
           tooltip={formatNodeName(node.name, isFeature)}
           title={formatNodeName(node.name, isFeature)}
         >
-          <div>
+          <div className="flex items-center w-full gap-2">
             <span
-              className="flex items-center gap-2 truncate cursor-pointer text-ellipsis"
+              className="flex items-center gap-2 truncate cursor-pointer text-ellipsis flex-1"
               title={formatNodeName(node.name, isFeature)}
             >
               {!isFeature && <Folder className="h-4 w-4 opacity-60" />}
               {formatNodeName(node.name, isFeature)}
             </span>
+            {shouldShowOwnerDot && <OwnerDot owner={node.feature.owner} />}
+            {/* Reserve space for chevron to align with collapsible items */}
+            <div className="w-4 shrink-0" />
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -314,7 +335,7 @@ function TreeNodeItem({
             title={formatNodeName(node.name, isFeature)}
           >
             <span
-              className="flex items-center gap-2 truncate cursor-pointer"
+              className="flex items-center gap-2 truncate cursor-pointer flex-1"
               title={formatNodeName(node.name, isFeature)}
             >
               {!isFeature &&
@@ -325,6 +346,7 @@ function TreeNodeItem({
                 ))}
               {formatNodeName(node.name, isFeature)}
             </span>
+            {shouldShowOwnerDot && <OwnerDot owner={node.feature.owner} />}
             <ChevronRight
               className={cn(
                 'ml-auto transition-transform duration-200',
