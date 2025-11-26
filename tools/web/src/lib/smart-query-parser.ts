@@ -170,18 +170,8 @@ export function parseQuery(query: string): ParsedQuery {
         }
       }
     } else if (upperToken === 'OR') {
-      if (currentGroup.conditions.length > 0) {
-        if (currentGroup.operator === 'AND') {
-          // Start a new OR group
-          groups.push(currentGroup)
-          currentGroup = {
-            conditions: [],
-            operator: 'OR',
-          }
-        }
-      } else {
-        currentGroup.operator = 'OR'
-      }
+      // Set the operator to OR for the current group
+      currentGroup.operator = 'OR'
     } else {
       const condition = parseCondition(token)
       currentGroup.conditions.push(condition)
@@ -207,10 +197,21 @@ function compareValues(
   operator: ComparisonOperator,
 ): boolean {
   // Handle null/undefined
+  const filterIsNull =
+    filterValue === 'null' || filterValue === null || filterValue === undefined
+
   if (itemValue === null || itemValue === undefined) {
+    if (filterIsNull) {
+      // Comparing null to null
+      return operator === '=' || operator === '>=' || operator === '<='
+    }
+    // Comparing null to non-null value
     return operator === '!='
-      ? filterValue !== null && filterValue !== undefined
-      : false
+  }
+
+  if (filterIsNull) {
+    // Comparing non-null to null
+    return operator === '!='
   }
 
   // Convert to strings for comparison if needed
