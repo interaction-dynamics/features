@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
+use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
 
 mod build;
@@ -390,11 +391,24 @@ async fn main() -> Result<()> {
         }
     };
 
-    // Handle serve flag
-    if args.serve {
-        eprintln!("🚀 Features CLI v{} starting...", env!("CARGO_PKG_VERSION"));
-        eprintln!("Searching for features in directory {}", path.display());
-    }
+    // Handle serve flag - show spinner while loading
+    let spinner = if args.serve {
+        let pb = ProgressBar::new_spinner();
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("{spinner:.green} {msg}")
+                .unwrap()
+                .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
+        );
+        pb.set_message(format!(
+            "Starting Features CLI v{}...",
+            env!("CARGO_PKG_VERSION")
+        ));
+        pb.enable_steady_tick(std::time::Duration::from_millis(100));
+        Some(pb)
+    } else {
+        None
+    };
 
     let mut features = if args.skip_changes {
         list_files_recursive(&path)?
@@ -420,7 +434,21 @@ async fn main() -> Result<()> {
 
     // Handle main actions - these can be combined with generate-codeowners
     if args.serve {
-        serve_features_with_watching(&features, args.port, path.clone()).await?;
+        if let Some(pb) = spinner {
+            pb.set_message("Server is starting...");
+            let pb_clone = pb.clone();
+            serve_features_with_watching(
+                &features,
+                args.port,
+                path.clone(),
+                Some(Box::new(move || {
+                    pb_clone.finish_and_clear();
+                })),
+            )
+            .await?;
+        } else {
+            serve_features_with_watching(&features, args.port, path.clone(), None).await?;
+        }
     } else if args.build {
         let build_config = BuildConfig::new(args.build_dir);
         create_build(&features, build_config).await?;

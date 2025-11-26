@@ -67,6 +67,7 @@ impl ServerConfig {
 /// * `features` - Initial Feature objects to serve as JSON
 /// * `port` - Port number to run the server on
 /// * `watch_path` - Path to watch for file changes
+/// * `on_ready` - Optional callback to be called when server is ready
 ///
 /// # Returns
 ///
@@ -75,9 +76,11 @@ pub async fn serve_features_with_watching(
     features: &[Feature],
     port: u16,
     watch_path: PathBuf,
+    on_ready: Option<Box<dyn FnOnce() + Send>>,
 ) -> Result<()> {
     let config = ServerConfig::new(port);
-    serve_features_with_config_and_watching(features, config, Some(watch_path.clone())).await
+    serve_features_with_config_and_watching(features, config, Some(watch_path.clone()), on_ready)
+        .await
 }
 
 /// Starts an HTTP server with custom configuration and optional file watching.
@@ -87,6 +90,7 @@ pub async fn serve_features_with_watching(
 /// * `features` - Slice of Feature objects to serve as JSON
 /// * `config` - Server configuration
 /// * `watch_path` - Optional path to watch for file changes
+/// * `on_ready` - Optional callback to be called when server is ready
 ///
 /// # Returns
 ///
@@ -95,6 +99,7 @@ pub async fn serve_features_with_config_and_watching(
     features: &[Feature],
     config: ServerConfig,
     watch_path: Option<PathBuf>,
+    on_ready: Option<Box<dyn FnOnce() + Send>>,
 ) -> Result<()> {
     // Create shared state for features
     let features_data = Arc::new(RwLock::new(features.to_vec()));
@@ -185,6 +190,11 @@ pub async fn serve_features_with_config_and_watching(
         .or(static_route)
         .with(warp::cors().allow_any_origin())
         .recover(handle_rejection);
+
+    // Call the ready callback if provided
+    if let Some(callback) = on_ready {
+        callback();
+    }
 
     println!(
         "Server running at http://{}:{}",
