@@ -9,7 +9,7 @@
     <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg" alt="Npm version" /></a>
 </div>
 
-`Feature` is a CLI and Web tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
+`Feature` is a Web and CLI tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
 
 <img src="https://github.com/user-attachments/assets/809cf34b-58e6-4c9c-8297-2e8960961635" width="100%" alt="screenshot" />
     
@@ -66,7 +66,8 @@ Commands and their descriptions are listed below:
 | ------- | ----------- |
 | `--json` | Output features as JSON |
 | `--flat` | Output features as a flat array instead of nested structure |
-| `--description` | Include feature descriptions in the output. The description is automatically included in the json format |
+| `--description` | Include feature descriptions in the output (automatically enabled for `--serve`, `--build`, and `--json`) |
+| `--coverage` | Include coverage information in the output (automatically enabled for `--serve`, `--build`, and `--json`) |
 | `--list-owners` | Display only unique list of owners |
 | `--find-owner <path>` | Find the owner of a specific file or folder |
 | `--check` | Run validation checks on features (e.g., duplicate names) |

@@ -87,6 +87,10 @@ struct Cli {
     #[arg(long)]
     coverage_dir: Option<std::path::PathBuf>,
 
+    /// Include coverage information in the output
+    #[arg(long)]
+    coverage: bool,
+
     /// Generate or update CODEOWNERS file
     #[arg(long)]
     generate_codeowners: bool,
@@ -417,14 +421,18 @@ async fn main() -> Result<()> {
     };
 
     // Add coverage data from .coverage and coverage directories
+    // Coverage is always added for --serve, --build, --json, or when --coverage flag is set
     let current_dir = std::env::current_dir()?;
-    add_coverage_to_features(
-        &mut features,
-        &path,
-        args.coverage_dir.as_deref(),
-        &current_dir,
-        args.project_dir.as_deref(),
-    );
+    let should_add_coverage = args.serve || args.build || args.json || args.coverage;
+    if should_add_coverage {
+        add_coverage_to_features(
+            &mut features,
+            &path,
+            args.coverage_dir.as_deref(),
+            &current_dir,
+            args.project_dir.as_deref(),
+        );
+    }
 
     // Generate CODEOWNERS file if requested
     if args.generate_codeowners {
