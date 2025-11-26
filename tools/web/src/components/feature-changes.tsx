@@ -21,16 +21,16 @@ function renderTitleWithPRLinks(
     return <>{title}</>
   }
 
-  // Match PR numbers in format (#123) or (PR #123) or (pr #123)
-  const prPattern = /\((pr\s+)?#(\d+)\)/gi
+  // Match PR numbers in format (#123) or (PR #123) or (pr #123) or (pull request #123)
+  const prPattern = /\((?:(?:pr|pull request)\s+)?#(\d+)\)/gi
   const parts: (string | ReactNode)[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
 
   match = prPattern.exec(title)
   while (match !== null) {
-    const fullMatch = match[0] // e.g., "(#123)" or "(PR #123)"
-    const prNumber = match[2] // e.g., "123"
+    const fullMatch = match[0] // e.g., "(#123)" or "(PR #123)" or "(pull request #123)"
+    const prNumber = match[1] // e.g., "123"
     const matchStart = match.index
 
     // Add text before the match
