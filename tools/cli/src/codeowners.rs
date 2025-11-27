@@ -106,7 +106,7 @@ fn collect_entries_with_parent(
 ) {
     for feature in features {
         // Skip this feature if it has the same owner as its parent
-        let should_skip = parent_owner.map_or(false, |parent| feature.owner == parent);
+        let should_skip = parent_owner.is_some_and(|parent| feature.owner == parent);
 
         if !should_skip {
             // Calculate the path for CODEOWNERS
