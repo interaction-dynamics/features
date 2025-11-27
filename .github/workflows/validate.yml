@@ -109,10 +109,33 @@ jobs:
         working-directory: ./tools/cli
         run: cargo build --release
 
-      # Generate features.json and metadata.json
+      # Ensure public directory exists
+      - name: Create public directory 📁
+        working-directory: ./tools/web
+        run: mkdir -p public
+
+      # Generate features JSON
       - name: Generate features data 📊
         working-directory: ./tools/cli
-        run: cargo run --release
+        run: |
+          if [ ! -d "../../examples/javascript-large/" ]; then
+            echo "Error: javascript-karge example directory not found"
+            exit 1
+          fi
+          cargo run --release -- ../../examples/javascript-large/src --project-dir ../../examples/javascript-large --json > ../web/public/features.json
+          if [ ! -s "../web/public/features.json" ]; then
+            echo "Error: features.json was not generated or is empty"
+            exit 1
+          fi
+          echo "Generated features.json with $(wc -l < ../web/public/features.json) lines"
+
+      # Generate metadata.json with version from Cargo.toml
+      - name: Generate metadata.json 📋
+        working-directory: ./tools/cli
+        run: |
+          VERSION=$(grep "^version" Cargo.toml | head -n1 | cut -d'"' -f2)
+          echo "{\"version\": \"$VERSION\", \"repository\": \"git@github.com:interaction-dynamics/features.git\" }" > ../web/public/metadata.json
+          echo "Generated metadata.json with version: $VERSION"
 
       # Setup Node.js for web app
       - uses: actions/setup-node@v5
