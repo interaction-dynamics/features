@@ -56,3 +56,5 @@ dist-ssr
 tools/web/public/features.json
 tools/web/public/metadata.json
 coverage
+tools/web/playwright-report/
+tools/web/test-results/
