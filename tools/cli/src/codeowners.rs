@@ -93,42 +93,64 @@ fn collect_entries(
     project_dir: Option<&Path>,
     entries: &mut Vec<String>,
 ) {
-    for feature in features {
-        // Calculate the path for CODEOWNERS
-        let feature_path = std::path::PathBuf::from(&feature.path);
-        let full_path = base_path.join(&feature_path);
+    collect_entries_with_parent(features, base_path, project_dir, entries, None);
+}
 
-        // Determine the final path to write
-        let codeowners_path = if let Some(proj_dir) = project_dir {
-            // Remove project_dir from the full_path if present
-            if let Ok(relative) = full_path.strip_prefix(proj_dir) {
-                relative.to_path_buf()
+/// Recursively collect CODEOWNERS entries from features with parent owner tracking
+fn collect_entries_with_parent(
+    features: &[Feature],
+    base_path: &Path,
+    project_dir: Option<&Path>,
+    entries: &mut Vec<String>,
+    parent_owner: Option<&str>,
+) {
+    for feature in features {
+        // Skip this feature if it has the same owner as its parent
+        let should_skip = parent_owner.map_or(false, |parent| feature.owner == parent);
+
+        if !should_skip {
+            // Calculate the path for CODEOWNERS
+            let feature_path = std::path::PathBuf::from(&feature.path);
+            let full_path = base_path.join(&feature_path);
+
+            // Determine the final path to write
+            let codeowners_path = if let Some(proj_dir) = project_dir {
+                // Remove project_dir from the full_path if present
+                if let Ok(relative) = full_path.strip_prefix(proj_dir) {
+                    relative.to_path_buf()
+                } else {
+                    full_path
+                }
             } else {
                 full_path
+            };
+
+            // Convert to forward slashes and add leading slash for CODEOWNERS format
+            let path_str = codeowners_path.to_str().unwrap_or("").replace('\\', "/");
+
+            let path_str = if path_str.starts_with('/') {
+                path_str
+            } else {
+                format!("/{}", path_str)
+            };
+
+            // Add owner with @ prefix, but skip if owner is empty
+            if feature.owner.is_empty() {
+                entries.push(format!("{} @Unknown", path_str));
+            } else {
+                let owner = format_owner(&feature.owner);
+                entries.push(format!("{} {}", path_str, owner));
             }
-        } else {
-            full_path
-        };
-
-        // Convert to forward slashes and add leading slash for CODEOWNERS format
-        let path_str = codeowners_path.to_str().unwrap_or("").replace('\\', "/");
-
-        let path_str = if path_str.starts_with('/') {
-            path_str
-        } else {
-            format!("/{}", path_str)
-        };
-
-        // Add owner with @ prefix, but skip if owner is empty
-        if feature.owner.is_empty() {
-            entries.push(format!("{} @Unknown", path_str));
-        } else {
-            let owner = format_owner(&feature.owner);
-            entries.push(format!("{} {}", path_str, owner));
         }
 
-        // Recursively collect from nested features
-        collect_entries(&feature.features, base_path, project_dir, entries);
+        // Recursively collect from nested features, passing current feature's owner
+        collect_entries_with_parent(
+            &feature.features,
+            base_path,
+            project_dir,
+            entries,
+            Some(&feature.owner),
+        );
     }
 }
 
