@@ -104,7 +104,8 @@ jobs:
             tools/cli/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Prepare public folder
+      - name: Prepare rust public folder
+        working-directory: ./tools/cli
         run: mkdir -p public
 
       # Build the CLI to generate features.json and metadata.json
