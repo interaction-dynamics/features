@@ -19,35 +19,20 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v5
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-      - uses: pnpm/action-setup@v4.2.0
-        name: Install pnpm
-        with:
-          version: 10
-          run_install: false
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          bun-version: latest
       - name: Install 🔧
-        run: pnpm install
+        run: bun install
       - name: Build 🔧
-        run: pnpm build
+        run: bun run build
       - name: Format 👕
         run: |
-          pnpm format
-          pnpm lint
+          bun run format
+          bun run lint
       - name: Unit Tests ✔️
-        run: pnpm test:coverage
+        run: bun run test:coverage
 
   validate-cli:
     name: Validate CLI
@@ -141,42 +126,23 @@ jobs:
           echo "{\"version\": \"$VERSION\", \"repository\": \"git@github.com:interaction-dynamics/features.git\" }" > ../web/public/metadata.json
           echo "Generated metadata.json with version: $VERSION"
 
-      # Setup Node.js for web app
-      - uses: actions/setup-node@v5
+      # Setup bun for web app
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-
-      - uses: pnpm/action-setup@v4.2.0
-        name: Install pnpm
-        with:
-          version: 10
-          run_install: false
-
-      - name: Get pnpm store directory
-        shell: bash
-        working-directory: ./tools/web
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          bun-version: latest
 
       - name: Install web dependencies 🔧
         working-directory: ./tools/web
-        run: pnpm install
+        run: bun install
 
       - name: Install Playwright browsers 🎭
         working-directory: ./tools/web
-        run: pnpm exec playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
 
       - name: Run e2e tests ✔️
         working-directory: ./tools/web
-        run: pnpm test:e2e
+        run: bun run test:e2e
 
       - name: Upload test results 📤
         if: always()
