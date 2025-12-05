@@ -79,6 +79,8 @@ Commands and their descriptions are listed below:
 | `--coverage-dir <path>` | Specify a custom coverage directory (overrides automatic search) |
 | `--generate-codeowners` | Generate or update a CODEOWNERS file with feature ownership information |
 | `--project-dir <path>` | Project directory for CODEOWNERS generation and additional coverage search locations |
+| `--codeowners-path <path>` | Custom path and filename for CODEOWNERS file (default: `CODEOWNERS` in project directory) |
+| `--codeowners-prefix <prefix>` | Custom prefix for owner names in CODEOWNERS file (default: `@`) |
 
 ## Guidelines
 
