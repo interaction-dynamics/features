@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build_for_cli": "WATCH=on rm -rf ../cli/public && bun run build && rm -rf dist/features.json && rm -rf dist/metadata.json && cp -r dist ../cli/public",
+    "build_for_cli": "WATCH=on rm -rf ../cli/public && pnpm build && rm -rf dist/features.json && rm -rf dist/metadata.json && cp -r dist ../cli/public",
     "lint": "biome lint .",
     "format": "biome format .",
     "format:fix": "biome format . --write",
@@ -58,7 +58,9 @@
     "vite": "npm:rolldown-vite@7.1.14",
     "vitest": "^4.0.9"
   },
-  "overrides": {
-    "vite": "npm:rolldown-vite@7.1.14"
+  "pnpm": {
+    "overrides": {
+      "vite": "npm:rolldown-vite@7.1.14"
+    }
   }
 }

@@ -9,14 +9,14 @@ A demo is available at [interaction-dynamics.io/features/](interaction-dynamics.
 # cd ../cli
 # cargo run  ../../examples/javascript-basic/ --json > ../web/public/features.json
 
-bun install
+pnpm install
 
-bun dev
+pnpm dev
 ```
 
 ## Build Static Version
 
 ```bash
 
-bun build
+pnpm build
 ```
