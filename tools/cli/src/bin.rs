@@ -98,6 +98,14 @@ struct Cli {
     /// Project directory for CODEOWNERS file generation
     #[arg(long)]
     project_dir: Option<std::path::PathBuf>,
+
+    /// Custom path and filename for CODEOWNERS file (default: CODEOWNERS)
+    #[arg(long)]
+    codeowners_path: Option<std::path::PathBuf>,
+
+    /// Custom prefix for owner names in CODEOWNERS file (default: @)
+    #[arg(long, default_value = "@")]
+    codeowners_prefix: String,
 }
 
 fn flatten_features(features: &[Feature]) -> Vec<Feature> {
@@ -437,7 +445,14 @@ async fn main() -> Result<()> {
     // Generate CODEOWNERS file if requested
     if args.generate_codeowners {
         let output_dir = args.project_dir.as_deref().unwrap_or(&current_dir);
-        generate_codeowners(&features, &path, args.project_dir.as_deref(), output_dir)?;
+        generate_codeowners(
+            &features,
+            &path,
+            args.project_dir.as_deref(),
+            output_dir,
+            args.codeowners_path.as_deref(),
+            &args.codeowners_prefix,
+        )?;
     }
 
     // Handle main actions - these can be combined with generate-codeowners
