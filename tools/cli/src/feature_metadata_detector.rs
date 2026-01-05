@@ -10,6 +10,18 @@ use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 
+/// Represents a single metadata entry's properties (key-value pairs)
+type MetadataProperties = HashMap<String, String>;
+
+/// Represents a list of metadata entries for a specific metadata key
+type MetadataEntries = Vec<MetadataProperties>;
+
+/// Maps metadata keys (e.g., "feature-flag") to their entries
+type MetadataByKey = HashMap<String, MetadataEntries>;
+
+/// Maps feature names to their metadata, organized by metadata key
+pub type FeatureMetadataMap = HashMap<String, MetadataByKey>;
+
 #[derive(Debug, Clone)]
 pub struct FeatureMetadataComment {
     #[allow(dead_code)]
@@ -17,7 +29,7 @@ pub struct FeatureMetadataComment {
     #[allow(dead_code)]
     pub line_number: usize,
     pub metadata_key: String,
-    pub properties: HashMap<String, String>,
+    pub properties: MetadataProperties,
 }
 
 /// Detects comment start patterns for various languages based on file extension
@@ -93,8 +105,8 @@ fn extract_comment_content(line: &str, patterns: &[CommentPattern]) -> Option<St
 
 /// Parses properties from a feature flag comment
 /// Format: "key: value, key2: value2, ..."
-fn parse_properties(content: &str) -> HashMap<String, String> {
-    let mut properties = HashMap::new();
+fn parse_properties(content: &str) -> MetadataProperties {
+    let mut properties = MetadataProperties::new();
 
     // Split by comma and parse key:value pairs
     for part in content.split(',') {
@@ -117,7 +129,7 @@ fn parse_properties(content: &str) -> HashMap<String, String> {
 fn check_line_for_feature_metadata(
     line: &str,
     patterns: &[CommentPattern],
-) -> Option<(String, HashMap<String, String>)> {
+) -> Option<(String, MetadataProperties)> {
     if let Some(comment_content) = extract_comment_content(line, patterns) {
         // Check if the comment contains "--feature-" pattern
         if let Some(feature_start) = comment_content.find("--feature-") {
@@ -181,11 +193,8 @@ fn scan_file(file_path: &Path) -> Result<Vec<FeatureMetadataComment>> {
 /// - Outer key: feature name (from "feature:feature-1")
 /// - Inner key: metadata key (from "--feature-flag", "--feature-experiment", etc.)
 /// - Value: vector of property maps
-pub fn scan_directory_for_feature_metadata(
-    dir_path: &Path,
-) -> Result<HashMap<String, HashMap<String, Vec<HashMap<String, String>>>>> {
-    let mut feature_metadata: HashMap<String, HashMap<String, Vec<HashMap<String, String>>>> =
-        HashMap::new();
+pub fn scan_directory_for_feature_metadata(dir_path: &Path) -> Result<FeatureMetadataMap> {
+    let mut feature_metadata = FeatureMetadataMap::new();
 
     // Skip common directories that shouldn't be scanned
     let skip_dirs = [
@@ -215,18 +224,18 @@ pub fn scan_directory_for_feature_metadata(
         })
         .filter_map(|e| e.ok())
     {
-        if entry.file_type().is_file() {
-            if let Ok(comments) = scan_file(entry.path()) {
-                for comment in comments {
-                    // Get the feature name from the properties
-                    if let Some(feature_name) = comment.properties.get("feature") {
-                        feature_metadata
-                            .entry(feature_name.clone())
-                            .or_insert_with(HashMap::new)
-                            .entry(comment.metadata_key)
-                            .or_insert_with(Vec::new)
-                            .push(comment.properties);
-                    }
+        if entry.file_type().is_file()
+            && let Ok(comments) = scan_file(entry.path())
+        {
+            for comment in comments {
+                // Get the feature name from the properties
+                if let Some(feature_name) = comment.properties.get("feature") {
+                    feature_metadata
+                        .entry(feature_name.clone())
+                        .or_default()
+                        .entry(comment.metadata_key)
+                        .or_default()
+                        .push(comment.properties);
                 }
             }
         }

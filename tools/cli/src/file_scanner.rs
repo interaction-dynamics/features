@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use crate::feature_metadata_detector;
+use crate::feature_metadata_detector::{self, FeatureMetadataMap};
 use crate::git_helper::get_all_commits_by_path;
 use crate::models::{Change, Feature, Stats};
 use crate::readme_parser::read_readme_info;
@@ -522,7 +522,7 @@ fn process_feature_directory(
     name: &str,
     changes_map: Option<&HashMap<String, Vec<Change>>>,
     parent_owner: Option<&str>,
-    feature_metadata_map: &HashMap<String, HashMap<String, Vec<HashMap<String, String>>>>,
+    feature_metadata_map: &FeatureMetadataMap,
 ) -> Result<Feature> {
     // Try to find and read README file, use defaults if not found
     let mut readme_info = if let Some(readme_path) = find_readme_file(path) {
@@ -678,7 +678,7 @@ fn list_files_recursive_impl(
     base_path: &Path,
     changes_map: Option<&HashMap<String, Vec<Change>>>,
     parent_owner: Option<&str>,
-    feature_metadata_map: &HashMap<String, HashMap<String, Vec<HashMap<String, String>>>>,
+    feature_metadata_map: &FeatureMetadataMap,
 ) -> Result<Vec<Feature>> {
     let entries = fs::read_dir(dir)
         .with_context(|| format!("could not read directory `{}`", dir.display()))?;
