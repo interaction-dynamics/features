@@ -1,4 +1,16 @@
 TN:
+SF:src/libs/features/feature-0/file.tsx
+FN:2,createFeature0
+FNF:1
+FNH:1
+FNDA:1,createFeature0
+DA:3,1
+LF:1
+LH:1
+BRF:0
+BRH:0
+end_of_record
+TN:
 SF:src/libs/features/feature-1/features/feature-3/feature-4.ts
 FN:1,createFeature3
 FN:8,(anonymous_1)
