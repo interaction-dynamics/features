@@ -206,16 +206,12 @@ fn infer_feature_name_from_path(file_path: &Path, base_path: &Path) -> Option<St
     let components: Vec<_> = relative_path.components().collect();
 
     for (i, component) in components.iter().enumerate() {
-        if let Some(os_str) = component.as_os_str().to_str() {
-            // Check if this component is named "features"
-            if os_str == "features" {
-                // The next component should be the feature name
-                if let Some(next_component) = components.get(i + 1) {
-                    if let Some(feature_name) = next_component.as_os_str().to_str() {
-                        return Some(feature_name.to_string());
-                    }
-                }
-            }
+        if let Some(os_str) = component.as_os_str().to_str()
+            && os_str == "features"
+            && let Some(next_component) = components.get(i + 1)
+            && let Some(feature_name) = next_component.as_os_str().to_str()
+        {
+            return Some(feature_name.to_string());
         }
     }
 
@@ -259,24 +255,24 @@ pub fn scan_directory_for_feature_metadata(dir_path: &Path) -> Result<FeatureMet
         })
         .filter_map(|e| e.ok())
     {
-        if entry.file_type().is_file() {
-            if let Ok(comments) = scan_file(entry.path()) {
-                for comment in comments {
-                    // Get the feature name from the properties, or infer from path
-                    let feature_name = comment
-                        .properties
-                        .get("feature")
-                        .cloned()
-                        .or_else(|| infer_feature_name_from_path(entry.path(), dir_path));
+        if entry.file_type().is_file()
+            && let Ok(comments) = scan_file(entry.path())
+        {
+            for comment in comments {
+                // Get the feature name from the properties, or infer from path
+                let feature_name = comment
+                    .properties
+                    .get("feature")
+                    .cloned()
+                    .or_else(|| infer_feature_name_from_path(entry.path(), dir_path));
 
-                    if let Some(feature_name) = feature_name {
-                        feature_metadata
-                            .entry(feature_name)
-                            .or_default()
-                            .entry(comment.metadata_key)
-                            .or_default()
-                            .push(comment.properties);
-                    }
+                if let Some(feature_name) = feature_name {
+                    feature_metadata
+                        .entry(feature_name)
+                        .or_default()
+                        .entry(comment.metadata_key)
+                        .or_default()
+                        .push(comment.properties);
                 }
             }
         }
