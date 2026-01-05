@@ -140,27 +140,21 @@ test.describe('Feature Owner', () => {
   test('should display help button for features without owner', async ({
     page,
   }) => {
-    // Click through features to find one without owner
-    const features = page.locator('[data-sidebar="menu-button"]')
-    const featureCount = await features.count()
+    // Navigate directly to feature-2 which has no owner
+    await page.goto('/#/?feature=libs/features/feature-2')
+    await page.waitForTimeout(500)
 
-    for (let i = 0; i < Math.min(featureCount, 10); i++) {
-      await features.nth(i).click()
-      await page.waitForTimeout(300)
+    const ownerSection = page.locator('p:has-text("Owner")').first()
+    const ownerContainer = ownerSection
+      .locator('..')
+      .locator('div.text-xs.font-mono')
 
-      const ownerSection = page.locator('p:has-text("Owner")').first()
-      const ownerContainer = ownerSection
-        .locator('..')
-        .locator('div.text-xs.font-mono')
+    // Check if help button exists
+    const helpButton = ownerContainer.locator('button[title*="Learn"]').first()
 
-      // Check if help button exists
-      const helpButton = ownerContainer
-        .locator('button[title*="Learn"]')
-        .first()
-      if ((await helpButton.count()) > 0) {
-        await expect(helpButton).toBeVisible()
-        break
-      }
+    // Feature-2 should have empty owner and show help button
+    if ((await helpButton.count()) > 0) {
+      await expect(helpButton).toBeVisible()
     }
   })
 
@@ -331,32 +325,25 @@ test.describe('Feature Owner', () => {
   })
 
   test('should handle features with empty owner string', async ({ page }) => {
-    // Click through features to find one with empty owner
-    const features = page.locator('[data-sidebar="menu-button"]')
-    const featureCount = await features.count()
+    // Navigate directly to feature-2 which has empty owner
+    await page.goto('/#/?feature=libs/features/feature-2')
+    await page.waitForTimeout(500)
 
-    for (let i = 0; i < Math.min(featureCount, 10); i++) {
-      await features.nth(i).click()
-      await page.waitForTimeout(300)
+    const ownerSection = page.locator('p:has-text("Owner")').first()
+    const ownerContainer = ownerSection
+      .locator('..')
+      .locator('div.text-xs.font-mono')
+    const text = await ownerContainer.textContent()
 
-      const ownerSection = page.locator('p:has-text("Owner")').first()
-      const ownerContainer = ownerSection
-        .locator('..')
-        .locator('div.text-xs.font-mono')
-      const text = await ownerContainer.textContent()
+    // Feature-2 has empty owner, should show "Unknown"
+    expect(text).toContain('Unknown')
 
-      if (text?.includes('Unknown')) {
-        // Should show help button for empty owner
-        const helpButton = ownerContainer
-          .locator('button[title*="Learn"]')
-          .first()
-        const hasHelpButton = (await helpButton.count()) > 0
+    // Should show help button for empty owner
+    const helpButton = ownerContainer.locator('button[title*="Learn"]').first()
+    const hasHelpButton = (await helpButton.count()) > 0
 
-        if (hasHelpButton) {
-          await expect(helpButton).toBeVisible()
-        }
-        break
-      }
+    if (hasHelpButton) {
+      await expect(helpButton).toBeVisible()
     }
   })
 })
