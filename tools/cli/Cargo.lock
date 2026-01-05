@@ -370,6 +370,7 @@ dependencies = [
  "serde_yaml",
  "tempfile",
  "tokio",
+ "walkdir",
  "warp",
 ]
 

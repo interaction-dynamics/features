@@ -2,9 +2,14 @@ import {
   BarChart3,
   CheckSquare,
   FileText,
+  Flag,
   FlaskConical,
   FolderTree,
   GitCommitVertical,
+  Settings,
+  Table,
+  Tags,
+  ToggleLeft,
   User,
 } from 'lucide-react'
 import { lazy } from 'react'
@@ -21,11 +26,30 @@ const FeatureDescription = lazy(() => import('./feature-description'))
 const FeatureInsights = lazy(() => import('./feature-insights'))
 const FeatureTests = lazy(() => import('./feature-tests'))
 
+import { FeatureMetadataTable } from './feature-metadata-table'
+
 interface FeatureDetailsProps {
   feature: Feature
 }
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
+  // Extract metadata keys that have array values (starting with 'feature-')
+  const metadataArrayKeys = feature.meta
+    ? Object.keys(feature.meta).filter(
+        (key) =>
+          key.startsWith('feature-') && Array.isArray(feature.meta?.[key]),
+      )
+    : []
+
+  // Get icon for metadata key
+  const getMetadataIcon = (key: string) => {
+    if (key.includes('flag')) return Flag
+    if (key.includes('experiment')) return FlaskConical
+    if (key.includes('toggle')) return ToggleLeft
+    if (key.includes('config')) return Settings
+    return Table
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -83,6 +107,18 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
               Insights
             </TabsTrigger>
           )}
+          {metadataArrayKeys.map((key) => {
+            const Icon = getMetadataIcon(key)
+            return (
+              <TabsTrigger key={key} value={key}>
+                <Icon className="h-4 w-4" />
+                {key
+                  .split('-')
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')}
+              </TabsTrigger>
+            )
+          })}
         </TabsList>
         <TabsContent value="description" className="mt-1">
           <FeatureDescription description={feature.description} />
@@ -105,6 +141,14 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             <FeatureInsights stats={feature.stats} />
           </TabsContent>
         )}
+        {metadataArrayKeys.map((key) => (
+          <TabsContent key={key} value={key} className="mt-1">
+            <FeatureMetadataTable
+              data={feature.meta?.[key] as Record<string, string>[]}
+              metadataKey={key}
+            />
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   )

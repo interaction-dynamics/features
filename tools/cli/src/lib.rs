@@ -2,6 +2,7 @@ pub mod build;
 pub mod checker;
 pub mod codeowners;
 pub mod coverage_parser;
+pub mod feature_metadata_detector;
 pub mod file_scanner;
 pub mod git_helper;
 pub mod http_server;

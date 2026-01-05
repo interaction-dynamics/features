@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use crate::feature_metadata_detector;
 use crate::git_helper::get_all_commits_by_path;
 use crate::models::{Change, Feature, Stats};
 use crate::readme_parser::read_readme_info;
@@ -96,13 +97,19 @@ fn is_feature_directory(dir_path: &Path) -> bool {
 }
 
 pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
-    list_files_recursive_impl(dir, dir, None, None)
+    // Scan entire base_path for feature metadata once
+    let feature_metadata =
+        feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
+    list_files_recursive_impl(dir, dir, None, None, &feature_metadata)
 }
 
 pub fn list_files_recursive_with_changes(dir: &Path) -> Result<Vec<Feature>> {
     // Get all commits once at the beginning for efficiency
     let all_commits = get_all_commits_by_path(dir).unwrap_or_default();
-    list_files_recursive_impl(dir, dir, Some(&all_commits), None)
+    // Scan entire base_path for feature metadata once
+    let feature_metadata =
+        feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
+    list_files_recursive_impl(dir, dir, Some(&all_commits), None, &feature_metadata)
 }
 
 fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
@@ -515,6 +522,7 @@ fn process_feature_directory(
     name: &str,
     changes_map: Option<&HashMap<String, Vec<Change>>>,
     parent_owner: Option<&str>,
+    feature_metadata_map: &HashMap<String, HashMap<String, Vec<HashMap<String, String>>>>,
 ) -> Result<Feature> {
     // Try to find and read README file, use defaults if not found
     let mut readme_info = if let Some(readme_path) = find_readme_file(path) {
@@ -531,6 +539,38 @@ fn process_feature_directory(
 
     // Remove the 'feature' key from meta if it exists (it's redundant since we know it's a feature)
     readme_info.meta.remove("feature");
+
+    // Get the folder name (the last component of the path)
+    let folder_name = path.file_name().and_then(|n| n.to_str()).unwrap_or(name);
+
+    // Check if this feature has any metadata from the global scan (matched by folder name)
+    if let Some(metadata_map) = feature_metadata_map.get(folder_name) {
+        // Iterate through each metadata key (e.g., "feature-flag", "feature-experiment")
+        for (metadata_key, flags) in metadata_map {
+            // Convert Vec<HashMap<String, String>> to JSON array
+            let flags_json: Vec<serde_json::Value> = flags
+                .iter()
+                .map(|flag_map| {
+                    let json_map: serde_json::Map<String, serde_json::Value> = flag_map
+                        .iter()
+                        .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                        .collect();
+                    serde_json::Value::Object(json_map)
+                })
+                .collect();
+
+            // Check if this metadata key already exists, append if it does
+            readme_info
+                .meta
+                .entry(metadata_key.clone())
+                .and_modify(|existing| {
+                    if let serde_json::Value::Array(arr) = existing {
+                        arr.extend(flags_json.clone());
+                    }
+                })
+                .or_insert_with(|| serde_json::Value::Array(flags_json));
+        }
+    }
 
     let changes = if let Some(map) = changes_map {
         // Convert the absolute path to a repo-relative path and look up changes
@@ -561,6 +601,7 @@ fn process_feature_directory(
             base_path,
             changes_map,
             Some(&actual_owner),
+            feature_metadata_map,
         )
         .unwrap_or_default()
     } else {
@@ -590,6 +631,7 @@ fn process_feature_directory(
                     &entry_name,
                     changes_map,
                     Some(&actual_owner),
+                    feature_metadata_map,
                 )?;
                 nested_features.push(nested_feature);
             } else {
@@ -600,6 +642,7 @@ fn process_feature_directory(
                     base_path,
                     changes_map,
                     Some(&actual_owner),
+                    feature_metadata_map,
                 )?;
                 nested_features.extend(deeper_features);
             }
@@ -635,6 +678,7 @@ fn list_files_recursive_impl(
     base_path: &Path,
     changes_map: Option<&HashMap<String, Vec<Change>>>,
     parent_owner: Option<&str>,
+    feature_metadata_map: &HashMap<String, HashMap<String, Vec<HashMap<String, String>>>>,
 ) -> Result<Vec<Feature>> {
     let entries = fs::read_dir(dir)
         .with_context(|| format!("could not read directory `{}`", dir.display()))?;
@@ -650,15 +694,26 @@ fn list_files_recursive_impl(
 
         if path.is_dir() {
             if is_feature_directory(&path) {
-                let feature =
-                    process_feature_directory(&path, base_path, &name, changes_map, parent_owner)?;
+                let feature = process_feature_directory(
+                    &path,
+                    base_path,
+                    &name,
+                    changes_map,
+                    parent_owner,
+                    feature_metadata_map,
+                )?;
                 features.push(feature);
             } else if !is_documentation_directory(&path)
                 && !is_inside_documentation_directory(&path)
             {
                 // Recursively search for features in non-documentation subdirectories
-                let new_features =
-                    list_files_recursive_impl(&path, base_path, changes_map, parent_owner)?;
+                let new_features = list_files_recursive_impl(
+                    &path,
+                    base_path,
+                    changes_map,
+                    parent_owner,
+                    feature_metadata_map,
+                )?;
                 features.extend(new_features);
             }
         }

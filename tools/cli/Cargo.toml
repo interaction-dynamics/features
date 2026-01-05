@@ -38,6 +38,7 @@ include_dir = "0.7"
 notify = "6.0"
 openssl = { version = "0.10.73", features = ["vendored"] }
 indicatif = "0.17"
+walkdir = "2.0"
 
 [dev-dependencies]
 tempfile = "3.0"
