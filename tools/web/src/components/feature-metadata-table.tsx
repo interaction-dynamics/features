@@ -74,6 +74,7 @@ export function FeatureMetadataTable({
           </TableHeader>
           <TableBody>
             {data.map((item, index) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: we have no other option
               <TableRow key={index}>
                 {sortedKeys.map((key) => (
                   <TableCell key={key} className="py-3">
