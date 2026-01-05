@@ -8,7 +8,6 @@ import {
   GitCommitVertical,
   Settings,
   Table,
-  Tags,
   ToggleLeft,
   User,
 } from 'lucide-react'
