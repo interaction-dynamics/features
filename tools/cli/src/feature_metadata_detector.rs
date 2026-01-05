@@ -143,16 +143,20 @@ fn check_line_for_feature_metadata(
 
             let metadata_key = after_dashes[..metadata_key_end].to_string();
 
-            // Look for the "feature:" part which contains the actual metadata
-            if let Some(feature_pos) = comment_content.find("feature:") {
-                // Extract everything from "feature:" onwards
-                let metadata_part = &comment_content[feature_pos..];
-                let properties = parse_properties(metadata_part);
+            // Extract everything after the metadata key for property parsing
+            let properties_start = feature_start + 2 + metadata_key_end; // +2 for "--"
+            let properties_content = if properties_start < comment_content.len() {
+                comment_content[properties_start..].trim_start()
+            } else {
+                ""
+            };
 
-                // Only return if we actually found some properties
-                if !properties.is_empty() {
-                    return Some((metadata_key, properties));
-                }
+            // Parse properties from the content after the metadata key
+            let properties = parse_properties(properties_content);
+
+            // Only return if we actually found some properties or patterns
+            if !properties.is_empty() {
+                return Some((metadata_key, properties));
             }
         }
     }
@@ -185,6 +189,33 @@ fn scan_file(file_path: &Path) -> Result<Vec<FeatureMetadataComment>> {
     }
 
     Ok(results)
+}
+
+/// Attempts to infer the feature name from a file path by looking for a 'features' directory
+/// in the path hierarchy and extracting the immediate subdirectory name
+///
+/// For example:
+/// - `src/features/user-auth/component.tsx` -> Some("user-auth")
+/// - `libs/features/api-v2/utils.ts` -> Some("api-v2")
+/// - `src/components/Button.tsx` -> None
+fn infer_feature_name_from_path(file_path: &Path, base_path: &Path) -> Option<String> {
+    // Get the relative path from base_path
+    let relative_path = file_path.strip_prefix(base_path).ok()?;
+
+    // Look for 'features' directory in the path components
+    let components: Vec<_> = relative_path.components().collect();
+
+    for (i, component) in components.iter().enumerate() {
+        if let Some(os_str) = component.as_os_str().to_str()
+            && os_str == "features"
+            && let Some(next_component) = components.get(i + 1)
+            && let Some(feature_name) = next_component.as_os_str().to_str()
+        {
+            return Some(feature_name.to_string());
+        }
+    }
+
+    None
 }
 
 /// Scans a directory recursively for feature metadata comments
@@ -228,10 +259,16 @@ pub fn scan_directory_for_feature_metadata(dir_path: &Path) -> Result<FeatureMet
             && let Ok(comments) = scan_file(entry.path())
         {
             for comment in comments {
-                // Get the feature name from the properties
-                if let Some(feature_name) = comment.properties.get("feature") {
+                // Get the feature name from the properties, or infer from path
+                let feature_name = comment
+                    .properties
+                    .get("feature")
+                    .cloned()
+                    .or_else(|| infer_feature_name_from_path(entry.path(), dir_path));
+
+                if let Some(feature_name) = feature_name {
                     feature_metadata
-                        .entry(feature_name.clone())
+                        .entry(feature_name)
                         .or_default()
                         .entry(comment.metadata_key)
                         .or_default()
