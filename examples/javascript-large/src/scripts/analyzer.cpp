@@ -1,4 +1,4 @@
-// --feature-flag feature:feature-1, type: analysis, language: cpp, version: 1.0.0
+// --feature-flag feature:feature-1, type: analysis, language: cpp, version: 1.0.0, expiration_date: 2024-12-31
 
 #include <iostream>
 #include <string>

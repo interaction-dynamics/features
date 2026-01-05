@@ -5,13 +5,15 @@
 //! and their respective comment styles.
 
 use anyhow::Result;
+use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 
 /// Represents a single metadata entry's properties (key-value pairs)
-type MetadataProperties = HashMap<String, String>;
+/// Uses IndexMap to preserve insertion order from comments
+type MetadataProperties = IndexMap<String, String>;
 
 /// Represents a list of metadata entries for a specific metadata key
 type MetadataEntries = Vec<MetadataProperties>;
@@ -105,8 +107,9 @@ fn extract_comment_content(line: &str, patterns: &[CommentPattern]) -> Option<St
 
 /// Parses properties from a feature flag comment
 /// Format: "key: value, key2: value2, ..."
+/// Preserves the order of properties as they appear in the comment
 fn parse_properties(content: &str) -> MetadataProperties {
-    let mut properties = MetadataProperties::new();
+    let mut properties = IndexMap::new();
 
     // Split by comma and parse key:value pairs
     for part in content.split(',') {
