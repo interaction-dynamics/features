@@ -1,3 +1,4 @@
+// --feature-flag name: feature-flag-1, type: rollout, status: active
 // Nothing
 export function createFeature0() {
   return {

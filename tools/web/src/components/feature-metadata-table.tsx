@@ -36,20 +36,6 @@ export function FeatureMetadataTable({
     new Set(data.flatMap((item) => Object.keys(item))),
   ).filter((key) => key !== 'feature') // Exclude 'feature' key as it's redundant
 
-  // Sort keys to have consistent order: common keys first, then alphabetically
-  const commonKeys = [
-    'type',
-    'status',
-    'owner',
-    'location',
-    'component',
-    'service',
-  ]
-  const sortedKeys = [
-    ...commonKeys.filter((key) => allKeys.includes(key)),
-    ...allKeys.filter((key) => !commonKeys.includes(key)).sort(),
-  ]
-
   return (
     <div className="space-y-2">
       <div className="text-xs text-muted-foreground">
@@ -59,7 +45,7 @@ export function FeatureMetadataTable({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              {sortedKeys.map((key) => (
+              {allKeys.map((key) => (
                 <TableHead
                   key={key}
                   className="h-10 font-semibold text-foreground"
@@ -76,7 +62,7 @@ export function FeatureMetadataTable({
             {data.map((item, index) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: we have no other option
               <TableRow key={index}>
-                {sortedKeys.map((key) => (
+                {allKeys.map((key) => (
                   <TableCell key={key} className="py-3">
                     {item[key] ? (
                       key === 'type' ||
