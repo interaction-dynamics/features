@@ -165,10 +165,7 @@ test.describe('Feature Metadata', () => {
     }
   })
 
-  test('should open URL metadata links in new tab', async ({
-    page,
-    context,
-  }) => {
+  test('should open URL metadata links in new tab', async ({ page }) => {
     const metaSection = page.locator('p:has-text("Meta")').first()
     await expect(metaSection).toBeVisible()
 

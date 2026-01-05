@@ -26,9 +26,9 @@ export function FeatureMeta({ feature }: FeatureMetaProps) {
 
   const metas = [
     ...(creationDate ? [['creation_date', formatDate(creationDate)]] : []),
-    ...Object.entries(feature?.meta ?? {}).filter(
-      ([key]) => key !== 'creation_date',
-    ),
+    ...Object.entries(feature?.meta ?? {})
+      .filter(([key]) => key !== 'creation_date')
+      .filter(([_, value]) => !Array.isArray(value)),
   ].filter(Boolean)
 
   return (

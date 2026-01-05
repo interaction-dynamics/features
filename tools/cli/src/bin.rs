@@ -7,6 +7,7 @@ mod build;
 mod checker;
 mod codeowners;
 mod coverage_parser;
+mod feature_metadata_detector;
 mod file_scanner;
 mod git_helper;
 mod http_server;
