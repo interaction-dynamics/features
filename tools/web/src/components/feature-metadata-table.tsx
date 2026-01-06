@@ -38,9 +38,6 @@ export function FeatureMetadataTable({
 
   return (
     <div className="space-y-2">
-      <div className="text-xs text-muted-foreground">
-        {data.length} {data.length === 1 ? 'entry' : 'entries'}
-      </div>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
@@ -99,6 +96,9 @@ export function FeatureMetadataTable({
             ))}
           </TableBody>
         </Table>
+      </div>
+      <div className="text-xs text-muted-foreground">
+        {data.length} {data.length === 1 ? 'entry' : 'entries'}
       </div>
     </div>
   )

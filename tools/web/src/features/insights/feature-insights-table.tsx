@@ -2,6 +2,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { FeatureOwner } from '@/components/feature-owner'
+import { MetadataTooltipContent } from '@/components/metadata-tooltip-content'
 import { SmartSearchInput } from '@/components/smart-search-input'
 import { SortableTableHeader } from '@/components/sortable-table-header'
 import { Button } from '@/components/ui/button'
@@ -29,8 +30,47 @@ type FeatureInsightsTableProps = {
   features: Feature[]
 }
 
+// Helper to get metadata array keys and their counts
+function getMetadataArrays(feature: Feature): Record<string, number> {
+  const metadataArrays: Record<string, number> = {}
+  if (!feature.meta) return metadataArrays
+
+  const knownMetadataTypes = [
+    'flag',
+    'experiment',
+    'toggle',
+    'config',
+    'deployment',
+    'version',
+    'deprecation',
+  ]
+
+  for (const key of Object.keys(feature.meta)) {
+    if (knownMetadataTypes.includes(key) && Array.isArray(feature.meta[key])) {
+      metadataArrays[key] = (feature.meta[key] as unknown[]).length
+    }
+  }
+
+  return metadataArrays
+}
+
+// Get all unique metadata keys across all features
+function getAllMetadataKeys(features: Feature[]): string[] {
+  const keysSet = new Set<string>()
+  for (const feature of features) {
+    const keys = Object.keys(getMetadataArrays(feature))
+    for (const key of keys) {
+      keysSet.add(key)
+    }
+  }
+  return Array.from(keysSet).sort()
+}
+
 export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
   const [showSearch] = useState(true)
+
+  // Get all metadata keys present in features
+  const metadataKeys = getAllMetadataKeys(features)
 
   // Define searchable fields for the smart filter
   const searchableFields = [
@@ -122,7 +162,7 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 label={`Feature (${sortedData.length})`}
                 sortConfig={sortConfig}
                 onSort={requestSort}
-                className="w-[300px]"
+                className="w-75"
               />
               <SortableTableHeader
                 field="owner"
@@ -191,7 +231,12 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 onSort={requestSort}
                 align="right"
               />
-              <TableHead className="w-[50px]"></TableHead>
+              {metadataKeys.map((key) => (
+                <TableHead key={key} className="text-right capitalize">
+                  {key}
+                </TableHead>
+              ))}
+              <TableHead className="w-12.5"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -281,6 +326,36 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                   >
                     {feature.stats?.commits.count_by_type?.refactor ?? 0}
                   </TableCell>
+                  {metadataKeys.map((key) => {
+                    const metadataArrays = getMetadataArrays(feature)
+                    const count = metadataArrays[key] ?? 0
+                    const items =
+                      (feature.meta?.[key] as Record<string, string>[]) ?? []
+
+                    return (
+                      <TableCell
+                        key={key}
+                        className={cn(
+                          'text-right tabular-nums',
+                          count === 0 ? 'text-muted-foreground/50' : '',
+                        )}
+                      >
+                        {count > 0 ? (
+                          <Tooltip>
+                            <TooltipTrigger>{count}</TooltipTrigger>
+                            <TooltipContent className="max-w-md">
+                              <MetadataTooltipContent
+                                items={items}
+                                metadataKey={key}
+                              />
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          0
+                        )}
+                      </TableCell>
+                    )
+                  })}
                   <TableCell>
                     <Button
                       variant="ghost"

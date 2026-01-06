@@ -18,7 +18,7 @@ type MetadataProperties = IndexMap<String, String>;
 /// Represents a list of metadata entries for a specific metadata key
 type MetadataEntries = Vec<MetadataProperties>;
 
-/// Maps metadata keys (e.g., "feature-flag") to their entries
+/// Maps metadata keys (e.g., "flag") to their entries
 type MetadataByKey = HashMap<String, MetadataEntries>;
 
 /// Maps feature names to their metadata, organized by metadata key
@@ -128,7 +128,7 @@ fn parse_properties(content: &str) -> MetadataProperties {
 }
 
 /// Checks if a line contains a feature metadata comment
-/// Returns the metadata key (e.g., "feature-flag") and the properties
+/// Returns the metadata key (e.g., "flag" from "--feature-flag") and the properties
 fn check_line_for_feature_metadata(
     line: &str,
     patterns: &[CommentPattern],
@@ -136,7 +136,7 @@ fn check_line_for_feature_metadata(
     if let Some(comment_content) = extract_comment_content(line, patterns) {
         // Check if the comment contains "--feature-" pattern
         if let Some(feature_start) = comment_content.find("--feature-") {
-            // Extract the metadata key (e.g., "--feature-flag" -> "feature-flag")
+            // Extract the metadata key (e.g., "--feature-flag" -> "flag")
             let after_dashes = &comment_content[feature_start + 2..]; // Skip "--"
 
             // Find where the metadata key ends (at space, comma, or end of string)
@@ -144,7 +144,13 @@ fn check_line_for_feature_metadata(
                 .find(|c: char| c.is_whitespace() || c == ',')
                 .unwrap_or(after_dashes.len());
 
-            let metadata_key = after_dashes[..metadata_key_end].to_string();
+            let full_key = after_dashes[..metadata_key_end].to_string();
+
+            // Strip "feature-" prefix to get just the key (e.g., "feature-flag" -> "flag")
+            let metadata_key = full_key
+                .strip_prefix("feature-")
+                .unwrap_or(&full_key)
+                .to_string();
 
             // Extract everything after the metadata key for property parsing
             let properties_start = feature_start + 2 + metadata_key_end; // +2 for "--"
@@ -225,7 +231,7 @@ fn infer_feature_name_from_path(file_path: &Path, base_path: &Path) -> Option<St
 ///
 /// Returns a nested map:
 /// - Outer key: feature name (from "feature:feature-1")
-/// - Inner key: metadata key (from "--feature-flag", "--feature-experiment", etc.)
+/// - Inner key: metadata key (e.g., "flag" from "--feature-flag", "experiment" from "--feature-experiment")
 /// - Value: vector of property maps
 pub fn scan_directory_for_feature_metadata(dir_path: &Path) -> Result<FeatureMetadataMap> {
     let mut feature_metadata = FeatureMetadataMap::new();
@@ -339,7 +345,7 @@ mod tests {
         assert!(result.is_some());
 
         let (metadata_key, props) = result.unwrap();
-        assert_eq!(metadata_key, "feature-flag");
+        assert_eq!(metadata_key, "flag");
         assert_eq!(props.get("feature"), Some(&"feature-1".to_string()));
         assert_eq!(props.get("type"), Some(&"experiment".to_string()));
     }
@@ -352,7 +358,7 @@ mod tests {
         assert!(result.is_some());
 
         let (metadata_key, props) = result.unwrap();
-        assert_eq!(metadata_key, "feature-flag");
+        assert_eq!(metadata_key, "flag");
         assert_eq!(props.get("feature"), Some(&"my-feature".to_string()));
         assert_eq!(props.get("enabled"), Some(&"true".to_string()));
     }
@@ -366,7 +372,7 @@ mod tests {
         assert!(result.is_some());
 
         let (metadata_key, props) = result.unwrap();
-        assert_eq!(metadata_key, "feature-flag");
+        assert_eq!(metadata_key, "flag");
         assert_eq!(props.get("feature"), Some(&"analytics".to_string()));
         assert_eq!(props.get("team"), Some(&"data-team".to_string()));
     }
@@ -387,12 +393,12 @@ mod tests {
         let result1 = check_line_for_feature_metadata(line1, &patterns);
         assert!(result1.is_some());
         let (metadata_key1, _) = result1.unwrap();
-        assert_eq!(metadata_key1, "feature-experiment");
+        assert_eq!(metadata_key1, "experiment");
 
         let line2 = "// --feature-toggle feature:another-feature, enabled: true";
         let result2 = check_line_for_feature_metadata(line2, &patterns);
         assert!(result2.is_some());
         let (metadata_key2, _) = result2.unwrap();
-        assert_eq!(metadata_key2, "feature-toggle");
+        assert_eq!(metadata_key2, "toggle");
     }
 }
