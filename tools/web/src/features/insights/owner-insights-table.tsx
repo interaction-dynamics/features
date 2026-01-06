@@ -1,3 +1,4 @@
+import { MetadataTooltipContent } from '@/components/metadata-tooltip-content'
 import {
   Table,
   TableBody,
@@ -12,6 +13,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type { Feature } from '@/models/feature'
+import { getOwnerName } from '@/models/owner'
 
 interface OwnerStats {
   owner: string
@@ -125,7 +127,7 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[300px]">Owner</TableHead>
+            <TableHead className="w-75">Owner</TableHead>
             <TableHead className="text-right">Features</TableHead>
             <TableHead className="text-right">Files</TableHead>
             <TableHead className="text-right">Lines</TableHead>
@@ -143,7 +145,9 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
         <TableBody>
           {ownerStats.map((stat) => (
             <TableRow key={stat.owner}>
-              <TableCell className="font-medium">{stat.owner}</TableCell>
+              <TableCell className="font-medium">
+                {getOwnerName(stat.owner)}
+              </TableCell>
               <TableCell className="text-right tabular-nums">
                 <Tooltip>
                   <TooltipTrigger>{stat.featuresCount}</TooltipTrigger>
@@ -176,31 +180,10 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
                       <Tooltip>
                         <TooltipTrigger>{count}</TooltipTrigger>
                         <TooltipContent className="max-w-md">
-                          <p className="font-semibold mb-2 capitalize">
-                            {key} ({count})
-                          </p>
-                          <div className="space-y-1 text-xs">
-                            {allItems.slice(0, 10).map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="font-mono text-muted-foreground"
-                              >
-                                {Object.entries(item)
-                                  .filter(([k]) => k !== 'feature')
-                                  .slice(0, 3)
-                                  .map(
-                                    ([k, v]) =>
-                                      `${k}: ${v.length > 20 ? v.substring(0, 20) + '...' : v}`,
-                                  )
-                                  .join(', ')}
-                              </div>
-                            ))}
-                            {allItems.length > 10 && (
-                              <div className="text-muted-foreground italic">
-                                +{allItems.length - 10} more
-                              </div>
-                            )}
-                          </div>
+                          <MetadataTooltipContent
+                            items={allItems}
+                            metadataKey={key}
+                          />
                         </TooltipContent>
                       </Tooltip>
                     ) : (

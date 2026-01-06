@@ -2,6 +2,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { FeatureOwner } from '@/components/feature-owner'
+import { MetadataTooltipContent } from '@/components/metadata-tooltip-content'
 import { SmartSearchInput } from '@/components/smart-search-input'
 import { SortableTableHeader } from '@/components/sortable-table-header'
 import { Button } from '@/components/ui/button'
@@ -161,7 +162,7 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 label={`Feature (${sortedData.length})`}
                 sortConfig={sortConfig}
                 onSort={requestSort}
-                className="w-[300px]"
+                className="w-75"
               />
               <SortableTableHeader
                 field="owner"
@@ -235,7 +236,7 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                   {key}
                 </TableHead>
               ))}
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-12.5"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -343,31 +344,10 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                           <Tooltip>
                             <TooltipTrigger>{count}</TooltipTrigger>
                             <TooltipContent className="max-w-md">
-                              <p className="font-semibold mb-2 capitalize">
-                                {key} ({count})
-                              </p>
-                              <div className="space-y-1 text-xs">
-                                {items.slice(0, 10).map((item, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="font-mono text-muted-foreground"
-                                  >
-                                    {Object.entries(item)
-                                      .filter(([k]) => k !== 'feature')
-                                      .slice(0, 3)
-                                      .map(
-                                        ([k, v]) =>
-                                          `${k}: ${v.length > 20 ? v.substring(0, 20) + '...' : v}`,
-                                      )
-                                      .join(', ')}
-                                  </div>
-                                ))}
-                                {items.length > 10 && (
-                                  <div className="text-muted-foreground italic">
-                                    +{items.length - 10} more
-                                  </div>
-                                )}
-                              </div>
+                              <MetadataTooltipContent
+                                items={items}
+                                metadataKey={key}
+                              />
                             </TooltipContent>
                           </Tooltip>
                         ) : (

@@ -1,4 +1,5 @@
 import type { Feature } from '@/models/feature'
+import { getOwnerName } from '@/models/owner'
 import { HelpButton } from './help-button'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
@@ -9,7 +10,7 @@ type FeatureOwnerProps = {
 export function FeatureOwner({ feature }: FeatureOwnerProps) {
   return (
     <div className="flex items-center gap-2">
-      <span>{feature.owner || 'Unknown'}</span>
+      <span>{getOwnerName(feature.owner)}</span>
       {feature.is_owner_inherited && (
         <Tooltip>
           <TooltipTrigger>
