@@ -131,7 +131,7 @@ This allows features to be organized anywhere in your codebase while still being
 You can annotate your code with feature metadata using special comments. These annotations can be placed **anywhere in your codebase** and will be automatically associated with the matching feature:
 
 ```typescript
-// --feature-flag name: feature-flag1, type: experiment, owner: team-a, introduced_on: 2025-01-01
+// --feature-flag feature: feature-1, name: feature-flag1, type: experiment, owner: team-a, introduced_on: 2025-01-01
 
 export function experimentalLoginFlow() {
   // implementation
@@ -141,7 +141,7 @@ export function experimentalLoginFlow() {
 The syntax is: `--feature-<metadata-key> feature:<feature-folder-name>, property: value, ...`
 
 - **`feature:`** property is optional if the comment is inside a feature folder - it will automatically link to that feature
-- **`<metadata-key>`** becomes a tab in the web UI (e.g., `feature-flag`, `feature-experiment`, `feature-toggle`)
+- **`<metadata-key>`** becomes a tab in the web UI (e.g., `flag`, `experiment`)
 - Properties are flexible - add any key-value pairs you need
 
 This works in any programming language:
@@ -156,12 +156,6 @@ This works in any programming language:
 
 ```bash
 # --feature-flag name: feature-flag1, environment: production, region: us-west-2
-```
-
-If you want to specify a feature name outside of a feature folder, you can use the `feature:` property:
-
-```typescript
-// --feature-flag feature:user-auth, type: ui, status: stable
 ```
 
 ## License

@@ -32,11 +32,23 @@ interface FeatureDetailsProps {
 }
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
-  // Extract metadata keys that have array values (starting with 'feature-')
+  // Extract metadata keys that have array values (e.g., 'flag', 'experiment', 'toggle')
+  // Common feature metadata types
+  const featureMetadataTypes = [
+    'flag',
+    'experiment',
+    'toggle',
+    'config',
+    'deployment',
+    'version',
+    'deprecation',
+  ]
+
   const metadataArrayKeys = feature.meta
     ? Object.keys(feature.meta).filter(
         (key) =>
-          key.startsWith('feature-') && Array.isArray(feature.meta?.[key]),
+          Array.isArray(feature.meta?.[key]) &&
+          featureMetadataTypes.includes(key),
       )
     : []
 
@@ -111,10 +123,7 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             return (
               <TabsTrigger key={key} value={key}>
                 <Icon className="h-4 w-4" />
-                {key
-                  .split('-')
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ')}
+                {key.charAt(0).toUpperCase() + key.slice(1)}
               </TabsTrigger>
             )
           })}
