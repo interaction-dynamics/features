@@ -23,13 +23,52 @@ interface OwnerStats {
   totalFixes: number
   totalRefactors: number
   features: Feature[]
+  metadata: Record<string, number>
 }
 
 type OwnerInsightsTableProps = {
   features: Feature[]
 }
 
+// Helper to get metadata array keys and their counts
+function getMetadataArrays(feature: Feature): Record<string, number> {
+  const metadataArrays: Record<string, number> = {}
+  if (!feature.meta) return metadataArrays
+
+  const knownMetadataTypes = [
+    'flag',
+    'experiment',
+    'toggle',
+    'config',
+    'deployment',
+    'version',
+    'deprecation',
+  ]
+
+  for (const key of Object.keys(feature.meta)) {
+    if (knownMetadataTypes.includes(key) && Array.isArray(feature.meta[key])) {
+      metadataArrays[key] = (feature.meta[key] as unknown[]).length
+    }
+  }
+
+  return metadataArrays
+}
+
+// Get all unique metadata keys across all features
+function getAllMetadataKeys(features: Feature[]): string[] {
+  const keysSet = new Set<string>()
+  for (const feature of features) {
+    const keys = Object.keys(getMetadataArrays(feature))
+    for (const key of keys) {
+      keysSet.add(key)
+    }
+  }
+  return Array.from(keysSet).sort()
+}
+
 export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
+  // Get all metadata keys present in features
+  const metadataKeys = getAllMetadataKeys(features)
   if (features.length === 0) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -54,6 +93,7 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
       totalFixes: 0,
       totalRefactors: 0,
       features: [],
+      metadata: {},
       ...ownerStatsMap.get(owner),
     }
 
@@ -65,6 +105,12 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
     stats.totalFixes += feature.stats?.commits.count_by_type?.fix ?? 0
     stats.totalRefactors += feature.stats?.commits.count_by_type?.refactor ?? 0
     stats.features.push(feature)
+
+    // Aggregate metadata counts
+    const featureMetadata = getMetadataArrays(feature)
+    for (const [key, count] of Object.entries(featureMetadata)) {
+      stats.metadata[key] = (stats.metadata[key] ?? 0) + count
+    }
 
     ownerStatsMap.set(owner, stats)
   }
@@ -83,6 +129,11 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
             <TableHead className="text-right">Features</TableHead>
             <TableHead className="text-right">Files</TableHead>
             <TableHead className="text-right">Lines</TableHead>
+            {metadataKeys.map((key) => (
+              <TableHead key={key} className="text-right capitalize">
+                {key}
+              </TableHead>
+            ))}
             {/*<TableHead className="text-right">Total Changes</TableHead>
             <TableHead className="text-right">Feat</TableHead>
             <TableHead className="text-right">Fix</TableHead>
@@ -109,6 +160,55 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
               <TableCell className="text-right tabular-nums">
                 {stat.totalLines}
               </TableCell>
+              {metadataKeys.map((key) => {
+                const count = stat.metadata[key] ?? 0
+                // Collect all metadata items of this type from all features
+                const allItems: Record<string, string>[] = []
+                for (const feature of stat.features) {
+                  const items =
+                    (feature.meta?.[key] as Record<string, string>[]) ?? []
+                  allItems.push(...items)
+                }
+
+                return (
+                  <TableCell key={key} className="text-right tabular-nums">
+                    {count > 0 ? (
+                      <Tooltip>
+                        <TooltipTrigger>{count}</TooltipTrigger>
+                        <TooltipContent className="max-w-md">
+                          <p className="font-semibold mb-2 capitalize">
+                            {key} ({count})
+                          </p>
+                          <div className="space-y-1 text-xs">
+                            {allItems.slice(0, 10).map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="font-mono text-muted-foreground"
+                              >
+                                {Object.entries(item)
+                                  .filter(([k]) => k !== 'feature')
+                                  .slice(0, 3)
+                                  .map(
+                                    ([k, v]) =>
+                                      `${k}: ${v.length > 20 ? v.substring(0, 20) + '...' : v}`,
+                                  )
+                                  .join(', ')}
+                              </div>
+                            ))}
+                            {allItems.length > 10 && (
+                              <div className="text-muted-foreground italic">
+                                +{allItems.length - 10} more
+                              </div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <span className="text-muted-foreground/50">0</span>
+                    )}
+                  </TableCell>
+                )
+              })}
               {/*<TableCell className="text-right tabular-nums">
                 {stat.totalCommits}
               </TableCell>
