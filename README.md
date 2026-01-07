@@ -1,55 +1,41 @@
 <div align="center">
     <img width="100" src="./tools/web/public/feature-icon.svg" alt="feature logo" />
 </div>
-<h1 align="center">Feature</h1>
+<h1 align="center">Features</h1>
 
-   
 <div align="center">
     <a href="https://crates.io/crates/features-cli"><img src="https://img.shields.io/crates/v/features-cli.svg" alt="Crates.io version" /></a>
     <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg" alt="Npm version" /></a>
 </div>
 
-`Feature` is a Web and CLI tool to explore the features in your projects. It is technology agnostic and can be used with any programming language or framework.
+`Features` is a Rust-based Web and CLI tool to explore the features in your projects, visualize their metrics and understand the ownership of each of these features.
 
-<img src="https://github.com/user-attachments/assets/809cf34b-58e6-4c9c-8297-2e8960961635" width="100%" alt="screenshot" />
-    
+It is technology agnostic and can be used with any programming language or framework.
 
-```bash
-npx features-cli@latest ./src
-
-Features found in ./src:
-feature-1 [team1] -> coverage/lcov-report/libs/features/feature-1
-  feature-3 [team1] -> coverage/lcov-report/libs/features/feature-1/features/feature-3
-feature-4 [] -> coverage/lcov-report/routes/route-3/features/feature-4
-Route 2 [John Doe] -> src/routes/route-2
-  Feature 20 [John Doe] -> src/routes/route-2/features/feature-20
-Route 3 [John Doe] -> src/routes/route-3
-  Feature 4 [team2] -> src/routes/route-3/features/feature-4
-    Coverage: 20.0% lines (1/5)
-             0.0% branches (0/2)
-```
-
-It also provides a UI to explore the feature. Check a live [demo](http://interaction-dynamics.io/features/).
-
-With both the CLI and Web GUI, you can:
+You can: 
 
 - list all the features in a project
 - find the team 'owning' a specific feature
 - get the history of a feature (git log)
-- share the list of features with product managers and stakeholders
-- find the code related to a feature
 - find the documentation related to the feature
 - list the test coverage by feature
 - check [the technical debt by feature](./FAQ.md#what-is-the-technical-debt-of-a-feature)
-- see statistics about the features
+- see statistics about the features like the repartition of feature, fix and refactor commits, lines of code, and files
 - generate CODEOWNERS file
+- list the feature flags and other feature dependencies
 
 > If you see an other use case, feel free to contribute to this repository.
 
+It also provides a UI to explore the feature. Check a live [demo](http://interaction-dynamics.io/features/).
+
+<img src="https://github.com/user-attachments/assets/809cf34b-58e6-4c9c-8297-2e8960961635" width="100%" alt="screenshot" />
+
+`features-cli` provides a Web Dashboard and CLI to also generate json reports.
+    
 ## Getting started 
 
 ```bash
-npx features-cli@latest /path/to/project
+npx features-cli@latest /path/to/project --project-dir ./repository --serve
 
 features /path/to/project # list all features in the directory and subdirectories
 
@@ -73,7 +59,7 @@ Commands and their descriptions are listed below:
 | `--check` | Run validation checks on features (e.g., duplicate names) |
 | `--skip-changes` | Skip computing git commit history (faster for large repos) |
 | `--serve` | Start an HTTP server to serve features and the web dashboard UI |
-| `--port <port>` | Change the port (default: 8080). Should be used with `--serve` |
+| `--port <port>` | Change the port (default: 3000). Should be used with `--serve` |
 | `--build` | Build a static version of the web dashboard UI |
 | `--build-dir <path>` | Output directory for the static build (default: `build`) |
 | `--coverage-dir <path>` | Specify a custom coverage directory (overrides automatic search) |
@@ -84,14 +70,15 @@ Commands and their descriptions are listed below:
 
 ## Guidelines
 
-By following specific guidelines and conventions, it becomes easier for `features` to explore your feature:
+By following specific guidelines and conventions, it becomes easier for `features` to find your feature:
 
 ### Folder structure
 
 Features can be organized in two ways:
 
 #### Method 1: Features folder (recommended)
-Place features in a dedicated `features` folder:
+
+Place your features folder in a dedicated `features` folder:
 
 ```bash
 src/
@@ -138,7 +125,7 @@ export function experimentalLoginFlow() {
 }
 ```
 
-The syntax is: `--feature-<metadata-key> feature:<feature-folder-name>, property: value, ...`
+The syntax is: `--feature-<metadata-key> feature:<feature-folder-basename>, property: value, ...`
 
 - **`feature:`** property is optional if the comment is inside a feature folder - it will automatically link to that feature
 - **`<metadata-key>`** becomes a tab in the web UI (e.g., `flag`, `experiment`)
