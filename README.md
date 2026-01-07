@@ -32,7 +32,7 @@ It also provides a UI to explore the feature. Check a live [demo](http://interac
     <img src="https://github.com/user-attachments/assets/e5e76d65-53a2-4469-9736-76daec884839" width="100%" alt="screenshot" />
 </a>
 
-`features-cli` provides a Web Dashboard and CLI to also generate json reports.
+`features-cli` provides a Web Dashboard and also a CLI to generate json reports.
     
 ## Getting started 
 
