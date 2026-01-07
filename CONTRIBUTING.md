@@ -143,6 +143,16 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 - **Discussions**: Ask questions in [GitHub Discussions](https://github.com/interaction-dynamics/features/discussions)
 - **Documentation**: Check the [README](README.md) and inline code comments
 
+## Screenshot 
+
+To update the screenshot in the README, follow these steps:
+
+1. Run the project locally using `features /path/to/project --project-dir ./repository --serve`
+2. Take a screenshot of the UI
+3. Use https://postspark.app/ to add a frame
+4. Upload the framed screenshot to your GitHub account
+5. Update the README with the new screenshot URL
+
 ## Code of Conduct
 
 This project follows a standard code of conduct. Please be respectful and professional in all interactions.
