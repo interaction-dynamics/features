@@ -28,7 +28,9 @@ You can:
 
 It also provides a UI to explore the feature. Check a live [demo](http://interaction-dynamics.io/features/).
 
-<img src="https://github.com/user-attachments/assets/e5e76d65-53a2-4469-9736-76daec884839" width="100%" alt="screenshot" />
+<a href="http://interaction-dynamics.io/features">
+    <img src="https://github.com/user-attachments/assets/e5e76d65-53a2-4469-9736-76daec884839" width="100%" alt="screenshot" />
+</a>
 
 `features-cli` provides a Web Dashboard and CLI to also generate json reports.
     
