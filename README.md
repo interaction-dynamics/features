@@ -28,7 +28,7 @@ You can:
 
 It also provides a UI to explore the feature. Check a live [demo](http://interaction-dynamics.io/features/).
 
-<img src="https://github.com/user-attachments/assets/809cf34b-58e6-4c9c-8297-2e8960961635" width="100%" alt="screenshot" />
+<img src="https://github.com/user-attachments/assets/88dd06e1-cd7e-4332-b971-ed1c73f83d8b" width="100%" alt="screenshot" />
 
 `features-cli` provides a Web Dashboard and CLI to also generate json reports.
     
@@ -37,13 +37,12 @@ It also provides a UI to explore the feature. Check a live [demo](http://interac
 ```bash
 npx features-cli@latest /path/to/project --project-dir ./repository --serve
 
-features /path/to/project # list all features in the directory and subdirectories
-
-
 # or with installation
 npm install -g features-cli
 # or
 cargo binstall features-cli
+# then 
+features /path/to/project --project-dir ./repository --serve
 ```
 
 Commands and their descriptions are listed below:
