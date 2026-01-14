@@ -10,6 +10,7 @@
 - [How can I add a test coverage report?](#how-can-i-add-a-test-coverage-report)
 - [What is the technical debt of a feature?](#what-is-the-technical-debt-of-a-feature)
 - [How can I generate codeowners file?](#how-can-i-generate-codeowners-file)
+- [I'm getting "GLIBC_2.38 not found" error on Linux, how do I fix it?](#im-getting-glibc_238-not-found-error-on-linux-how-do-i-fix-it)
 
 ## What is a feature-based architecture?
 
@@ -106,3 +107,46 @@ The generated CODEOWNERS file will have a managed section between markers:
 ```
 
 Any content outside these markers is preserved when regenerating.
+
+## I'm getting "GLIBC_2.38 not found" error on Linux, how do I fix it?
+
+This error occurs when the Linux binary was built with a newer version of GLIBC than what's available on your system. There are several solutions:
+
+### Option 1: Use the musl build (Recommended)
+
+The musl builds are statically linked and don't depend on GLIBC at all, making them the most compatible option:
+
+```bash
+# For x64 (64-bit Intel/AMD) systems
+npm install -g @features-cli/feature-cli-linux-x64-musl
+
+# For ARM64 systems
+npm install -g @features-cli/feature-cli-linux-arm64-musl
+
+# Note: npx features-cli automatically detects and uses musl on musl-based systems
+npx features-cli@latest /path/to/project --serve
+
+# Or download the musl binary directly from GitHub releases
+# Look for files: features-linux-x64-musl or features-linux-arm64-musl
+```
+
+### Option 2: Use cargo/rust to build from source
+
+If you have Rust installed, you can build directly from source which will use your system's GLIBC:
+
+```bash
+cargo install features-cli
+```
+
+### Option 3: Use npx (which should automatically select the right binary)
+
+```bash
+npx features-cli@latest /path/to/project --serve
+```
+
+### Option 4: Update your system
+
+If possible, update your Linux distribution to a newer version that includes GLIBC 2.38 or higher. This is typically available on:
+- Ubuntu 24.04 or later
+- Debian 13 (Trixie) or later
+- Fedora 39 or later
