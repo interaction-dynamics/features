@@ -68,6 +68,7 @@ impl ServerConfig {
 /// * `port` - Port number to run the server on
 /// * `watch_path` - Path to watch for file changes
 /// * `on_ready` - Optional callback to be called when server is ready
+/// * `skip_changes` - Whether changes were skipped during feature computation
 ///
 /// # Returns
 ///
@@ -77,10 +78,17 @@ pub async fn serve_features_with_watching(
     port: u16,
     watch_path: PathBuf,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
+    skip_changes: bool,
 ) -> Result<()> {
     let config = ServerConfig::new(port);
-    serve_features_with_config_and_watching(features, config, Some(watch_path.clone()), on_ready)
-        .await
+    serve_features_with_config_and_watching(
+        features,
+        config,
+        Some(watch_path.clone()),
+        on_ready,
+        skip_changes,
+    )
+    .await
 }
 
 /// Starts an HTTP server with custom configuration and optional file watching.
@@ -91,6 +99,7 @@ pub async fn serve_features_with_watching(
 /// * `config` - Server configuration
 /// * `watch_path` - Optional path to watch for file changes
 /// * `on_ready` - Optional callback to be called when server is ready
+/// * `skip_changes` - Whether changes were skipped during feature computation
 ///
 /// # Returns
 ///
@@ -100,6 +109,7 @@ pub async fn serve_features_with_config_and_watching(
     config: ServerConfig,
     watch_path: Option<PathBuf>,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
+    skip_changes: bool,
 ) -> Result<()> {
     // Create shared state for features
     let features_data = Arc::new(RwLock::new(features.to_vec()));
@@ -152,7 +162,8 @@ pub async fn serve_features_with_config_and_watching(
             let repo_url = repository_url.clone();
             async move {
                 let mut metadata = serde_json::json!({
-                    "version": env!("CARGO_PKG_VERSION")
+                    "version": env!("CARGO_PKG_VERSION"),
+                    "skipChanges": skip_changes
                 });
 
                 // Add repository URL if available

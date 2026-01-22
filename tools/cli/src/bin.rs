@@ -468,14 +468,22 @@ async fn main() -> Result<()> {
                 Some(Box::new(move || {
                     pb_clone.finish_and_clear();
                 })),
+                args.skip_changes,
             )
             .await?;
         } else {
-            serve_features_with_watching(&features, args.port, path.clone(), None).await?;
+            serve_features_with_watching(
+                &features,
+                args.port,
+                path.clone(),
+                None,
+                args.skip_changes,
+            )
+            .await?;
         }
     } else if args.build {
         let build_config = BuildConfig::new(args.build_dir);
-        create_build(&features, build_config).await?;
+        create_build(&features, build_config, args.skip_changes).await?;
     } else if args.check {
         run_checks(&features)?;
     } else if args.generate_codeowners {
