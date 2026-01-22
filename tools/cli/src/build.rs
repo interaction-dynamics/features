@@ -54,6 +54,7 @@ impl BuildConfig {
 ///
 /// * `features` - Slice of Feature objects to include in the build
 /// * `config` - Build configuration
+/// * `skip_changes` - Whether changes were skipped during feature computation
 ///
 /// # Returns
 ///
@@ -64,6 +65,7 @@ impl BuildConfig {
 /// The build directory will contain:
 /// * All static files from the embedded public directory
 /// * `features.json` - Generated features data
+/// * `metadata.json` - Generated metadata with version and skipChanges flag
 ///
 /// # Example
 ///
@@ -75,10 +77,14 @@ impl BuildConfig {
 /// async fn main() -> anyhow::Result<()> {
 ///     let features = vec![]; // Your features data
 ///     let config = BuildConfig::new("dist");
-///     create_build(&features, config).await
+///     create_build(&features, config, false).await
 /// }
 /// ```
-pub async fn create_build(features: &[Feature], config: BuildConfig) -> Result<()> {
+pub async fn create_build(
+    features: &[Feature],
+    config: BuildConfig,
+    skip_changes: bool,
+) -> Result<()> {
     println!(
         "Creating build in directory: {}",
         config.output_dir.display()
@@ -98,6 +104,9 @@ pub async fn create_build(features: &[Feature], config: BuildConfig) -> Result<(
 
     // Generate features.json
     generate_features_json(features, &config.output_dir).await?;
+
+    // Generate metadata.json
+    generate_metadata_json(&config.output_dir, skip_changes).await?;
 
     println!("Build completed successfully!");
     println!("Output directory: {}", config.output_dir.display());
@@ -162,6 +171,26 @@ async fn generate_features_json(features: &[Feature], output_dir: &Path) -> Resu
     fs::write(&features_path, features_json).await?;
 
     println!("  Created: {}", features_path.display());
+
+    Ok(())
+}
+
+/// Generates the metadata.json file
+async fn generate_metadata_json(output_dir: &Path, skip_changes: bool) -> Result<()> {
+    println!("Generating metadata.json...");
+
+    let metadata = serde_json::json!({
+        "version": env!("CARGO_PKG_VERSION"),
+        "skipChanges": skip_changes
+    });
+
+    let metadata_json = serde_json::to_string_pretty(&metadata)
+        .map_err(|e| anyhow::anyhow!("Failed to serialize metadata to JSON: {}", e))?;
+
+    let metadata_path = output_dir.join("metadata.json");
+    fs::write(&metadata_path, metadata_json).await?;
+
+    println!("  Created: {}", metadata_path.display());
 
     Ok(())
 }

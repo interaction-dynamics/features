@@ -19,6 +19,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useMetadata } from '@/hooks/use-metadata'
 import { useTableFilter } from '@/hooks/use-table-filter'
 import { useTableSort } from '@/hooks/use-table-sort'
 import { formatDate } from '@/lib/format-date'
@@ -68,6 +69,8 @@ function getAllMetadataKeys(features: Feature[]): string[] {
 
 export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
   const [showSearch] = useState(true)
+  const { metadata } = useMetadata()
+  const skipChanges = metadata?.skipChanges ?? false
 
   // Get all metadata keys present in features
   const metadataKeys = getAllMetadataKeys(features)
@@ -170,18 +173,22 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 sortConfig={sortConfig}
                 onSort={requestSort}
               />
-              <SortableTableHeader
-                field="stats.commits.first_commit_date"
-                label="Initial Date"
-                sortConfig={sortConfig}
-                onSort={requestSort}
-              />
-              <SortableTableHeader
-                field="stats.commits.last_commit_date"
-                label="Last changed"
-                sortConfig={sortConfig}
-                onSort={requestSort}
-              />
+              {!skipChanges && (
+                <>
+                  <SortableTableHeader
+                    field="stats.commits.first_commit_date"
+                    label="Initial Date"
+                    sortConfig={sortConfig}
+                    onSort={requestSort}
+                  />
+                  <SortableTableHeader
+                    field="stats.commits.last_commit_date"
+                    label="Last changed"
+                    sortConfig={sortConfig}
+                    onSort={requestSort}
+                  />
+                </>
+              )}
               <SortableTableHeader
                 field="stats.files_count"
                 label="Files"
@@ -203,34 +210,38 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 onSort={requestSort}
                 align="right"
               />
-              <SortableTableHeader
-                field="stats.commits.total_commits"
-                label="Total Changes"
-                sortConfig={sortConfig}
-                onSort={requestSort}
-                align="right"
-              />
-              <SortableTableHeader
-                field="stats.commits.count_by_type.feat"
-                label="Feat"
-                sortConfig={sortConfig}
-                onSort={requestSort}
-                align="right"
-              />
-              <SortableTableHeader
-                field="stats.commits.count_by_type.fix"
-                label="Fix"
-                sortConfig={sortConfig}
-                onSort={requestSort}
-                align="right"
-              />
-              <SortableTableHeader
-                field="stats.commits.count_by_type.refactor"
-                label="Refactor"
-                sortConfig={sortConfig}
-                onSort={requestSort}
-                align="right"
-              />
+              {!skipChanges && (
+                <>
+                  <SortableTableHeader
+                    field="stats.commits.total_commits"
+                    label="Total Changes"
+                    sortConfig={sortConfig}
+                    onSort={requestSort}
+                    align="right"
+                  />
+                  <SortableTableHeader
+                    field="stats.commits.count_by_type.feat"
+                    label="Feat"
+                    sortConfig={sortConfig}
+                    onSort={requestSort}
+                    align="right"
+                  />
+                  <SortableTableHeader
+                    field="stats.commits.count_by_type.fix"
+                    label="Fix"
+                    sortConfig={sortConfig}
+                    onSort={requestSort}
+                    align="right"
+                  />
+                  <SortableTableHeader
+                    field="stats.commits.count_by_type.refactor"
+                    label="Refactor"
+                    sortConfig={sortConfig}
+                    onSort={requestSort}
+                    align="right"
+                  />
+                </>
+              )}
               {metadataKeys.map((key) => (
                 <TableHead key={key} className="text-right capitalize">
                   {key}
@@ -270,12 +281,16 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                   <TableCell className="text-muted-foreground">
                     <FeatureOwner feature={feature} />
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(feature.stats?.commits.first_commit_date)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(feature.stats?.commits.last_commit_date)}
-                  </TableCell>
+                  {!skipChanges && (
+                    <>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(feature.stats?.commits.first_commit_date)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(feature.stats?.commits.last_commit_date)}
+                      </TableCell>
+                    </>
+                  )}
                   <TableCell className="text-right tabular-nums">
                     {feature.stats?.files_count ?? 0}
                   </TableCell>
@@ -292,40 +307,45 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                   >
                     {feature.stats?.todos_count ?? 0}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {feature.stats?.commits.total_commits}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      'text-right tabular-nums',
-                      (feature.stats?.commits.count_by_type?.feat ?? 0) === 0
-                        ? 'text-muted-foreground/50'
-                        : '',
-                    )}
-                  >
-                    {feature.stats?.commits.count_by_type?.feat ?? 0}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      'text-right tabular-nums',
-                      (feature.stats?.commits.count_by_type?.fix ?? 0) === 0
-                        ? 'text-muted-foreground/50'
-                        : '',
-                    )}
-                  >
-                    {feature.stats?.commits.count_by_type?.fix ?? 0}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      'text-right tabular-nums',
-                      (feature.stats?.commits.count_by_type?.refactor ?? 0) ===
-                        0
-                        ? 'text-muted-foreground/50'
-                        : '',
-                    )}
-                  >
-                    {feature.stats?.commits.count_by_type?.refactor ?? 0}
-                  </TableCell>
+                  {!skipChanges && (
+                    <>
+                      <TableCell className="text-right tabular-nums">
+                        {feature.stats?.commits.total_commits}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          'text-right tabular-nums',
+                          (feature.stats?.commits.count_by_type?.feat ?? 0) ===
+                            0
+                            ? 'text-muted-foreground/50'
+                            : '',
+                        )}
+                      >
+                        {feature.stats?.commits.count_by_type?.feat ?? 0}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          'text-right tabular-nums',
+                          (feature.stats?.commits.count_by_type?.fix ?? 0) === 0
+                            ? 'text-muted-foreground/50'
+                            : '',
+                        )}
+                      >
+                        {feature.stats?.commits.count_by_type?.fix ?? 0}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          'text-right tabular-nums',
+                          (feature.stats?.commits.count_by_type?.refactor ??
+                            0) === 0
+                            ? 'text-muted-foreground/50'
+                            : '',
+                        )}
+                      >
+                        {feature.stats?.commits.count_by_type?.refactor ?? 0}
+                      </TableCell>
+                    </>
+                  )}
                   {metadataKeys.map((key) => {
                     const metadataArrays = getMetadataArrays(feature)
                     const count = metadataArrays[key] ?? 0

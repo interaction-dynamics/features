@@ -3,6 +3,7 @@ import useSWR from 'swr'
 export interface Metadata {
   version: string
   repository?: string
+  skipChanges?: boolean
 }
 
 const fetcher = async (url: string): Promise<Metadata> => {
