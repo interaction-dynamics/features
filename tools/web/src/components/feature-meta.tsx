@@ -31,6 +31,10 @@ export function FeatureMeta({ feature }: FeatureMetaProps) {
       .filter(([_, value]) => !Array.isArray(value)),
   ].filter(Boolean)
 
+  if (metas.length === 0) {
+    return null
+  }
+
   return (
     <div className="flex items-start gap-3">
       <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
