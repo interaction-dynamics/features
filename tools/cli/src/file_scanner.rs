@@ -649,8 +649,30 @@ fn process_feature_directory(
         }
     }
 
-    // Compute stats from changes if available
-    let stats = compute_stats_from_changes(&changes, path, &nested_features);
+    // Collect paths of nested features to exclude from file/line counts
+    let nested_feature_paths: Vec<String> =
+        nested_features.iter().map(|f| f.path.clone()).collect();
+
+    // Always compute file, line, and TODO counts
+    let files_count = count_files(path, &nested_feature_paths);
+    let lines_count = count_lines(path, &nested_feature_paths);
+    let todos_count = count_todos(path, &nested_feature_paths);
+
+    // Compute stats from changes if available, otherwise create basic stats
+    let stats =
+        if let Some(change_stats) = compute_stats_from_changes(&changes, path, &nested_features) {
+            // If we have change stats, they already include files/lines/todos counts
+            Some(change_stats)
+        } else {
+            // No changes, but we still want to include file/line/todo counts
+            Some(Stats {
+                files_count: Some(files_count),
+                lines_count: Some(lines_count),
+                todos_count: Some(todos_count),
+                commits: HashMap::new(),
+                coverage: None,
+            })
+        };
 
     // Make path relative to base_path
     let relative_path = path
