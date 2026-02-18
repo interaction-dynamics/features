@@ -7,10 +7,12 @@ mod build;
 mod checker;
 mod codeowners;
 mod coverage_parser;
+mod dependency_resolver;
 mod feature_metadata_detector;
 mod file_scanner;
 mod git_helper;
 mod http_server;
+mod import_detector;
 mod models;
 mod printer;
 mod readme_parser;
@@ -125,6 +127,7 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
             changes: Vec::new(),
             decisions: Vec::new(),
             stats: feature.stats.clone(),
+            dependencies: feature.dependencies.clone(),
         };
 
         flat_features.push(flat_feature);
