@@ -16,22 +16,28 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { Dependency, Feature } from "@/models/feature";
-import { buildDependencyMap, detectAlerts, groupDependencies } from "./utils";
+import {
+	buildDependencyMap,
+	buildNameToPathMap,
+	detectAlerts,
+	groupDependencies,
+} from "./utils";
 
 interface FeatureDependenciesProps {
 	dependencies: Dependency[];
-	currentFeatureName: string;
+	currentFeaturePath: string;
 	allFeatures: Feature[];
 }
 
 export default function FeatureDependencies({
 	dependencies,
-	currentFeatureName,
+	currentFeaturePath,
 	allFeatures,
 }: FeatureDependenciesProps) {
 	const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
 	const dependencyMap = buildDependencyMap(allFeatures);
+	const nameToPath = buildNameToPathMap(allFeatures);
 	const groupedArray = groupDependencies(dependencies);
 
 	const toggleRow = (key: string) => {
@@ -85,8 +91,9 @@ export default function FeatureDependencies({
 						const isExpanded = expandedRows.has(key);
 						const alerts = detectAlerts(
 							group,
-							currentFeatureName,
+							currentFeaturePath,
 							dependencyMap,
+							nameToPath,
 						);
 
 						return (

@@ -160,7 +160,7 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             <FeatureInsights
               stats={feature.stats}
               dependencies={feature.dependencies}
-              currentFeatureName={feature.name}
+              currentFeaturePath={feature.path}
               allFeatures={features}
             />
           </TabsContent>
@@ -169,7 +169,7 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
           <TabsContent value="dependencies" className="mt-1">
             <FeatureDependencies
               dependencies={feature.dependencies}
-              currentFeatureName={feature.name}
+              currentFeaturePath={feature.path}
               allFeatures={features}
             />
           </TabsContent>
