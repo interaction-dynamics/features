@@ -279,14 +279,6 @@
 				"description": "",
 				"date": "2025-10-08 11:43:11",
 				"hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
-			},
-			{
-				"title": "feat: add more examples",
-				"author_name": "Thibault Friedrich",
-				"author_email": "thibault.friedrich@interaction-dynamics.io",
-				"description": "",
-				"date": "2025-10-08 11:43:11",
-				"hash": "fafdea35cd5f979b51234b212c714e53cf11e181"
 			}
 		],
 		"decisions": [
