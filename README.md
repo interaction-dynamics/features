@@ -146,6 +146,10 @@ This works in any programming language:
 # --feature-flag name: feature-flag1, environment: production, region: us-west-2
 ```
 
+## Supported Programming Languages
+
+The tool supports feature metadata annotations in the following programming languages: Rust, C/C++, Java, JavaScript/TypeScript, Go, C#, Swift, Kotlin, Scala, CSS/SCSS/Less, Python, Bash/Shell, Ruby, Perl, YAML, TOML, SQL, Lua, HTML/XML/SVG.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

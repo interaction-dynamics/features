@@ -612,6 +612,7 @@ mod tests {
                 changes: vec![],
                 decisions: vec![],
                 stats: None,
+                dependencies: vec![],
             },
             Feature {
                 name: "CruiseOffersRoute".to_string(),
@@ -624,6 +625,7 @@ mod tests {
                 changes: vec![],
                 decisions: vec![],
                 stats: None,
+                dependencies: vec![],
             },
         ];
 
@@ -653,6 +655,7 @@ mod tests {
                 changes: vec![],
                 decisions: vec![],
                 stats: None,
+                dependencies: vec![],
             },
             Feature {
                 name: "OffersRouteExtra".to_string(),
@@ -665,6 +668,7 @@ mod tests {
                 changes: vec![],
                 decisions: vec![],
                 stats: None,
+                dependencies: vec![],
             },
         ];
 
@@ -692,6 +696,7 @@ mod tests {
             changes: vec![],
             decisions: vec![],
             stats: None,
+            dependencies: vec![],
         }];
 
         // Exact match (file IS the feature directory)
@@ -717,6 +722,7 @@ mod tests {
             changes: vec![],
             decisions: vec![],
             stats: None,
+            dependencies: vec![],
         }];
 
         // Unrelated path
@@ -745,6 +751,7 @@ mod tests {
                     changes: vec![],
                     decisions: vec![],
                     stats: None,
+                    dependencies: vec![],
                 },
                 Feature {
                     name: "SubFeatureB".to_string(),
@@ -757,12 +764,14 @@ mod tests {
                     changes: vec![],
                     decisions: vec![],
                     stats: None,
+                    dependencies: vec![],
                 },
             ],
             meta: HashMap::new(),
             changes: vec![],
             decisions: vec![],
             stats: None,
+            dependencies: vec![],
         }];
 
         // File in SubFeatureA should match SubFeatureA (most specific)

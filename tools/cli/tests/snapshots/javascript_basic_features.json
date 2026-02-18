@@ -4,7 +4,7 @@
     "description": "",
     "owner": "",
     "is_owner_inherited": false,
-    "path": "src/features/feature-0",
+    "path": "features/feature-0",
     "features": [],
     "meta": {},
     "changes": [
@@ -29,25 +29,26 @@
         "count_by_type": {
           "fix": 1
         },
-        "total_commits": 1,
         "first_commit_date": "2025-10-22 01:07:46",
+        "total_commits": 1,
         "last_commit_date": "2025-10-22 01:07:46"
       }
-    }
+    },
+    "dependencies": []
   },
   {
     "name": "Feature 1",
     "description": "This is a Feature that does something useful.",
     "owner": "team1",
     "is_owner_inherited": false,
-    "path": "src/features/feature-1",
+    "path": "features/feature-1",
     "features": [
       {
         "name": "Feature 2 Duplicated",
         "description": "This is a very long description of the feature 2 duplicated.\n\n## Reason of the feature\n\nThis Feature is duplicated because it is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Implementation Details\n\nThis feature is implemented using the following technologies:\n\n- JavaScript\n- HTML\n- CSS\n\n## Conclusion\n\nThis feature is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Future Improvements\n\n- Add more features to the feature\n- Improve the user interface",
         "owner": "team1",
         "is_owner_inherited": true,
-        "path": "src/features/feature-1/features/feature-2",
+        "path": "features/feature-1/features/feature-2",
         "features": [],
         "meta": {},
         "changes": [
@@ -77,21 +78,22 @@
             "count_by_type": {
               "feat": 2
             },
+            "last_commit_date": "2025-10-08 11:43:11",
             "total_commits": 2,
             "first_commit_date": "2025-10-08 13:30:08",
             "authors_count": {
               "Thibault Friedrich": 2
-            },
-            "last_commit_date": "2025-10-08 11:43:11"
+            }
           }
-        }
+        },
+        "dependencies": []
       },
       {
         "name": "feature-3",
         "description": "",
         "owner": "team1",
         "is_owner_inherited": true,
-        "path": "src/features/feature-1/features/feature-3",
+        "path": "features/feature-1/features/feature-3",
         "features": [],
         "meta": {},
         "changes": [
@@ -117,17 +119,18 @@
               "Thibault Friedrich": 1
             },
             "first_commit_date": "2025-10-08 11:43:11",
-            "last_commit_date": "2025-10-08 11:43:11",
-            "total_commits": 1
+            "total_commits": 1,
+            "last_commit_date": "2025-10-08 11:43:11"
           }
-        }
+        },
+        "dependencies": []
       },
       {
         "name": "Feature 4",
         "description": "",
         "owner": "team2",
         "is_owner_inherited": false,
-        "path": "src/features/feature-1/features/feature-4",
+        "path": "features/feature-1/features/feature-4",
         "features": [],
         "meta": {
           "deprecated": true,
@@ -157,17 +160,18 @@
           "lines_count": 7,
           "todos_count": 0,
           "commits": {
-            "authors_count": {
-              "Thibault Friedrich": 2
-            },
-            "last_commit_date": "2025-10-08 11:43:11",
             "count_by_type": {
               "feat": 2
             },
+            "first_commit_date": "2025-10-10 00:18:07",
+            "last_commit_date": "2025-10-08 11:43:11",
             "total_commits": 2,
-            "first_commit_date": "2025-10-10 00:18:07"
+            "authors_count": {
+              "Thibault Friedrich": 2
+            }
           }
-        }
+        },
+        "dependencies": []
       }
     ],
     "meta": {},
@@ -213,28 +217,37 @@
       "lines_count": 43,
       "todos_count": 0,
       "commits": {
-        "total_commits": 4,
         "authors_count": {
           "Thibault Friedrich": 4
         },
+        "first_commit_date": "2025-10-22 00:58:27",
+        "last_commit_date": "2025-10-08 11:43:11",
+        "total_commits": 4,
         "count_by_type": {
           "feat": 3,
           "test": 1
-        },
-        "last_commit_date": "2025-10-08 11:43:11",
-        "first_commit_date": "2025-10-22 00:58:27"
+        }
       }
-    }
+    },
+    "dependencies": []
   },
   {
     "name": "Feature 2",
     "description": "This is a feature that does something very interesting.",
     "owner": "",
     "is_owner_inherited": false,
-    "path": "src/features/feature-2",
+    "path": "features/feature-2",
     "features": [],
     "meta": {},
     "changes": [
+      {
+        "title": "fix: pnpm conflicts",
+        "author_name": "Thibault Friedrich",
+        "author_email": "thibault.friedrich@interaction-dynamics.io",
+        "description": "",
+        "date": "2026-02-18 12:51:05",
+        "hash": "56d06b20559944160994afb0d0accf104ace4564"
+      },
       {
         "title": "feat: detect readme.mdx (#11)",
         "author_name": "Thibault Friedrich",
@@ -274,34 +287,44 @@
     ],
     "stats": {
       "files_count": 4,
-      "lines_count": 7,
+      "lines_count": 12,
       "todos_count": 0,
       "commits": {
-        "count_by_type": {
-          "feat": 4
-        },
-        "last_commit_date": "2025-10-08 11:43:11",
-        "total_commits": 4,
-        "first_commit_date": "2025-10-17 21:56:01",
         "authors_count": {
-          "Thibault Friedrich": 4
-        }
+          "Thibault Friedrich": 5
+        },
+        "total_commits": 5,
+        "first_commit_date": "2026-02-18 12:51:05",
+        "count_by_type": {
+          "feat": 4,
+          "fix": 1
+        },
+        "last_commit_date": "2025-10-08 11:43:11"
       }
-    }
+    },
+    "dependencies": [
+      {
+        "filename": "features/feature-1/components/foo.tsx",
+        "line": 1,
+        "content": "import { Foo } from '../feature-1/components/foo';",
+        "feature": "Feature 1",
+        "type": "sibling"
+      }
+    ]
   },
   {
     "name": "Route 1",
     "description": "This is the first route.",
     "owner": "John Doe",
     "is_owner_inherited": false,
-    "path": "src/routes/route-1",
+    "path": "routes/route-1",
     "features": [
       {
         "name": "feature-5",
         "description": "",
         "owner": "John Doe",
         "is_owner_inherited": true,
-        "path": "src/routes/route-1/features/feature-5",
+        "path": "routes/route-1/features/feature-5",
         "features": [],
         "meta": {},
         "changes": [
@@ -320,24 +343,25 @@
           "lines_count": 1,
           "todos_count": 0,
           "commits": {
-            "count_by_type": {
-              "fix": 1
-            },
-            "total_commits": 1,
             "authors_count": {
               "Thibault Friedrich": 1
             },
+            "first_commit_date": "2025-11-13 22:37:23",
             "last_commit_date": "2025-11-13 22:37:23",
-            "first_commit_date": "2025-11-13 22:37:23"
+            "total_commits": 1,
+            "count_by_type": {
+              "fix": 1
+            }
           }
-        }
+        },
+        "dependencies": []
       },
       {
         "name": "Component 1",
         "description": "",
         "owner": "John Doe",
         "is_owner_inherited": false,
-        "path": "src/routes/route-1/components/component-1",
+        "path": "routes/route-1/components/component-1",
         "features": [],
         "meta": {},
         "changes": [
@@ -356,17 +380,18 @@
           "lines_count": 6,
           "todos_count": 0,
           "commits": {
-            "count_by_type": {
-              "fix": 1
-            },
-            "last_commit_date": "2025-11-13 22:37:23",
             "total_commits": 1,
             "authors_count": {
               "Thibault Friedrich": 1
             },
-            "first_commit_date": "2025-11-13 22:37:23"
+            "first_commit_date": "2025-11-13 22:37:23",
+            "count_by_type": {
+              "fix": 1
+            },
+            "last_commit_date": "2025-11-13 22:37:23"
           }
-        }
+        },
+        "dependencies": []
       }
     ],
     "meta": {},
@@ -394,17 +419,18 @@
       "lines_count": 15,
       "todos_count": 0,
       "commits": {
-        "last_commit_date": "2025-10-30 15:59:38",
-        "first_commit_date": "2025-11-13 22:37:23",
         "authors_count": {
           "Thibault Friedrich": 2
         },
         "total_commits": 2,
+        "last_commit_date": "2025-10-30 15:59:38",
+        "first_commit_date": "2025-11-13 22:37:23",
         "count_by_type": {
           "feat": 1,
           "fix": 1
         }
       }
-    }
+    },
+    "dependencies": []
   }
 ]

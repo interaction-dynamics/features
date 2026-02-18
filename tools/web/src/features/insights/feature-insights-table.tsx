@@ -27,6 +27,8 @@ import { formatFeatureName } from '@/lib/format-feature-name'
 import { cn } from '@/lib/utils'
 import type { Feature } from '@/models/feature'
 
+import { DependenciesCell } from './dependencies-cell'
+
 type FeatureInsightsTableProps = {
   features: Feature[]
 }
@@ -242,6 +244,13 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                   />
                 </>
               )}
+              <SortableTableHeader
+                field="dependencies.length"
+                label="Dependencies"
+                sortConfig={sortConfig}
+                onSort={requestSort}
+                align="right"
+              />
               {metadataKeys.map((key) => (
                 <TableHead key={key} className="text-right capitalize">
                   {key}
@@ -346,6 +355,12 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                       </TableCell>
                     </>
                   )}
+                  <TableCell className="text-right tabular-nums">
+                    <DependenciesCell
+                      feature={feature}
+                      allFeatures={features}
+                    />
+                  </TableCell>
                   {metadataKeys.map((key) => {
                     const metadataArrays = getMetadataArrays(feature)
                     const count = metadataArrays[key] ?? 0

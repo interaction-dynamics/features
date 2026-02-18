@@ -6,13 +6,15 @@ import {
   FlaskConical,
   FolderTree,
   GitCommitVertical,
+  Network,
   Settings,
   Table,
   ToggleLeft,
   User,
 } from 'lucide-react'
-import { lazy } from 'react'
+import { lazy, useContext } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
 
@@ -21,6 +23,7 @@ import { FeatureOwner } from './feature-owner'
 
 const FeatureChanges = lazy(() => import('./feature-changes'))
 const FeatureDecisions = lazy(() => import('./feature-decisions'))
+const FeatureDependencies = lazy(() => import('@/features/dependencies'))
 const FeatureDescription = lazy(() => import('./feature-description'))
 const FeatureInsights = lazy(() => import('./feature-insights'))
 const FeatureTests = lazy(() => import('./feature-tests'))
@@ -32,6 +35,8 @@ interface FeatureDetailsProps {
 }
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
+  const { features } = useContext(FeaturesContext)
+
   // Extract metadata keys that have array values (e.g., 'flag', 'experiment', 'toggle')
   // Common feature metadata types
   const featureMetadataTypes = [
@@ -118,6 +123,12 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
               Insights
             </TabsTrigger>
           )}
+          {feature.dependencies.length > 0 && (
+            <TabsTrigger value="dependencies">
+              <Network className="h-4 w-4" />
+              Dependencies
+            </TabsTrigger>
+          )}
           {metadataArrayKeys.map((key) => {
             const Icon = getMetadataIcon(key)
             return (
@@ -146,7 +157,21 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
         </TabsContent>
         {feature.stats && (
           <TabsContent value="insights" className="mt-1">
-            <FeatureInsights stats={feature.stats} />
+            <FeatureInsights
+              stats={feature.stats}
+              dependencies={feature.dependencies}
+              currentFeatureName={feature.name}
+              allFeatures={features}
+            />
+          </TabsContent>
+        )}
+        {feature.dependencies.length > 0 && (
+          <TabsContent value="dependencies" className="mt-1">
+            <FeatureDependencies
+              dependencies={feature.dependencies}
+              currentFeatureName={feature.name}
+              allFeatures={features}
+            />
           </TabsContent>
         )}
         {metadataArrayKeys.map((key) => (

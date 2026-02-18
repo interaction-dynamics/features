@@ -4,8 +4,12 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use crate::dependency_resolver::{
+    build_file_to_feature_map, collect_feature_info, resolve_feature_dependencies,
+};
 use crate::feature_metadata_detector::{self, FeatureMetadataMap};
 use crate::git_helper::get_all_commits_by_path;
+use crate::import_detector::{ImportStatement, build_file_map, scan_file_for_imports};
 use crate::models::{Change, Feature, Stats};
 use crate::readme_parser::read_readme_info;
 
@@ -100,7 +104,14 @@ pub fn list_files_recursive(dir: &Path) -> Result<Vec<Feature>> {
     // Scan entire base_path for feature metadata once
     let feature_metadata =
         feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
-    list_files_recursive_impl(dir, dir, None, None, &feature_metadata)
+
+    // First pass: build feature structure without dependencies
+    let mut features = list_files_recursive_impl(dir, dir, None, None, &feature_metadata)?;
+
+    // Second pass: scan for imports and resolve dependencies
+    populate_dependencies(&mut features, dir)?;
+
+    Ok(features)
 }
 
 pub fn list_files_recursive_with_changes(dir: &Path) -> Result<Vec<Feature>> {
@@ -109,7 +120,133 @@ pub fn list_files_recursive_with_changes(dir: &Path) -> Result<Vec<Feature>> {
     // Scan entire base_path for feature metadata once
     let feature_metadata =
         feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
-    list_files_recursive_impl(dir, dir, Some(&all_commits), None, &feature_metadata)
+
+    // First pass: build feature structure without dependencies
+    let mut features =
+        list_files_recursive_impl(dir, dir, Some(&all_commits), None, &feature_metadata)?;
+
+    // Second pass: scan for imports and resolve dependencies
+    populate_dependencies(&mut features, dir)?;
+
+    Ok(features)
+}
+
+/// Populate dependencies for all features by scanning imports
+fn populate_dependencies(features: &mut [Feature], base_path: &Path) -> Result<()> {
+    // Build file map for quick path resolution
+    let file_map = build_file_map(base_path);
+
+    // Collect all feature info (flat list with paths)
+    let mut feature_info_list = Vec::new();
+    collect_feature_info(features, None, &mut feature_info_list);
+
+    // Build file-to-feature mapping
+    let file_to_feature_map = build_file_to_feature_map(&feature_info_list, base_path);
+
+    // Build feature name to path mapping
+    let mut feature_path_map = HashMap::new();
+    for info in &feature_info_list {
+        feature_path_map.insert(info.name.clone(), info.path.clone());
+    }
+
+    // Scan all files in each feature for imports
+    let mut feature_imports: HashMap<String, Vec<ImportStatement>> = HashMap::new();
+
+    for feature_info in &feature_info_list {
+        let feature_path = base_path.join(&feature_info.path);
+        let imports = scan_feature_directory_for_imports(&feature_path);
+        feature_imports.insert(feature_info.name.clone(), imports);
+    }
+
+    // Now populate dependencies in the feature tree
+    populate_dependencies_recursive(
+        features,
+        base_path,
+        &feature_imports,
+        &file_to_feature_map,
+        &feature_path_map,
+        &file_map,
+    );
+
+    Ok(())
+}
+
+/// Scan a feature directory for all import statements
+fn scan_feature_directory_for_imports(feature_path: &Path) -> Vec<ImportStatement> {
+    let mut all_imports = Vec::new();
+
+    if let Ok(entries) = fs::read_dir(feature_path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+
+            // Skip documentation directories
+            if is_documentation_directory(&path) {
+                continue;
+            }
+
+            if path.is_file() {
+                if let Ok(imports) = scan_file_for_imports(&path) {
+                    all_imports.extend(imports);
+                }
+            } else if path.is_dir() {
+                // Skip 'features' subdirectory (contains nested features)
+                let dir_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if dir_name == "features" {
+                    continue;
+                }
+
+                // Recursively scan subdirectories (but not nested features with readme flag)
+                if !has_feature_flag_in_readme(&path) {
+                    let nested_imports = scan_feature_directory_for_imports(&path);
+                    all_imports.extend(nested_imports);
+                }
+            }
+        }
+    }
+
+    all_imports
+}
+
+/// Recursively populate dependencies in the feature tree
+fn populate_dependencies_recursive(
+    features: &mut [Feature],
+    base_path: &Path,
+    feature_imports: &HashMap<String, Vec<ImportStatement>>,
+    file_to_feature_map: &HashMap<std::path::PathBuf, String>,
+    feature_path_map: &HashMap<String, std::path::PathBuf>,
+    file_map: &HashMap<String, std::path::PathBuf>,
+) {
+    for feature in features {
+        // Get imports for this feature
+        if let Some(imports) = feature_imports.get(&feature.name) {
+            let feature_path = std::path::PathBuf::from(&feature.path);
+
+            // Resolve dependencies
+            let dependencies = resolve_feature_dependencies(
+                &feature.name,
+                &feature_path,
+                base_path,
+                imports,
+                file_to_feature_map,
+                feature_path_map,
+                file_map,
+            );
+
+            feature.dependencies = dependencies;
+        }
+
+        // Recursively process nested features
+        if !feature.features.is_empty() {
+            populate_dependencies_recursive(
+                &mut feature.features,
+                base_path,
+                feature_imports,
+                file_to_feature_map,
+                feature_path_map,
+                file_map,
+            );
+        }
+    }
 }
 
 fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
@@ -692,6 +829,7 @@ fn process_feature_directory(
         changes,
         decisions,
         stats,
+        dependencies: Vec::new(), // Will be populated in second pass
     })
 }
 

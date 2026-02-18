@@ -21,12 +21,20 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+import {
+  buildDependencyMap,
+  detectAlerts,
+  groupDependencies,
+} from '@/features/dependencies/utils'
 import { formatDate } from '@/lib/format-date'
-import type { Stats } from '@/models/feature'
+import type { Dependency, Feature, Stats } from '@/models/feature'
 import { StatsCard } from './stats-card'
 
 interface FeatureInsightsProps {
   stats: Stats
+  dependencies: Dependency[]
+  currentFeatureName: string
+  allFeatures: Feature[]
 }
 
 const chartConfig = {
@@ -64,8 +72,34 @@ const getCommitTypeColor = (type: string) => {
   return COMMIT_TYPE_COLORS[type] || COMMIT_TYPE_COLORS.other
 }
 
-export default function FeatureInsights({ stats }: FeatureInsightsProps) {
+export default function FeatureInsights({
+  stats,
+  dependencies,
+  currentFeatureName,
+  allFeatures,
+}: FeatureInsightsProps) {
   const { commits } = stats
+
+  // Calculate dependency statistics
+  const dependencyMap = buildDependencyMap(allFeatures)
+  const groupedDeps = groupDependencies(dependencies)
+  const uniqueFeatureDependencies = new Set(
+    dependencies.map((dep) => dep.feature),
+  ).size
+  const totalDependencies = dependencies.length
+
+  let circularDependenciesCount = 0
+  let tightDependenciesCount = 0
+
+  groupedDeps.forEach((group) => {
+    const alerts = detectAlerts(group, currentFeatureName, dependencyMap)
+    if (alerts.includes('Circular Dependency')) {
+      circularDependenciesCount++
+    }
+    if (alerts.includes('Tight Dependency')) {
+      tightDependenciesCount++
+    }
+  })
 
   // Prepare data for authors chart
   const authorsData = Object.entries(commits.authors_count || {})
@@ -262,6 +296,60 @@ export default function FeatureInsights({ stats }: FeatureInsightsProps) {
                   </div>
                 )
               })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dependencies Overview */}
+      {dependencies.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Dependencies Overview</CardTitle>
+            <CardDescription>
+              Summary of feature dependencies and potential issues
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="font-bold text-3xl">{totalDependencies}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  total dependencies
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-3xl">
+                  {uniqueFeatureDependencies}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  unique features dependencies
+                </div>
+              </div>
+              <div className="text-center">
+                <div
+                  className={`font-bold text-3xl ${
+                    circularDependenciesCount > 0 ? 'text-orange-500' : ''
+                  }`}
+                >
+                  {circularDependenciesCount}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  circular dependencies
+                </div>
+              </div>
+              <div className="text-center">
+                <div
+                  className={`font-bold text-3xl ${
+                    tightDependenciesCount > 0 ? 'text-orange-500' : ''
+                  }`}
+                >
+                  {tightDependenciesCount}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  tight dependencies
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

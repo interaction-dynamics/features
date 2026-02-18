@@ -39,4 +39,23 @@ pub struct Feature {
     pub decisions: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats: Option<Stats>,
+    pub dependencies: Vec<Dependency>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DependencyType {
+    Parent,
+    Child,
+    Sibling,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Dependency {
+    pub filename: String,
+    pub line: usize,
+    pub content: String,
+    pub feature: String,
+    #[serde(rename = "type")]
+    pub dependency_type: DependencyType,
 }

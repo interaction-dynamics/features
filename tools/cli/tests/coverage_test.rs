@@ -20,6 +20,7 @@ fn create_test_feature(name: &str, path: &str) -> Feature {
         changes: Vec::new(),
         decisions: Vec::new(),
         stats: None,
+        dependencies: Vec::new(),
     }
 }
 

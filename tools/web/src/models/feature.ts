@@ -44,6 +44,14 @@ export type Stats = {
   coverage?: CoverageStats
 }
 
+export type Dependency = {
+  filename: string
+  line: number
+  content: string
+  feature: string
+  type: 'parent' | 'child' | 'sibling'
+}
+
 export type Feature = {
   name: string
   path: string
@@ -56,6 +64,7 @@ export type Feature = {
   changes: Change[]
   decisions: string[]
   stats?: Stats
+  dependencies: Dependency[]
 }
 
 export const ChangeSchema: z.ZodType<Change> = z.object({
@@ -102,6 +111,14 @@ export const StatsSchema: z.ZodType<Stats> = z.object({
   coverage: CoverageStatsSchema.optional(),
 })
 
+export const DependencySchema: z.ZodType<Dependency> = z.object({
+  filename: z.string(),
+  line: z.number(),
+  content: z.string(),
+  feature: z.string(),
+  type: z.enum(['parent', 'child', 'sibling']),
+})
+
 export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
   z.object({
     name: z.string(),
@@ -115,5 +132,6 @@ export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
     changes: z.array(ChangeSchema),
     decisions: z.array(z.string()),
     stats: StatsSchema.optional(),
+    dependencies: z.array(DependencySchema),
   }),
 )
