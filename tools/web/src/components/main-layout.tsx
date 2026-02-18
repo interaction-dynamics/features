@@ -6,31 +6,12 @@ import { FeaturesContext } from '@/lib/features-context'
 import type { Feature } from '@/models/feature'
 import { AppSidebar } from './app-sidebar'
 
-// Helper function to find a feature by path in the features tree
-const findFeatureByPath = (
-  features: Feature[],
-  path: string,
-): Feature | null => {
-  for (const feature of features) {
-    if (feature.path === path) {
-      return feature
-    }
-    if (feature.features) {
-      const found = findFeatureByPath(feature.features, path)
-      if (found) {
-        return found
-      }
-    }
-  }
-  return null
-}
-
 export function MainLayout() {
   const [searchParams] = useSearchParams()
 
   const featurePath = searchParams.get('feature')
 
-  const { features } = useContext(FeaturesContext)
+  const { features, featuresMap } = useContext(FeaturesContext)
   const [currentFeature, setCurrentFeature] = useState<Feature | null>(null)
 
   const navigate = useNavigate()
@@ -38,8 +19,8 @@ export function MainLayout() {
   useEffect(() => {
     if (features.length > 0) {
       if (featurePath) {
-        // Find the updated version of the current feature by path
-        const updatedFeature = findFeatureByPath(features, featurePath)
+        // Find the updated version of the current feature by path using featuresMap
+        const updatedFeature = featuresMap[featurePath]
         if (updatedFeature) {
           setCurrentFeature(updatedFeature)
         } else {
@@ -52,7 +33,7 @@ export function MainLayout() {
     } else {
       setCurrentFeature(null)
     }
-  }, [features, featurePath])
+  }, [features, featuresMap, featurePath])
 
   const onSelectFeature = (feature: Feature) => {
     setCurrentFeature(feature)

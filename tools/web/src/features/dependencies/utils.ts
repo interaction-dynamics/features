@@ -20,7 +20,7 @@ export function buildDependencyMap(
   const collectDeps = (feature: Feature) => {
     const deps = new Set<string>()
     feature.dependencies.forEach((dep) => {
-      deps.add(dep.feature)
+      deps.add(dep.featurePath)
     })
     pathToDeps.set(feature.path, deps)
     nameToPath.set(feature.name, feature.path)
@@ -59,10 +59,10 @@ export function groupDependencies(
 ): GroupedDependency[] {
   const grouped = dependencies.reduce<Record<string, GroupedDependency>>(
     (acc, dep) => {
-      const key = `${dep.feature}-${dep.type}`
+      const key = `${dep.featurePath}-${dep.type}`
       if (!acc[key]) {
         acc[key] = {
-          feature: dep.feature,
+          feature: dep.featurePath,
           type: dep.type,
           count: 0,
           items: [],

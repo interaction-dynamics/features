@@ -1,5 +1,11 @@
-import { AlertTriangle, ChevronDown, ChevronRight, Eye } from 'lucide-react'
-import { useState } from 'react'
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  Eye,
+} from 'lucide-react'
+import { useContext, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { FeaturesContext } from '@/lib/features-context'
 import type { Dependency, Feature } from '@/models/feature'
 import {
   buildDependencyMap,
@@ -35,6 +47,7 @@ export default function FeatureDependencies({
   allFeatures,
 }: FeatureDependenciesProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const { featuresMap } = useContext(FeaturesContext)
 
   const dependencyMap = buildDependencyMap(allFeatures)
   const nameToPath = buildNameToPathMap(allFeatures)
@@ -78,7 +91,7 @@ export default function FeatureDependencies({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Feature Dependency</TableHead>
+            <TableHead>Feature Name</TableHead>
             <TableHead>Type</TableHead>
             <TableHead className="text-right">Count</TableHead>
             <TableHead>Alerts</TableHead>
@@ -102,7 +115,42 @@ export default function FeatureDependencies({
                   key={key}
                   className="cursor-pointer hover:bg-muted/50"
                 >
-                  <TableCell className="font-medium">{group.feature}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help">
+                            {featuresMap[group.feature]?.name || group.feature}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs font-mono">{group.feature}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 cursor-pointer opacity-50 hover:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const targetFeature = featuresMap[group.feature]
+                              if (targetFeature) {
+                                // Navigate and trigger selection
+                                window.location.hash = `#/?feature=${encodeURIComponent(group.feature)}`
+                              }
+                            }}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Open feature</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={getTypeBadgeVariant(group.type)}>
                       {group.type}

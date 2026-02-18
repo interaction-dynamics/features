@@ -22,6 +22,20 @@ const addParentReferences = (
   })
 }
 
+const buildFeaturesMap = (features: Feature[]): Record<string, Feature> => {
+  const map: Record<string, Feature> = {}
+
+  const addToMap = (feature: Feature) => {
+    map[feature.path] = feature
+    if (feature.features && feature.features.length > 0) {
+      feature.features.forEach(addToMap)
+    }
+  }
+
+  features.forEach(addToMap)
+  return map
+}
+
 const fetcher = async (url: string): Promise<Feature[]> => {
   const response = await fetch(url)
   const data = await response.json()
@@ -41,6 +55,7 @@ export function FeaturesProvider({ children }: { children: React.ReactNode }) {
   const contextValue: FeaturesContextValue = useMemo(
     () => ({
       features: features ?? [],
+      featuresMap: buildFeaturesMap(features ?? []),
       isLoading: isLoading ?? false,
       isValidating: isValidating ?? false,
     }),

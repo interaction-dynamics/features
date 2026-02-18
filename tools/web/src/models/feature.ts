@@ -49,7 +49,7 @@ export type Dependency = {
   targetFilename: string
   line: number
   content: string
-  feature: string
+  featurePath: string
   type: 'parent' | 'child' | 'sibling'
 }
 
@@ -117,7 +117,7 @@ export const DependencySchema: z.ZodType<Dependency> = z.object({
   targetFilename: z.string(),
   line: z.number(),
   content: z.string(),
-  feature: z.string(),
+  featurePath: z.string(),
   type: z.enum(['parent', 'child', 'sibling']),
 })
 

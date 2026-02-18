@@ -86,7 +86,7 @@ export default function FeatureInsights({
   const nameToPath = buildNameToPathMap(allFeatures)
   const groupedDeps = groupDependencies(dependencies)
   const uniqueFeatureDependencies = new Set(
-    dependencies.map((dep) => dep.feature),
+    dependencies.map((dep) => dep.featurePath),
   ).size
   const totalDependencies = dependencies.length
 

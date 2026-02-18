@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
+import { useContext } from 'react'
 import {
   Tooltip,
   TooltipContent,
@@ -10,6 +11,7 @@ import {
   detectAlerts,
   groupDependencies,
 } from '@/features/dependencies/utils'
+import { FeaturesContext } from '@/lib/features-context'
 import type { Feature } from '@/models/feature'
 
 interface DependenciesCellProps {
@@ -19,7 +21,7 @@ interface DependenciesCellProps {
 
 // Get unique feature dependencies count
 function getUniqueDependenciesCount(feature: Feature): number {
-  return new Set(feature.dependencies.map((dep) => dep.feature)).size
+  return new Set(feature.dependencies.map((dep) => dep.featurePath)).size
 }
 
 // Get dependency alerts for a feature
@@ -48,6 +50,7 @@ export function DependenciesCell({
   feature,
   allFeatures,
 }: DependenciesCellProps) {
+  const { featuresMap } = useContext(FeaturesContext)
   const count = getUniqueDependenciesCount(feature)
   const alerts = getDependencyAlerts(feature, allFeatures)
   const hasAlerts = alerts.length > 0
@@ -59,6 +62,7 @@ export function DependenciesCell({
   // Build tooltip content with feature dependencies and their alerts
   const dependencyMap = buildDependencyMap(allFeatures)
   const nameToPath = buildNameToPathMap(allFeatures)
+
   const groupedDeps = groupDependencies(feature.dependencies)
   const featureDepsWithAlerts = groupedDeps.map((group) => {
     const groupAlerts = detectAlerts(
@@ -68,7 +72,8 @@ export function DependenciesCell({
       nameToPath,
     )
     return {
-      feature: group.feature,
+      featurePath: group.feature,
+      featureName: featuresMap[group.feature]?.name || group.feature,
       alerts: groupAlerts,
     }
   })
@@ -83,8 +88,8 @@ export function DependenciesCell({
         <div className="space-y-1">
           <p className="font-semibold mb-2">Feature Dependencies</p>
           {featureDepsWithAlerts.map((dep) => (
-            <p key={dep.feature} className="text-xs">
-              {dep.feature}
+            <p key={dep.featurePath} className="text-xs">
+              {dep.featureName}
               {dep.alerts.length > 0 && (
                 <span className="text-orange-500 font-semibold">
                   {' '}

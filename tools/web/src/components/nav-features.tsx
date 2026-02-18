@@ -240,6 +240,13 @@ function TreeNodeItem({
     return node.isFolder && !node.feature && node.name !== 'features'
   })
 
+  // Auto-expand when activeFeature changes and this node is in the active path
+  useEffect(() => {
+    if (activeFeature && activeFeature.path.startsWith(node.path)) {
+      setIsOpen(true)
+    }
+  }, [activeFeature, node.path])
+
   // Close all folders when collapseAll changes
   useEffect(() => {
     if (collapseAll > 0) {
