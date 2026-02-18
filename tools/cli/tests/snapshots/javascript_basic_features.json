@@ -23,15 +23,15 @@
       "lines_count": 1,
       "todos_count": 0,
       "commits": {
+        "total_commits": 1,
         "count_by_type": {
           "fix": 1
         },
-        "first_commit_date": "2025-10-22 01:07:46",
-        "last_commit_date": "2025-10-22 01:07:46",
-        "total_commits": 1,
         "authors_count": {
           "Thibault Friedrich": 1
-        }
+        },
+        "last_commit_date": "2025-10-22 01:07:46",
+        "first_commit_date": "2025-10-22 01:07:46"
       }
     },
     "dependencies": []
@@ -75,15 +75,15 @@
           "lines_count": 24,
           "todos_count": 0,
           "commits": {
-            "first_commit_date": "2025-10-08 13:30:08",
-            "last_commit_date": "2025-10-08 11:43:11",
-            "authors_count": {
-              "Thibault Friedrich": 2
-            },
             "total_commits": 2,
             "count_by_type": {
               "feat": 2
-            }
+            },
+            "authors_count": {
+              "Thibault Friedrich": 2
+            },
+            "first_commit_date": "2025-10-08 13:30:08",
+            "last_commit_date": "2025-10-08 11:43:11"
           }
         },
         "dependencies": []
@@ -112,15 +112,15 @@
           "lines_count": 0,
           "todos_count": 0,
           "commits": {
-            "first_commit_date": "2025-10-08 11:43:11",
             "authors_count": {
               "Thibault Friedrich": 1
             },
             "total_commits": 1,
+            "first_commit_date": "2025-10-08 11:43:11",
+            "last_commit_date": "2025-10-08 11:43:11",
             "count_by_type": {
               "feat": 1
-            },
-            "last_commit_date": "2025-10-08 11:43:11"
+            }
           }
         },
         "dependencies": []
@@ -160,12 +160,12 @@
           "lines_count": 7,
           "todos_count": 0,
           "commits": {
+            "first_commit_date": "2025-10-10 00:18:07",
+            "last_commit_date": "2025-10-08 11:43:11",
             "total_commits": 2,
             "authors_count": {
               "Thibault Friedrich": 2
             },
-            "last_commit_date": "2025-10-08 11:43:11",
-            "first_commit_date": "2025-10-10 00:18:07",
             "count_by_type": {
               "feat": 2
             }
@@ -217,16 +217,16 @@
       "lines_count": 43,
       "todos_count": 0,
       "commits": {
+        "total_commits": 4,
+        "last_commit_date": "2025-10-08 11:43:11",
+        "first_commit_date": "2025-10-22 00:58:27",
         "authors_count": {
           "Thibault Friedrich": 4
         },
-        "total_commits": 4,
-        "first_commit_date": "2025-10-22 00:58:27",
         "count_by_type": {
           "test": 1,
           "feat": 3
-        },
-        "last_commit_date": "2025-10-08 11:43:11"
+        }
       }
     },
     "dependencies": []
@@ -290,15 +290,15 @@
       "lines_count": 12,
       "todos_count": 0,
       "commits": {
-        "last_commit_date": "2025-10-08 11:43:11",
         "total_commits": 5,
-        "count_by_type": {
-          "feat": 5
-        },
         "authors_count": {
           "Thibault Friedrich": 5
         },
-        "first_commit_date": "2026-02-18 13:36:26"
+        "first_commit_date": "2026-02-18 13:36:26",
+        "count_by_type": {
+          "feat": 5
+        },
+        "last_commit_date": "2025-10-08 11:43:11"
       }
     },
     "dependencies": [
@@ -307,7 +307,7 @@
         "targetFilename": "features/feature-1/components/foo.tsx",
         "line": 1,
         "content": "import { Foo } from '../feature-1/components/foo';",
-        "feature": "Feature 1",
+        "featurePath": "features/feature-1",
         "type": "sibling"
       }
     ]
@@ -343,15 +343,15 @@
           "lines_count": 1,
           "todos_count": 0,
           "commits": {
+            "total_commits": 1,
+            "first_commit_date": "2025-11-13 22:37:23",
+            "last_commit_date": "2025-11-13 22:37:23",
             "count_by_type": {
               "fix": 1
             },
-            "last_commit_date": "2025-11-13 22:37:23",
             "authors_count": {
               "Thibault Friedrich": 1
-            },
-            "first_commit_date": "2025-11-13 22:37:23",
-            "total_commits": 1
+            }
           }
         },
         "dependencies": []
@@ -380,12 +380,12 @@
           "lines_count": 6,
           "todos_count": 0,
           "commits": {
-            "total_commits": 1,
-            "last_commit_date": "2025-11-13 22:37:23",
+            "first_commit_date": "2025-11-13 22:37:23",
             "authors_count": {
               "Thibault Friedrich": 1
             },
-            "first_commit_date": "2025-11-13 22:37:23",
+            "total_commits": 1,
+            "last_commit_date": "2025-11-13 22:37:23",
             "count_by_type": {
               "fix": 1
             }
@@ -420,15 +420,15 @@
       "todos_count": 0,
       "commits": {
         "total_commits": 2,
-        "count_by_type": {
-          "fix": 1,
-          "feat": 1
-        },
         "first_commit_date": "2025-11-13 22:37:23",
+        "last_commit_date": "2025-10-30 15:59:38",
+        "count_by_type": {
+          "feat": 1,
+          "fix": 1
+        },
         "authors_count": {
           "Thibault Friedrich": 2
-        },
-        "last_commit_date": "2025-10-30 15:59:38"
+        }
       }
     },
     "dependencies": []

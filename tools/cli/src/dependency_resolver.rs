@@ -124,9 +124,10 @@ pub fn resolve_feature_dependencies(
                 }
                 seen.insert(dep_key);
 
-                // Get the target feature name from the path
-                if let Some(target_feature_name) =
-                    feature_path_to_name_map.get(target_feature_path_str)
+                // Get the target feature name from the path (for validation)
+                if feature_path_to_name_map
+                    .get(target_feature_path_str)
+                    .is_some()
                 {
                     let target_path = PathBuf::from(target_feature_path_str);
                     let full_target_path = base_path.join(&target_path);
@@ -172,7 +173,7 @@ pub fn resolve_feature_dependencies(
                         target_filename: relative_target_filename,
                         line: import.line_number,
                         content: import.line_content.clone(),
-                        feature: target_feature_name.clone(),
+                        feature_path: target_feature_path_str.to_string(),
                         dependency_type,
                     });
                 }

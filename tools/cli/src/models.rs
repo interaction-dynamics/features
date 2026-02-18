@@ -58,7 +58,8 @@ pub struct Dependency {
     pub target_filename: String,
     pub line: usize,
     pub content: String,
-    pub feature: String,
+    #[serde(rename = "featurePath")]
+    pub feature_path: String,
     #[serde(rename = "type")]
     pub dependency_type: DependencyType,
 }
