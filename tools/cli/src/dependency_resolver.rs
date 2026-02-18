@@ -133,20 +133,40 @@ pub fn resolve_feature_dependencies(
                     let dependency_type =
                         determine_dependency_type(&full_source_path, &full_target_path);
 
-                    // Convert resolved_path to be relative to base_path
-                    let relative_filename = if let Ok(canonical_base) = base_path.canonicalize() {
-                        if let Ok(rel_path) = resolved_path.strip_prefix(&canonical_base) {
-                            rel_path.to_string_lossy().to_string()
+                    // Convert source file path to be relative to base_path
+                    let relative_source_filename = if let Ok(canonical_base) =
+                        base_path.canonicalize()
+                    {
+                        let source_path = Path::new(&import.file_path);
+                        if let Ok(canonical_source) = source_path.canonicalize() {
+                            if let Ok(rel_path) = canonical_source.strip_prefix(&canonical_base) {
+                                rel_path.to_string_lossy().to_string()
+                            } else {
+                                import.file_path.clone()
+                            }
                         } else {
-                            resolved_path.to_string_lossy().to_string()
+                            import.file_path.clone()
                         }
                     } else {
-                        resolved_path.to_string_lossy().to_string()
+                        import.file_path.clone()
                     };
+
+                    // Convert target file path to be relative to base_path
+                    let relative_target_filename =
+                        if let Ok(canonical_base) = base_path.canonicalize() {
+                            if let Ok(rel_path) = resolved_path.strip_prefix(&canonical_base) {
+                                rel_path.to_string_lossy().to_string()
+                            } else {
+                                resolved_path.to_string_lossy().to_string()
+                            }
+                        } else {
+                            resolved_path.to_string_lossy().to_string()
+                        };
 
                     // Create dependency
                     dependencies.push(Dependency {
-                        filename: relative_filename,
+                        source_filename: relative_source_filename,
+                        target_filename: relative_target_filename,
                         line: import.line_number,
                         content: import.line_content.clone(),
                         feature: target_feature_name.clone(),
