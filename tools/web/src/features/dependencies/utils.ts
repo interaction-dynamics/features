@@ -8,19 +8,22 @@ export interface GroupedDependency {
 }
 
 /**
- * Build a map of feature names to their dependencies (recursively)
+ * Build a map of feature paths to their dependencies (recursively)
+ * Also builds a name-to-path mapping to resolve feature names to paths
  */
 export function buildDependencyMap(
   features: Feature[],
 ): Map<string, Set<string>> {
-  const map = new Map<string, Set<string>>()
+  const pathToDeps = new Map<string, Set<string>>()
+  const nameToPath = new Map<string, string>()
 
   const collectDeps = (feature: Feature) => {
     const deps = new Set<string>()
     feature.dependencies.forEach((dep) => {
       deps.add(dep.feature)
     })
-    map.set(feature.name, deps)
+    pathToDeps.set(feature.path, deps)
+    nameToPath.set(feature.name, feature.path)
 
     // Recursively collect from nested features
     feature.features?.forEach((nested) => {
@@ -31,7 +34,21 @@ export function buildDependencyMap(
   features.forEach((feature) => {
     collectDeps(feature)
   })
-  return map
+
+  // Convert dependency names to paths
+  const pathToPathDeps = new Map<string, Set<string>>()
+  pathToDeps.forEach((depNames, path) => {
+    const depPaths = new Set<string>()
+    depNames.forEach((depName) => {
+      const depPath = nameToPath.get(depName)
+      if (depPath) {
+        depPaths.add(depPath)
+      }
+    })
+    pathToPathDeps.set(path, depPaths)
+  })
+
+  return pathToPathDeps
 }
 
 /**
@@ -62,23 +79,48 @@ export function groupDependencies(
 }
 
 /**
+ * Build a name-to-path mapping for all features
+ */
+export function buildNameToPathMap(features: Feature[]): Map<string, string> {
+  const nameToPath = new Map<string, string>()
+
+  const collectPaths = (feature: Feature) => {
+    nameToPath.set(feature.name, feature.path)
+    feature.features?.forEach((nested) => {
+      collectPaths(nested)
+    })
+  }
+
+  features.forEach((feature) => {
+    collectPaths(feature)
+  })
+
+  return nameToPath
+}
+
+/**
  * Detect alerts for a dependency group
  */
 export function detectAlerts(
   group: GroupedDependency,
-  currentFeatureName: string,
+  currentFeaturePath: string,
   dependencyMap: Map<string, Set<string>>,
+  nameToPath: Map<string, string>,
 ): string[] {
   const alerts: string[] = []
 
   // Check for circular dependency: if the feature we depend on also depends on us
-  const targetDeps = dependencyMap.get(group.feature)
-  if (targetDeps && targetDeps.has(currentFeatureName)) {
-    alerts.push('Circular Dependency')
+  // Convert the feature name to a path first
+  const targetFeaturePath = nameToPath.get(group.feature)
+  if (targetFeaturePath) {
+    const targetDeps = dependencyMap.get(targetFeaturePath)
+    if (targetDeps && targetDeps.has(currentFeaturePath)) {
+      alerts.push('Circular Dependency')
+    }
   }
 
-  // Check for tight dependency
-  const uniqueFiles = new Set(group.items.map((item) => item.filename))
+  // Check for tight dependency (based on target files)
+  const uniqueFiles = new Set(group.items.map((item) => item.targetFilename))
   const fileCount = uniqueFiles.size
 
   if (fileCount === 1 && group.count > 5) {

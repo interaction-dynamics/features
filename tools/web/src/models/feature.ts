@@ -45,7 +45,8 @@ export type Stats = {
 }
 
 export type Dependency = {
-  filename: string
+  sourceFilename: string
+  targetFilename: string
   line: number
   content: string
   feature: string
@@ -112,7 +113,8 @@ export const StatsSchema: z.ZodType<Stats> = z.object({
 })
 
 export const DependencySchema: z.ZodType<Dependency> = z.object({
-  filename: z.string(),
+  sourceFilename: z.string(),
+  targetFilename: z.string(),
   line: z.number(),
   content: z.string(),
   feature: z.string(),

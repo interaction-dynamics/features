@@ -15,7 +15,7 @@ pub struct FeatureInfo {
     pub path: PathBuf,
 }
 
-/// Build a map of file paths to their containing features
+/// Build a map of file paths to their containing features (using feature path as identifier)
 pub fn build_file_to_feature_map(
     features: &[FeatureInfo],
     base_path: &Path,
@@ -25,17 +25,17 @@ pub fn build_file_to_feature_map(
     for feature in features {
         let feature_path = base_path.join(&feature.path);
 
-        // Map all files within this feature directory
+        // Map all files within this feature directory using the feature's path as identifier
         if std::fs::read_dir(&feature_path).is_ok() {
-            map_directory_files(&feature_path, &feature.name, &mut map);
+            map_directory_files(&feature_path, &feature.path.to_string_lossy(), &mut map);
         }
     }
 
     map
 }
 
-/// Recursively map all files in a directory to a feature name
-fn map_directory_files(dir: &Path, feature_name: &str, map: &mut HashMap<PathBuf, String>) {
+/// Recursively map all files in a directory to a feature path
+fn map_directory_files(dir: &Path, feature_path: &str, map: &mut HashMap<PathBuf, String>) {
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
@@ -43,15 +43,15 @@ fn map_directory_files(dir: &Path, feature_name: &str, map: &mut HashMap<PathBuf
             if path.is_file() {
                 // Canonicalize the path to resolve .. and .
                 if let Ok(canonical_path) = path.canonicalize() {
-                    map.insert(canonical_path, feature_name.to_string());
+                    map.insert(canonical_path, feature_path.to_string());
                 } else {
-                    map.insert(path.clone(), feature_name.to_string());
+                    map.insert(path.clone(), feature_path.to_string());
                 }
             } else if path.is_dir()
                 && let Some(dir_name) = path.file_name().and_then(|n| n.to_str())
                 && !should_skip_directory(dir_name)
             {
-                map_directory_files(&path, feature_name, map);
+                map_directory_files(&path, feature_path, map);
             }
         }
     }
@@ -86,12 +86,12 @@ pub fn determine_dependency_type(
 
 /// Resolve imports to dependencies for a specific feature
 pub fn resolve_feature_dependencies(
-    feature_name: &str,
+    _feature_name: &str,
     feature_path: &Path,
     base_path: &Path,
     imports: &[ImportStatement],
     file_to_feature_map: &HashMap<PathBuf, String>,
-    feature_info_map: &HashMap<String, PathBuf>,
+    feature_path_to_name_map: &HashMap<String, String>,
     file_map: &HashMap<String, PathBuf>,
 ) -> Vec<Dependency> {
     let mut dependencies = Vec::new();
@@ -104,10 +104,10 @@ pub fn resolve_feature_dependencies(
         if let Some(resolved_path) =
             resolve_import_path(&import.imported_path, source_file, base_path, file_map)
         {
-            // Find which feature this file belongs to
-            if let Some(target_feature_name) = file_to_feature_map.get(&resolved_path) {
+            // Find which feature this file belongs to (returns feature path)
+            if let Some(target_feature_path_str) = file_to_feature_map.get(&resolved_path) {
                 // Skip if it's the same feature
-                if target_feature_name == feature_name {
+                if target_feature_path_str == feature_path.to_string_lossy().as_ref() {
                     continue;
                 }
 
@@ -116,7 +116,7 @@ pub fn resolve_feature_dependencies(
                     "{}:{}:{}",
                     resolved_path.display(),
                     import.line_number,
-                    target_feature_name
+                    target_feature_path_str
                 );
 
                 if seen.contains(&dep_key) {
@@ -124,29 +124,52 @@ pub fn resolve_feature_dependencies(
                 }
                 seen.insert(dep_key);
 
-                // Get the target feature path
-                if let Some(target_feature_path) = feature_info_map.get(target_feature_name) {
-                    let full_target_path = base_path.join(target_feature_path);
+                // Get the target feature name from the path
+                if let Some(target_feature_name) =
+                    feature_path_to_name_map.get(target_feature_path_str)
+                {
+                    let target_path = PathBuf::from(target_feature_path_str);
+                    let full_target_path = base_path.join(&target_path);
                     let full_source_path = base_path.join(feature_path);
 
                     // Determine the dependency type
                     let dependency_type =
                         determine_dependency_type(&full_source_path, &full_target_path);
 
-                    // Convert resolved_path to be relative to base_path
-                    let relative_filename = if let Ok(canonical_base) = base_path.canonicalize() {
-                        if let Ok(rel_path) = resolved_path.strip_prefix(&canonical_base) {
-                            rel_path.to_string_lossy().to_string()
+                    // Convert source file path to be relative to base_path
+                    let relative_source_filename = if let Ok(canonical_base) =
+                        base_path.canonicalize()
+                    {
+                        let source_path = Path::new(&import.file_path);
+                        if let Ok(canonical_source) = source_path.canonicalize() {
+                            if let Ok(rel_path) = canonical_source.strip_prefix(&canonical_base) {
+                                rel_path.to_string_lossy().to_string()
+                            } else {
+                                import.file_path.clone()
+                            }
                         } else {
-                            resolved_path.to_string_lossy().to_string()
+                            import.file_path.clone()
                         }
                     } else {
-                        resolved_path.to_string_lossy().to_string()
+                        import.file_path.clone()
                     };
+
+                    // Convert target file path to be relative to base_path
+                    let relative_target_filename =
+                        if let Ok(canonical_base) = base_path.canonicalize() {
+                            if let Ok(rel_path) = resolved_path.strip_prefix(&canonical_base) {
+                                rel_path.to_string_lossy().to_string()
+                            } else {
+                                resolved_path.to_string_lossy().to_string()
+                            }
+                        } else {
+                            resolved_path.to_string_lossy().to_string()
+                        };
 
                     // Create dependency
                     dependencies.push(Dependency {
-                        filename: relative_filename,
+                        source_filename: relative_source_filename,
+                        target_filename: relative_target_filename,
                         line: import.line_number,
                         content: import.line_content.clone(),
                         feature: target_feature_name.clone(),

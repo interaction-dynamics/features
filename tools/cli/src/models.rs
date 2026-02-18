@@ -52,7 +52,10 @@ pub enum DependencyType {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Dependency {
-    pub filename: String,
+    #[serde(rename = "sourceFilename")]
+    pub source_filename: String,
+    #[serde(rename = "targetFilename")]
+    pub target_filename: String,
     pub line: usize,
     pub content: String,
     pub feature: String,

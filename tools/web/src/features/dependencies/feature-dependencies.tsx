@@ -16,22 +16,28 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { Dependency, Feature } from '@/models/feature'
-import { buildDependencyMap, detectAlerts, groupDependencies } from './utils'
+import {
+  buildDependencyMap,
+  buildNameToPathMap,
+  detectAlerts,
+  groupDependencies,
+} from './utils'
 
 interface FeatureDependenciesProps {
   dependencies: Dependency[]
-  currentFeatureName: string
+  currentFeaturePath: string
   allFeatures: Feature[]
 }
 
 export default function FeatureDependencies({
   dependencies,
-  currentFeatureName,
+  currentFeaturePath,
   allFeatures,
 }: FeatureDependenciesProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
   const dependencyMap = buildDependencyMap(allFeatures)
+  const nameToPath = buildNameToPathMap(allFeatures)
   const groupedArray = groupDependencies(dependencies)
 
   const toggleRow = (key: string) => {
@@ -85,8 +91,9 @@ export default function FeatureDependencies({
             const isExpanded = expandedRows.has(key)
             const alerts = detectAlerts(
               group,
-              currentFeatureName,
+              currentFeaturePath,
               dependencyMap,
+              nameToPath,
             )
 
             return (
@@ -140,7 +147,9 @@ export default function FeatureDependencies({
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="pl-14">Filename</TableHead>
+                              <TableHead className="pl-14">
+                                Target File
+                              </TableHead>
                               <TableHead>Line</TableHead>
                               <TableHead className="w-12"></TableHead>
                             </TableRow>
@@ -148,10 +157,10 @@ export default function FeatureDependencies({
                           <TableBody>
                             {group.items.map((item) => (
                               <TableRow
-                                key={`${key}-${item.filename}-${item.line}`}
+                                key={`${key}-${item.targetFilename}-${item.line}`}
                               >
                                 <TableCell className="pl-14 font-mono text-xs">
-                                  {item.filename}
+                                  {item.targetFilename}
                                 </TableCell>
                                 <TableCell className="font-mono text-xs">
                                   {item.line}
@@ -170,7 +179,11 @@ export default function FeatureDependencies({
                                     <PopoverContent className="w-auto max-w-2xl">
                                       <div className="space-y-2">
                                         <p className="text-sm font-semibold">
-                                          Import Statement
+                                          In{' '}
+                                          <code className="text-xs">
+                                            {item.sourceFilename}
+                                          </code>
+                                          :
                                         </p>
                                         <div className="rounded-md bg-muted p-3">
                                           <pre className="text-xs font-mono overflow-x-auto">

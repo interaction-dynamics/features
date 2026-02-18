@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/tooltip'
 import {
   buildDependencyMap,
+  buildNameToPathMap,
   detectAlerts,
   groupDependencies,
 } from '@/features/dependencies/utils'
@@ -29,11 +30,12 @@ function getDependencyAlerts(
   if (feature.dependencies.length === 0) return []
 
   const dependencyMap = buildDependencyMap(allFeatures)
+  const nameToPath = buildNameToPathMap(allFeatures)
   const groupedDeps = groupDependencies(feature.dependencies)
   const allAlerts = new Set<string>()
 
   groupedDeps.forEach((group) => {
-    const alerts = detectAlerts(group, feature.name, dependencyMap)
+    const alerts = detectAlerts(group, feature.path, dependencyMap, nameToPath)
     alerts.forEach((alert) => {
       allAlerts.add(alert)
     })
@@ -56,9 +58,15 @@ export function DependenciesCell({
 
   // Build tooltip content with feature dependencies and their alerts
   const dependencyMap = buildDependencyMap(allFeatures)
+  const nameToPath = buildNameToPathMap(allFeatures)
   const groupedDeps = groupDependencies(feature.dependencies)
   const featureDepsWithAlerts = groupedDeps.map((group) => {
-    const groupAlerts = detectAlerts(group, feature.name, dependencyMap)
+    const groupAlerts = detectAlerts(
+      group,
+      feature.path,
+      dependencyMap,
+      nameToPath,
+    )
     return {
       feature: group.feature,
       alerts: groupAlerts,

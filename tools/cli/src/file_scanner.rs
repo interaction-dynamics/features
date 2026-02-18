@@ -143,10 +143,10 @@ fn populate_dependencies(features: &mut [Feature], base_path: &Path) -> Result<(
     // Build file-to-feature mapping
     let file_to_feature_map = build_file_to_feature_map(&feature_info_list, base_path);
 
-    // Build feature name to path mapping
-    let mut feature_path_map = HashMap::new();
+    // Build feature path to name mapping (path is the unique identifier)
+    let mut feature_path_to_name_map = HashMap::new();
     for info in &feature_info_list {
-        feature_path_map.insert(info.name.clone(), info.path.clone());
+        feature_path_to_name_map.insert(info.path.to_string_lossy().to_string(), info.name.clone());
     }
 
     // Scan all files in each feature for imports
@@ -164,7 +164,7 @@ fn populate_dependencies(features: &mut [Feature], base_path: &Path) -> Result<(
         base_path,
         &feature_imports,
         &file_to_feature_map,
-        &feature_path_map,
+        &feature_path_to_name_map,
         &file_map,
     );
 
@@ -213,7 +213,7 @@ fn populate_dependencies_recursive(
     base_path: &Path,
     feature_imports: &HashMap<String, Vec<ImportStatement>>,
     file_to_feature_map: &HashMap<std::path::PathBuf, String>,
-    feature_path_map: &HashMap<String, std::path::PathBuf>,
+    feature_path_to_name_map: &HashMap<String, String>,
     file_map: &HashMap<String, std::path::PathBuf>,
 ) {
     for feature in features {
@@ -228,7 +228,7 @@ fn populate_dependencies_recursive(
                 base_path,
                 imports,
                 file_to_feature_map,
-                feature_path_map,
+                feature_path_to_name_map,
                 file_map,
             );
 
@@ -242,7 +242,7 @@ fn populate_dependencies_recursive(
                 base_path,
                 feature_imports,
                 file_to_feature_map,
-                feature_path_map,
+                feature_path_to_name_map,
                 file_map,
             );
         }

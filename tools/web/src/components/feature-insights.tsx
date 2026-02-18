@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/chart'
 import {
   buildDependencyMap,
+  buildNameToPathMap,
   detectAlerts,
   groupDependencies,
 } from '@/features/dependencies/utils'
@@ -33,7 +34,7 @@ import { StatsCard } from './stats-card'
 interface FeatureInsightsProps {
   stats: Stats
   dependencies: Dependency[]
-  currentFeatureName: string
+  currentFeaturePath: string
   allFeatures: Feature[]
 }
 
@@ -75,13 +76,14 @@ const getCommitTypeColor = (type: string) => {
 export default function FeatureInsights({
   stats,
   dependencies,
-  currentFeatureName,
+  currentFeaturePath,
   allFeatures,
 }: FeatureInsightsProps) {
   const { commits } = stats
 
   // Calculate dependency statistics
   const dependencyMap = buildDependencyMap(allFeatures)
+  const nameToPath = buildNameToPathMap(allFeatures)
   const groupedDeps = groupDependencies(dependencies)
   const uniqueFeatureDependencies = new Set(
     dependencies.map((dep) => dep.feature),
@@ -92,7 +94,12 @@ export default function FeatureInsights({
   let tightDependenciesCount = 0
 
   groupedDeps.forEach((group) => {
-    const alerts = detectAlerts(group, currentFeatureName, dependencyMap)
+    const alerts = detectAlerts(
+      group,
+      currentFeaturePath,
+      dependencyMap,
+      nameToPath,
+    )
     if (alerts.includes('Circular Dependency')) {
       circularDependenciesCount++
     }
