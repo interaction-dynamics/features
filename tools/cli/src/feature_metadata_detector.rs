@@ -258,7 +258,8 @@ pub fn scan_directory_for_feature_metadata(dir_path: &Path) -> Result<FeatureMet
         "coverage",
     ];
 
-    for entry in WalkDir::new(dir_path)
+    // Collect all entries first
+    let mut entries: Vec<_> = WalkDir::new(dir_path)
         .into_iter()
         .filter_entry(|e| {
             if e.file_type().is_dir() {
@@ -269,7 +270,12 @@ pub fn scan_directory_for_feature_metadata(dir_path: &Path) -> Result<FeatureMet
             }
         })
         .filter_map(|e| e.ok())
-    {
+        .collect();
+
+    // Sort entries by path for consistent cross-platform behavior
+    entries.sort_by(|a, b| a.path().cmp(b.path()));
+
+    for entry in entries {
         if entry.file_type().is_file()
             && let Ok(comments) = scan_file(entry.path())
         {

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 
 use tempfile::TempDir;
@@ -16,7 +16,7 @@ fn create_test_feature(name: &str, path: &str) -> Feature {
         is_owner_inherited: false,
         path: path.to_string(),
         features: Vec::new(),
-        meta: HashMap::new(),
+        meta: BTreeMap::new(),
         changes: Vec::new(),
         decisions: Vec::new(),
         stats: None,

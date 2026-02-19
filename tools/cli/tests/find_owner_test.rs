@@ -49,7 +49,7 @@ fn run_cli(args: &[&str]) -> Result<String, String> {
 fn test_find_owner_with_explicit_owner() {
     // Build the binary first
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let test_base = manifest_dir.join("../../examples/javascript-basic/src");
+    let test_base = manifest_dir.join("../../examples/tests-skip-changes/src");
     let target_path = test_base.join("features/feature-1/features/feature-4");
 
     if !test_base.exists() {
@@ -92,7 +92,7 @@ fn test_find_owner_with_explicit_owner() {
 #[test]
 fn test_find_owner_with_inherited_owner() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let test_base = manifest_dir.join("../../examples/javascript-basic/src");
+    let test_base = manifest_dir.join("../../examples/tests-skip-changes/src");
     let target_path = test_base.join("features/feature-1/features/feature-2");
 
     if !test_base.exists() {
@@ -130,7 +130,7 @@ fn test_find_owner_with_inherited_owner() {
 #[test]
 fn test_find_owner_for_file_inside_feature() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let test_base = manifest_dir.join("../../examples/javascript-basic/src");
+    let test_base = manifest_dir.join("../../examples/tests-skip-changes/src");
     let target_file = test_base.join("features/feature-1/features/feature-2/README.md");
 
     if !test_base.exists() {
@@ -168,7 +168,7 @@ fn test_find_owner_for_file_inside_feature() {
 #[test]
 fn test_find_owner_json_output_with_explicit_owner() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let test_base = manifest_dir.join("../../examples/javascript-basic/src");
+    let test_base = manifest_dir.join("../../examples/tests-skip-changes/src");
     let target_path = test_base.join("features/feature-1/features/feature-4");
 
     if !test_base.exists() {
@@ -228,7 +228,7 @@ fn test_find_owner_json_output_with_explicit_owner() {
 #[test]
 fn test_find_owner_json_output_with_inherited_owner() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let test_base = manifest_dir.join("../../examples/javascript-basic/src");
+    let test_base = manifest_dir.join("../../examples/tests-skip-changes/src");
     let target_path = test_base.join("features/feature-1/features/feature-2");
 
     if !test_base.exists() {
@@ -289,7 +289,7 @@ fn test_find_owner_json_output_with_inherited_owner() {
 #[test]
 fn test_find_owner_with_unknown_owner() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let test_base = manifest_dir.join("../../examples/javascript-basic/src");
+    let test_base = manifest_dir.join("../../examples/tests-skip-changes/src");
     let target_path = test_base.join("features/feature-0");
 
     if !test_base.exists() {
@@ -332,7 +332,7 @@ fn test_find_owner_with_unknown_owner() {
 #[test]
 fn test_find_owner_nonexistent_path() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let test_base = manifest_dir.join("../../examples/javascript-basic/src");
+    let test_base = manifest_dir.join("../../examples/tests-skip-changes/src");
     let target_path = test_base.join("nonexistent/path/to/file.txt");
 
     if !test_base.exists() {
@@ -364,7 +364,7 @@ fn test_find_owner_nonexistent_path() {
 #[test]
 fn test_find_owner_path_not_in_any_feature() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let test_base = manifest_dir.join("../../examples/javascript-basic/src");
+    let test_base = manifest_dir.join("../../examples/tests-skip-changes/src");
     // Use a path that exists but is not in any feature
     let target_path = manifest_dir.join("tests");
 

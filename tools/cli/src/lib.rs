@@ -12,3 +12,4 @@ pub mod import_detector;
 pub mod models;
 pub mod printer;
 pub mod readme_parser;
+pub mod scan;
