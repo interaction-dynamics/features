@@ -177,9 +177,15 @@ fn scan_feature_directory_for_imports(feature_path: &Path) -> Vec<ImportStatemen
     let mut all_imports = Vec::new();
 
     if let Ok(entries) = fs::read_dir(feature_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
+        // Collect and sort entries alphabetically by filename
+        let mut paths: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+        paths.sort_by(|a, b| {
+            let name_a = a.file_name().unwrap_or_default().to_string_lossy();
+            let name_b = b.file_name().unwrap_or_default().to_string_lossy();
+            name_a.cmp(&name_b)
+        });
 
+        for path in paths {
             // Skip documentation directories
             if is_documentation_directory(&path) {
                 continue;
@@ -268,6 +274,9 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
                 )
             })?;
 
+            // Collect all decision file paths first
+            let mut decision_paths_vec = Vec::new();
+
             for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
@@ -278,13 +287,26 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
                 {
                     let file_name_str = file_name.to_string_lossy();
                     if file_name_str.ends_with(".md") && file_name_str != "README.md" {
-                        let content = fs::read_to_string(&path).with_context(|| {
-                            format!("could not read decision file `{}`", path.display())
-                        })?;
-                        decisions.push(content);
+                        decision_paths_vec.push(path);
                     }
                 }
             }
+
+            // Sort decision files alphabetically by filename
+            decision_paths_vec.sort_by(|a, b| {
+                let name_a = a.file_name().unwrap_or_default().to_string_lossy();
+                let name_b = b.file_name().unwrap_or_default().to_string_lossy();
+                name_a.cmp(&name_b)
+            });
+
+            // Read the sorted files
+            for path in decision_paths_vec {
+                let content = fs::read_to_string(&path).with_context(|| {
+                    format!("could not read decision file `{}`", path.display())
+                })?;
+                decisions.push(content);
+            }
+
             break; // If we found one of the directories, don't check the other
         }
     }
@@ -297,8 +319,15 @@ fn count_files(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
     let mut file_count = 0;
 
     if let Ok(entries) = fs::read_dir(feature_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
+        // Collect and sort entries alphabetically by filename
+        let mut paths: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+        paths.sort_by(|a, b| {
+            let name_a = a.file_name().unwrap_or_default().to_string_lossy();
+            let name_b = b.file_name().unwrap_or_default().to_string_lossy();
+            name_a.cmp(&name_b)
+        });
+
+        for path in paths {
             let path_str = path.to_string_lossy().to_string();
 
             // Skip documentation directories
@@ -331,8 +360,15 @@ fn count_lines(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
     let mut line_count = 0;
 
     if let Ok(entries) = fs::read_dir(feature_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
+        // Collect and sort entries alphabetically by filename
+        let mut paths: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+        paths.sort_by(|a, b| {
+            let name_a = a.file_name().unwrap_or_default().to_string_lossy();
+            let name_b = b.file_name().unwrap_or_default().to_string_lossy();
+            name_a.cmp(&name_b)
+        });
+
+        for path in paths {
             let path_str = path.to_string_lossy().to_string();
 
             // Skip documentation directories
@@ -368,8 +404,15 @@ fn count_todos(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
     let mut todo_count = 0;
 
     if let Ok(entries) = fs::read_dir(feature_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
+        // Collect and sort entries alphabetically by filename
+        let mut paths: Vec<_> = entries.flatten().map(|e| e.path()).collect();
+        paths.sort_by(|a, b| {
+            let name_a = a.file_name().unwrap_or_default().to_string_lossy();
+            let name_b = b.file_name().unwrap_or_default().to_string_lossy();
+            name_a.cmp(&name_b)
+        });
+
+        for path in paths {
             let path_str = path.to_string_lossy().to_string();
 
             // Skip documentation directories
@@ -566,7 +609,7 @@ fn compute_stats_from_changes(
         })
         .collect();
 
-    let mut commits = HashMap::new();
+    let mut commits = std::collections::BTreeMap::new();
 
     // Add total commit count
     commits.insert(
@@ -672,7 +715,12 @@ fn process_feature_directory(
                 toml_data.meta,
             )
         } else {
-            (None, String::new(), String::new(), HashMap::new())
+            (
+                None,
+                String::new(),
+                String::new(),
+                std::collections::BTreeMap::new(),
+            )
         }
     } else {
         // Fall back to README file if FEATURES.toml not found
@@ -684,7 +732,7 @@ fn process_feature_directory(
                 title: None,
                 owner: "".to_string(),
                 description: "".to_string(),
-                meta: std::collections::HashMap::new(),
+                meta: std::collections::BTreeMap::new(),
             }
         };
         (
@@ -829,7 +877,7 @@ fn process_feature_directory(
                 files_count: Some(files_count),
                 lines_count: Some(lines_count),
                 todos_count: Some(todos_count),
-                commits: HashMap::new(),
+                commits: std::collections::BTreeMap::new(),
                 coverage: None,
             })
         };

@@ -17,15 +17,15 @@ mod import_detector;
 mod models;
 mod printer;
 mod readme_parser;
+mod scan;
 
 use build::{BuildConfig, create_build};
 use checker::run_checks;
 use codeowners::generate_codeowners;
-use coverage_parser::{map_coverage_to_features, parse_coverage_reports};
-use file_scanner::{list_files_recursive, list_files_recursive_with_changes};
 use http_server::serve_features_with_watching;
 use models::Feature;
 use printer::print_features;
+use scan::{ScanConfig, scan_features};
 
 /// A CLI tool for discovering features in a folder by reading README.md or README.mdx files,
 /// and serving them via HTTP or static builds.
@@ -240,84 +240,6 @@ fn find_owner_for_path(
 /// - Stops searching after finding coverage data in the first valid directory
 /// - Only processes directories that contain actual coverage files
 /// - Updates feature stats with coverage information (line/branch coverage percentages)
-fn add_coverage_to_features(
-    features: &mut [Feature],
-    base_path: &std::path::Path,
-    coverage_dir_override: Option<&std::path::Path>,
-    current_dir: &std::path::Path,
-    project_dir: Option<&std::path::Path>,
-) {
-    let coverage_dirs = if let Some(override_dir) = coverage_dir_override {
-        // If override is provided, only use that directory
-        vec![override_dir.to_path_buf()]
-    } else {
-        // Check multiple locations:
-        // 1. .coverage and coverage in base_path
-        // 2. .coverage and coverage in current directory (where executable is run)
-        // 3. .coverage and coverage in project_dir (if provided)
-        let mut dirs = vec![
-            base_path.join(".coverage"),
-            base_path.join("coverage"),
-            current_dir.join(".coverage"),
-            current_dir.join("coverage"),
-        ];
-
-        // Add project_dir coverage directories if provided
-        if let Some(proj_dir) = project_dir {
-            let proj_coverage = proj_dir.join(".coverage");
-            let proj_coverage_plain = proj_dir.join("coverage");
-
-            // Only add if different from already added paths
-            if !dirs.contains(&proj_coverage) {
-                dirs.push(proj_coverage);
-            }
-            if !dirs.contains(&proj_coverage_plain) {
-                dirs.push(proj_coverage_plain);
-            }
-        }
-
-        dirs
-    };
-
-    for coverage_dir in &coverage_dirs {
-        // Parse coverage reports if the directory exists
-        if let Ok(coverage_map) = parse_coverage_reports(coverage_dir, base_path)
-            && !coverage_map.is_empty()
-        {
-            // Use coverage from the first directory found
-            let feature_coverage = map_coverage_to_features(features, coverage_map, base_path);
-            update_features_with_coverage(features, &feature_coverage);
-            break; // Stop after finding coverage in one directory
-        }
-    }
-}
-
-/// Recursively update features with coverage data
-fn update_features_with_coverage(
-    features: &mut [Feature],
-    feature_coverage: &std::collections::HashMap<String, coverage_parser::CoverageStats>,
-) {
-    for feature in features {
-        if let Some(coverage) = feature_coverage.get(&feature.path) {
-            // Update or create stats
-            if let Some(ref mut stats) = feature.stats {
-                stats.coverage = Some(coverage.clone());
-            } else {
-                feature.stats = Some(models::Stats {
-                    files_count: None,
-                    lines_count: None,
-                    todos_count: None,
-                    commits: std::collections::HashMap::new(),
-                    coverage: Some(coverage.clone()),
-                });
-            }
-        }
-
-        // Recursively update nested features
-        update_features_with_coverage(&mut feature.features, feature_coverage);
-    }
-}
-
 fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
     let mut owners_set = HashSet::new();
 
@@ -362,11 +284,10 @@ async fn main() -> Result<()> {
             std::env::current_dir()?
         };
 
-        let features = if args.skip_changes {
-            list_files_recursive(&base_path)?
-        } else {
-            list_files_recursive_with_changes(&base_path)?
-        };
+        let current_dir = std::env::current_dir()?;
+        let config = ScanConfig::new(&current_dir).skip_changes(args.skip_changes);
+
+        let features = scan_features(&base_path, config)?;
 
         match find_owner_for_path(&target_path, &features, &base_path) {
             Some(owner_info) => {
@@ -427,25 +348,23 @@ async fn main() -> Result<()> {
         None
     };
 
-    let mut features = if args.skip_changes {
-        list_files_recursive(&path)?
-    } else {
-        list_files_recursive_with_changes(&path)?
-    };
-
-    // Add coverage data from .coverage and coverage directories
-    // Coverage is always added for --serve, --build, --json, or when --coverage flag is set
+    // Build scan configuration
     let current_dir = std::env::current_dir()?;
     let should_add_coverage = args.serve || args.build || args.json || args.coverage;
-    if should_add_coverage {
-        add_coverage_to_features(
-            &mut features,
-            &path,
-            args.coverage_dir.as_deref(),
-            &current_dir,
-            args.project_dir.as_deref(),
-        );
+
+    let mut config = ScanConfig::new(&current_dir)
+        .skip_changes(args.skip_changes)
+        .with_coverage(should_add_coverage);
+
+    if let Some(ref coverage_dir) = args.coverage_dir {
+        config = config.coverage_dir(coverage_dir);
     }
+
+    if let Some(ref project_dir) = args.project_dir {
+        config = config.project_dir(project_dir);
+    }
+
+    let features = scan_features(&path, config)?;
 
     // Generate CODEOWNERS file if requested
     if args.generate_codeowners {

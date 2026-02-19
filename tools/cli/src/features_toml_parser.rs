@@ -5,7 +5,7 @@
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -15,7 +15,7 @@ pub struct FeaturesToml {
     pub owner: Option<String>,
     pub description: Option<String>,
     #[serde(flatten)]
-    pub meta: HashMap<String, serde_json::Value>,
+    pub meta: BTreeMap<String, serde_json::Value>,
 }
 
 /// Reads and parses a FEATURES.toml file

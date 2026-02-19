@@ -6,14 +6,14 @@ A zero-config CLI tool for discovering and managing features in a feature-based 
 
 ```bash
 
-cargo run ../../examples/javascript-basic/src/features
+cargo run ../../examples/demo/src/features
 
 # For the web dashboard
 cd ../web
 pnpm build_for_cli
 cd ../cli
 
-cargo run ../../examples/javascript-basic/src/features --serve # for the Web dashboard
+cargo run ../../examples/demo/src/features --serve # for the Web dashboard
 ```
 
 ## Deploy

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::coverage_parser::CoverageStats;
 
@@ -20,7 +20,7 @@ pub struct Stats {
     pub lines_count: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub todos_count: Option<usize>,
-    pub commits: HashMap<String, serde_json::Value>,
+    pub commits: BTreeMap<String, serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coverage: Option<CoverageStats>,
 }
@@ -34,7 +34,7 @@ pub struct Feature {
     pub is_owner_inherited: bool,
     pub path: String,
     pub features: Vec<Feature>,
-    pub meta: HashMap<String, serde_json::Value>,
+    pub meta: BTreeMap<String, serde_json::Value>,
     pub changes: Vec<Change>,
     pub decisions: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

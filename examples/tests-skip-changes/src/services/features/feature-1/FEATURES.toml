@@ -1,0 +1,3 @@
+name = "Feature 1"
+owner = "services-team"
+description = "Feature 1 in services - independent from libs Feature 1"

@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -12,7 +12,7 @@ pub struct ReadmeInfo {
     /// Description content (everything after the first heading)
     pub description: String,
     /// Additional metadata from YAML frontmatter
-    pub meta: HashMap<String, serde_json::Value>,
+    pub meta: BTreeMap<String, serde_json::Value>,
 }
 
 fn extract_first_title(content: &str) -> Option<String> {
@@ -63,7 +63,7 @@ pub fn read_readme_info(readme_path: &Path) -> Result<ReadmeInfo> {
             title: None,
             owner: "".to_string(),
             description: "".to_string(),
-            meta: HashMap::new(),
+            meta: BTreeMap::new(),
         });
     }
 
@@ -73,7 +73,7 @@ pub fn read_readme_info(readme_path: &Path) -> Result<ReadmeInfo> {
     let mut title: Option<String> = None;
     let mut owner = "".to_string();
     let mut description = "".to_string();
-    let mut meta: HashMap<String, serde_json::Value> = HashMap::new();
+    let mut meta: BTreeMap<String, serde_json::Value> = BTreeMap::new();
 
     // Check if content starts with YAML front matter (---)
     if let Some(stripped) = content.strip_prefix("---\n") {
