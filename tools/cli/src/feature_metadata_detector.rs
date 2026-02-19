@@ -21,7 +21,7 @@ type MetadataEntries = Vec<MetadataProperties>;
 /// Maps metadata keys (e.g., "flag") to their entries
 type MetadataByKey = HashMap<String, MetadataEntries>;
 
-/// Maps feature names to their metadata, organized by metadata key
+/// Maps feature paths to their metadata, organized by metadata key
 pub type FeatureMetadataMap = HashMap<String, MetadataByKey>;
 
 #[derive(Debug, Clone)]
@@ -200,14 +200,14 @@ fn scan_file(file_path: &Path) -> Result<Vec<FeatureMetadataComment>> {
     Ok(results)
 }
 
-/// Attempts to infer the feature name from a file path by looking for a 'features' directory
-/// in the path hierarchy and extracting the immediate subdirectory name
+/// Attempts to infer the feature path from a file path by looking for a 'features' directory
+/// in the path hierarchy and extracting the path from base to the feature directory
 ///
-/// For example:
-/// - `src/features/user-auth/component.tsx` -> Some("user-auth")
-/// - `libs/features/api-v2/utils.ts` -> Some("api-v2")
+/// For example (with base_path as project root):
+/// - `src/features/user-auth/component.tsx` -> Some("src/features/user-auth")
+/// - `libs/features/api-v2/utils.ts` -> Some("libs/features/api-v2")
 /// - `src/components/Button.tsx` -> None
-fn infer_feature_name_from_path(file_path: &Path, base_path: &Path) -> Option<String> {
+fn infer_feature_path_from_file(file_path: &Path, base_path: &Path) -> Option<String> {
     // Get the relative path from base_path
     let relative_path = file_path.strip_prefix(base_path).ok()?;
 
@@ -217,10 +217,16 @@ fn infer_feature_name_from_path(file_path: &Path, base_path: &Path) -> Option<St
     for (i, component) in components.iter().enumerate() {
         if let Some(os_str) = component.as_os_str().to_str()
             && os_str == "features"
-            && let Some(next_component) = components.get(i + 1)
-            && let Some(feature_name) = next_component.as_os_str().to_str()
+            && let Some(_next_component) = components.get(i + 1)
         {
-            return Some(feature_name.to_string());
+            // Build the path up to and including the feature directory (i+1)
+            let mut feature_path = std::path::PathBuf::new();
+            for j in 0..=i + 1 {
+                if let Some(comp) = components.get(j) {
+                    feature_path.push(comp);
+                }
+            }
+            return Some(feature_path.to_string_lossy().to_string());
         }
     }
 
@@ -268,16 +274,16 @@ pub fn scan_directory_for_feature_metadata(dir_path: &Path) -> Result<FeatureMet
             && let Ok(comments) = scan_file(entry.path())
         {
             for comment in comments {
-                // Get the feature name from the properties, or infer from path
-                let feature_name = comment
+                // Get the feature path from the properties, or infer from file path
+                let feature_path = comment
                     .properties
                     .get("feature")
                     .cloned()
-                    .or_else(|| infer_feature_name_from_path(entry.path(), dir_path));
+                    .or_else(|| infer_feature_path_from_file(entry.path(), dir_path));
 
-                if let Some(feature_name) = feature_name {
+                if let Some(feature_path) = feature_path {
                     feature_metadata
-                        .entry(feature_name)
+                        .entry(feature_path)
                         .or_default()
                         .entry(comment.metadata_key)
                         .or_default()
