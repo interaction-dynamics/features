@@ -9,12 +9,12 @@
     "meta": {},
     "changes": [
       {
-        "title": "test: use specific folder for tests",
+        "title": "test: improve test coverage (#107)",
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
-        "description": "",
-        "date": "2026-02-19 17:38:13",
-        "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+        "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+        "date": "2026-02-19 17:49:05",
+        "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
       }
     ],
     "decisions": [],
@@ -29,8 +29,8 @@
         "count_by_type": {
           "test": 1
         },
-        "first_commit_date": "2026-02-19 17:38:13",
-        "last_commit_date": "2026-02-19 17:38:13",
+        "first_commit_date": "2026-02-19 17:49:05",
+        "last_commit_date": "2026-02-19 17:49:05",
         "total_commits": 1
       }
     },
@@ -53,12 +53,12 @@
         "meta": {},
         "changes": [
           {
-            "title": "test: use specific folder for tests",
+            "title": "test: improve test coverage (#107)",
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
-            "description": "",
-            "date": "2026-02-19 17:38:13",
-            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+            "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+            "date": "2026-02-19 17:49:05",
+            "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
           }
         ],
         "decisions": [],
@@ -73,8 +73,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 17:38:13",
-            "last_commit_date": "2026-02-19 17:38:13",
+            "first_commit_date": "2026-02-19 17:49:05",
+            "last_commit_date": "2026-02-19 17:49:05",
             "total_commits": 1
           }
         },
@@ -90,12 +90,12 @@
         "meta": {},
         "changes": [
           {
-            "title": "test: use specific folder for tests",
+            "title": "test: improve test coverage (#107)",
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
-            "description": "",
-            "date": "2026-02-19 17:38:13",
-            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+            "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+            "date": "2026-02-19 17:49:05",
+            "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
           }
         ],
         "decisions": [],
@@ -110,8 +110,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 17:38:13",
-            "last_commit_date": "2026-02-19 17:38:13",
+            "first_commit_date": "2026-02-19 17:49:05",
+            "last_commit_date": "2026-02-19 17:49:05",
             "total_commits": 1
           }
         },
@@ -130,12 +130,12 @@
         },
         "changes": [
           {
-            "title": "test: use specific folder for tests",
+            "title": "test: improve test coverage (#107)",
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
-            "description": "",
-            "date": "2026-02-19 17:38:13",
-            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+            "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+            "date": "2026-02-19 17:49:05",
+            "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
           }
         ],
         "decisions": [],
@@ -150,8 +150,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 17:38:13",
-            "last_commit_date": "2026-02-19 17:38:13",
+            "first_commit_date": "2026-02-19 17:49:05",
+            "last_commit_date": "2026-02-19 17:49:05",
             "total_commits": 1
           }
         },
@@ -161,12 +161,12 @@
     "meta": {},
     "changes": [
       {
-        "title": "test: use specific folder for tests",
+        "title": "test: improve test coverage (#107)",
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
-        "description": "",
-        "date": "2026-02-19 17:38:13",
-        "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+        "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+        "date": "2026-02-19 17:49:05",
+        "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
       }
     ],
     "decisions": [
@@ -183,8 +183,8 @@
         "count_by_type": {
           "test": 1
         },
-        "first_commit_date": "2026-02-19 17:38:13",
-        "last_commit_date": "2026-02-19 17:38:13",
+        "first_commit_date": "2026-02-19 17:49:05",
+        "last_commit_date": "2026-02-19 17:49:05",
         "total_commits": 1
       }
     },
@@ -200,12 +200,12 @@
     "meta": {},
     "changes": [
       {
-        "title": "test: use specific folder for tests",
+        "title": "test: improve test coverage (#107)",
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
-        "description": "",
-        "date": "2026-02-19 17:38:13",
-        "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+        "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+        "date": "2026-02-19 17:49:05",
+        "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
       }
     ],
     "decisions": [
@@ -223,8 +223,8 @@
         "count_by_type": {
           "test": 1
         },
-        "first_commit_date": "2026-02-19 17:38:13",
-        "last_commit_date": "2026-02-19 17:38:13",
+        "first_commit_date": "2026-02-19 17:49:05",
+        "last_commit_date": "2026-02-19 17:49:05",
         "total_commits": 1
       }
     },
@@ -256,12 +256,12 @@
         "meta": {},
         "changes": [
           {
-            "title": "test: use specific folder for tests",
+            "title": "test: improve test coverage (#107)",
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
-            "description": "",
-            "date": "2026-02-19 17:38:13",
-            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+            "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+            "date": "2026-02-19 17:49:05",
+            "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
           }
         ],
         "decisions": [],
@@ -276,8 +276,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 17:38:13",
-            "last_commit_date": "2026-02-19 17:38:13",
+            "first_commit_date": "2026-02-19 17:49:05",
+            "last_commit_date": "2026-02-19 17:49:05",
             "total_commits": 1
           }
         },
@@ -293,12 +293,12 @@
         "meta": {},
         "changes": [
           {
-            "title": "test: use specific folder for tests",
+            "title": "test: improve test coverage (#107)",
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
-            "description": "",
-            "date": "2026-02-19 17:38:13",
-            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+            "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+            "date": "2026-02-19 17:49:05",
+            "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
           }
         ],
         "decisions": [],
@@ -313,8 +313,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 17:38:13",
-            "last_commit_date": "2026-02-19 17:38:13",
+            "first_commit_date": "2026-02-19 17:49:05",
+            "last_commit_date": "2026-02-19 17:49:05",
             "total_commits": 1
           }
         },
@@ -324,12 +324,12 @@
     "meta": {},
     "changes": [
       {
-        "title": "test: use specific folder for tests",
+        "title": "test: improve test coverage (#107)",
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
-        "description": "",
-        "date": "2026-02-19 17:38:13",
-        "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
+        "description": "* test: use specific folder for tests\n\n* test: fix snapshot",
+        "date": "2026-02-19 17:49:05",
+        "hash": "a4743a59c05ebf6a57c46a111499f14c5b0e0841"
       }
     ],
     "decisions": [],
@@ -344,8 +344,8 @@
         "count_by_type": {
           "test": 1
         },
-        "first_commit_date": "2026-02-19 17:38:13",
-        "last_commit_date": "2026-02-19 17:38:13",
+        "first_commit_date": "2026-02-19 17:49:05",
+        "last_commit_date": "2026-02-19 17:49:05",
         "total_commits": 1
       }
     },
