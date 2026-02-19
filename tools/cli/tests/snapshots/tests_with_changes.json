@@ -13,8 +13,8 @@
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
         "description": "",
-        "date": "2026-02-19 12:32:14",
-        "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+        "date": "2026-02-19 17:38:13",
+        "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
       }
     ],
     "decisions": [],
@@ -29,8 +29,8 @@
         "count_by_type": {
           "test": 1
         },
-        "first_commit_date": "2026-02-19 12:32:14",
-        "last_commit_date": "2026-02-19 12:32:14",
+        "first_commit_date": "2026-02-19 17:38:13",
+        "last_commit_date": "2026-02-19 17:38:13",
         "total_commits": 1
       }
     },
@@ -53,28 +53,12 @@
         "meta": {},
         "changes": [
           {
-            "title": "test: fix unit tests",
-            "author_name": "Thibault Friedrich",
-            "author_email": "thibault.friedrich@interaction-dynamics.io",
-            "description": "",
-            "date": "2026-02-19 12:35:09",
-            "hash": "a6d32c22d9863e4db75adeec47b4366845012827"
-          },
-          {
-            "title": "test: fix unit tests",
-            "author_name": "Thibault Friedrich",
-            "author_email": "thibault.friedrich@interaction-dynamics.io",
-            "description": "",
-            "date": "2026-02-19 12:34:16",
-            "hash": "99b3e6474e0c336f4529b09a84f65df9f2465e94"
-          },
-          {
             "title": "test: use specific folder for tests",
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
             "description": "",
-            "date": "2026-02-19 12:32:14",
-            "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+            "date": "2026-02-19 17:38:13",
+            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
           }
         ],
         "decisions": [],
@@ -84,14 +68,14 @@
           "todos_count": 0,
           "commits": {
             "authors_count": {
-              "Thibault Friedrich": 3
+              "Thibault Friedrich": 1
             },
             "count_by_type": {
-              "test": 3
+              "test": 1
             },
-            "first_commit_date": "2026-02-19 12:35:09",
-            "last_commit_date": "2026-02-19 12:32:14",
-            "total_commits": 3
+            "first_commit_date": "2026-02-19 17:38:13",
+            "last_commit_date": "2026-02-19 17:38:13",
+            "total_commits": 1
           }
         },
         "dependencies": []
@@ -110,8 +94,8 @@
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
             "description": "",
-            "date": "2026-02-19 12:32:14",
-            "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+            "date": "2026-02-19 17:38:13",
+            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
           }
         ],
         "decisions": [],
@@ -126,8 +110,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 12:32:14",
-            "last_commit_date": "2026-02-19 12:32:14",
+            "first_commit_date": "2026-02-19 17:38:13",
+            "last_commit_date": "2026-02-19 17:38:13",
             "total_commits": 1
           }
         },
@@ -150,8 +134,8 @@
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
             "description": "",
-            "date": "2026-02-19 12:32:14",
-            "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+            "date": "2026-02-19 17:38:13",
+            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
           }
         ],
         "decisions": [],
@@ -166,8 +150,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 12:32:14",
-            "last_commit_date": "2026-02-19 12:32:14",
+            "first_commit_date": "2026-02-19 17:38:13",
+            "last_commit_date": "2026-02-19 17:38:13",
             "total_commits": 1
           }
         },
@@ -177,28 +161,12 @@
     "meta": {},
     "changes": [
       {
-        "title": "test: fix unit tests",
-        "author_name": "Thibault Friedrich",
-        "author_email": "thibault.friedrich@interaction-dynamics.io",
-        "description": "",
-        "date": "2026-02-19 12:35:09",
-        "hash": "a6d32c22d9863e4db75adeec47b4366845012827"
-      },
-      {
-        "title": "test: fix unit tests",
-        "author_name": "Thibault Friedrich",
-        "author_email": "thibault.friedrich@interaction-dynamics.io",
-        "description": "",
-        "date": "2026-02-19 12:34:16",
-        "hash": "99b3e6474e0c336f4529b09a84f65df9f2465e94"
-      },
-      {
         "title": "test: use specific folder for tests",
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
         "description": "",
-        "date": "2026-02-19 12:32:14",
-        "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+        "date": "2026-02-19 17:38:13",
+        "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
       }
     ],
     "decisions": [
@@ -210,14 +178,14 @@
       "todos_count": 0,
       "commits": {
         "authors_count": {
-          "Thibault Friedrich": 3
+          "Thibault Friedrich": 1
         },
         "count_by_type": {
-          "test": 3
+          "test": 1
         },
-        "first_commit_date": "2026-02-19 12:35:09",
-        "last_commit_date": "2026-02-19 12:32:14",
-        "total_commits": 3
+        "first_commit_date": "2026-02-19 17:38:13",
+        "last_commit_date": "2026-02-19 17:38:13",
+        "total_commits": 1
       }
     },
     "dependencies": []
@@ -236,8 +204,8 @@
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
         "description": "",
-        "date": "2026-02-19 12:32:14",
-        "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+        "date": "2026-02-19 17:38:13",
+        "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
       }
     ],
     "decisions": [
@@ -255,8 +223,8 @@
         "count_by_type": {
           "test": 1
         },
-        "first_commit_date": "2026-02-19 12:32:14",
-        "last_commit_date": "2026-02-19 12:32:14",
+        "first_commit_date": "2026-02-19 17:38:13",
+        "last_commit_date": "2026-02-19 17:38:13",
         "total_commits": 1
       }
     },
@@ -292,8 +260,8 @@
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
             "description": "",
-            "date": "2026-02-19 12:32:14",
-            "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+            "date": "2026-02-19 17:38:13",
+            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
           }
         ],
         "decisions": [],
@@ -308,8 +276,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 12:32:14",
-            "last_commit_date": "2026-02-19 12:32:14",
+            "first_commit_date": "2026-02-19 17:38:13",
+            "last_commit_date": "2026-02-19 17:38:13",
             "total_commits": 1
           }
         },
@@ -329,8 +297,8 @@
             "author_name": "Thibault Friedrich",
             "author_email": "thibault.friedrich@interaction-dynamics.io",
             "description": "",
-            "date": "2026-02-19 12:32:14",
-            "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+            "date": "2026-02-19 17:38:13",
+            "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
           }
         ],
         "decisions": [],
@@ -345,8 +313,8 @@
             "count_by_type": {
               "test": 1
             },
-            "first_commit_date": "2026-02-19 12:32:14",
-            "last_commit_date": "2026-02-19 12:32:14",
+            "first_commit_date": "2026-02-19 17:38:13",
+            "last_commit_date": "2026-02-19 17:38:13",
             "total_commits": 1
           }
         },
@@ -360,8 +328,8 @@
         "author_name": "Thibault Friedrich",
         "author_email": "thibault.friedrich@interaction-dynamics.io",
         "description": "",
-        "date": "2026-02-19 12:32:14",
-        "hash": "9f8a332dc26285b84bab56a73a7f0273946bb4f2"
+        "date": "2026-02-19 17:38:13",
+        "hash": "c0b97590538b17d9c88df488ddd25d034531fca8"
       }
     ],
     "decisions": [],
@@ -376,8 +344,8 @@
         "count_by_type": {
           "test": 1
         },
-        "first_commit_date": "2026-02-19 12:32:14",
-        "last_commit_date": "2026-02-19 12:32:14",
+        "first_commit_date": "2026-02-19 17:38:13",
+        "last_commit_date": "2026-02-19 17:38:13",
         "total_commits": 1
       }
     },
