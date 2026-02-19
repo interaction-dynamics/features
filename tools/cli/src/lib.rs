@@ -4,6 +4,7 @@ pub mod codeowners;
 pub mod coverage_parser;
 pub mod dependency_resolver;
 pub mod feature_metadata_detector;
+pub mod features_toml_parser;
 pub mod file_scanner;
 pub mod git_helper;
 pub mod http_server;

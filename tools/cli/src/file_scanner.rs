@@ -8,6 +8,7 @@ use crate::dependency_resolver::{
     build_file_to_feature_map, collect_feature_info, resolve_feature_dependencies,
 };
 use crate::feature_metadata_detector::{self, FeatureMetadataMap};
+use crate::features_toml_parser::{find_features_toml, read_features_toml};
 use crate::git_helper::get_all_commits_by_path;
 use crate::import_detector::{ImportStatement, build_file_map, scan_file_for_imports};
 use crate::models::{Change, Feature, Stats};
@@ -661,27 +662,51 @@ fn process_feature_directory(
     parent_owner: Option<&str>,
     feature_metadata_map: &FeatureMetadataMap,
 ) -> Result<Feature> {
-    // Try to find and read README file, use defaults if not found
-    let mut readme_info = if let Some(readme_path) = find_readme_file(path) {
-        read_readme_info(&readme_path)?
-    } else {
-        use crate::readme_parser::ReadmeInfo;
-        ReadmeInfo {
-            title: None,
-            owner: "".to_string(),
-            description: "".to_string(),
-            meta: std::collections::HashMap::new(),
+    // First try to find and read FEATURES.toml file
+    let (title, owner, description, mut meta) = if let Some(toml_path) = find_features_toml(path) {
+        if let Ok(toml_data) = read_features_toml(&toml_path) {
+            (
+                toml_data.name,
+                toml_data.owner.unwrap_or_default(),
+                toml_data.description.unwrap_or_default(),
+                toml_data.meta,
+            )
+        } else {
+            (None, String::new(), String::new(), HashMap::new())
         }
+    } else {
+        // Fall back to README file if FEATURES.toml not found
+        let readme_info = if let Some(readme_path) = find_readme_file(path) {
+            read_readme_info(&readme_path)?
+        } else {
+            use crate::readme_parser::ReadmeInfo;
+            ReadmeInfo {
+                title: None,
+                owner: "".to_string(),
+                description: "".to_string(),
+                meta: std::collections::HashMap::new(),
+            }
+        };
+        (
+            readme_info.title,
+            readme_info.owner,
+            readme_info.description,
+            readme_info.meta,
+        )
     };
 
     // Remove the 'feature' key from meta if it exists (it's redundant since we know it's a feature)
-    readme_info.meta.remove("feature");
+    meta.remove("feature");
 
-    // Get the folder name (the last component of the path)
-    let folder_name = path.file_name().and_then(|n| n.to_str()).unwrap_or(name);
+    // Get the relative path to this feature directory for metadata lookup
+    let relative_path = path
+        .strip_prefix(base_path)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .to_string();
 
-    // Check if this feature has any metadata from the global scan (matched by folder name)
-    if let Some(metadata_map) = feature_metadata_map.get(folder_name) {
+    // Check if this feature has any metadata from the global scan (matched by feature path)
+    if let Some(metadata_map) = feature_metadata_map.get(&relative_path) {
         // Iterate through each metadata key (e.g., "feature-flag", "feature-experiment")
         for (metadata_key, flags) in metadata_map {
             // Convert Vec<HashMap<String, String>> to JSON array
@@ -697,9 +722,7 @@ fn process_feature_directory(
                 .collect();
 
             // Check if this metadata key already exists, append if it does
-            readme_info
-                .meta
-                .entry(metadata_key.clone())
+            meta.entry(metadata_key.clone())
                 .and_modify(|existing| {
                     if let serde_json::Value::Array(arr) = existing {
                         arr.extend(flags_json.clone());
@@ -720,14 +743,14 @@ fn process_feature_directory(
     let decisions = read_decision_files(path).unwrap_or_default();
 
     // Determine the actual owner and whether it's inherited
-    let (actual_owner, is_owner_inherited) = if readme_info.owner.is_empty() {
+    let (actual_owner, is_owner_inherited) = if owner.is_empty() {
         if let Some(parent) = parent_owner {
             (parent.to_string(), true)
         } else {
             ("".to_string(), false)
         }
     } else {
-        (readme_info.owner.clone(), false)
+        (owner.clone(), false)
     };
 
     // Check if this feature has nested features in a 'features' subdirectory
@@ -819,13 +842,13 @@ fn process_feature_directory(
         .to_string();
 
     Ok(Feature {
-        name: readme_info.title.unwrap_or_else(|| name.to_string()),
-        description: readme_info.description,
+        name: title.unwrap_or_else(|| name.to_string()),
+        description,
         owner: actual_owner,
         is_owner_inherited,
         path: relative_path,
         features: nested_features,
-        meta: readme_info.meta,
+        meta,
         changes,
         decisions,
         stats,
