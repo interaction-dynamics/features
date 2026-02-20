@@ -79,12 +79,11 @@ fn is_nested_feature_directory(dir: &Path) -> bool {
     }
 
     // Check if it's a direct child of a "features" directory
-    if let Some(parent) = dir.parent() {
-        if let Some(parent_name) = parent.file_name() {
-            if parent_name == "features" {
-                return true;
-            }
-        }
+    if let Some(parent) = dir.parent()
+        && let Some(parent_name) = parent.file_name()
+        && parent_name == "features"
+    {
+        return true;
     }
 
     false
