@@ -156,7 +156,8 @@ fn populate_dependencies(features: &mut [Feature], base_path: &Path) -> Result<(
     for feature_info in &feature_info_list {
         let feature_path = base_path.join(&feature_info.path);
         let imports = scan_feature_directory_for_imports(&feature_path);
-        feature_imports.insert(feature_info.name.clone(), imports);
+        // Use feature path as key instead of name to handle features with duplicate names
+        feature_imports.insert(feature_info.path.to_string_lossy().to_string(), imports);
     }
 
     // Now populate dependencies in the feature tree
@@ -202,11 +203,14 @@ fn scan_feature_directory_for_imports(feature_path: &Path) -> Vec<ImportStatemen
                     continue;
                 }
 
-                // Recursively scan subdirectories (but not nested features with readme flag)
-                if !has_feature_flag_in_readme(&path) {
-                    let nested_imports = scan_feature_directory_for_imports(&path);
-                    all_imports.extend(nested_imports);
+                // Skip nested feature directories (check if it's a direct child of "features" directory with README)
+                if is_feature_directory(&path) {
+                    continue;
                 }
+
+                // Recursively scan subdirectories
+                let nested_imports = scan_feature_directory_for_imports(&path);
+                all_imports.extend(nested_imports);
             }
         }
     }
@@ -224,8 +228,8 @@ fn populate_dependencies_recursive(
     file_map: &HashMap<String, std::path::PathBuf>,
 ) {
     for feature in features {
-        // Get imports for this feature
-        if let Some(imports) = feature_imports.get(&feature.name) {
+        // Get imports for this feature using path as key (not name, since multiple features can have same name)
+        if let Some(imports) = feature_imports.get(&feature.path) {
             let feature_path = std::path::PathBuf::from(&feature.path);
 
             // Resolve dependencies
