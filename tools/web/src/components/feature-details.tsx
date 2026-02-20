@@ -123,12 +123,10 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
               Insights
             </TabsTrigger>
           )}
-          {feature.dependencies.length > 0 && (
-            <TabsTrigger value="dependencies">
-              <Network className="h-4 w-4" />
-              Dependencies
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="dependencies">
+            <Network className="h-4 w-4" />
+            Dependencies
+          </TabsTrigger>
           {metadataArrayKeys.map((key) => {
             const Icon = getMetadataIcon(key)
             return (
@@ -165,15 +163,13 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             />
           </TabsContent>
         )}
-        {feature.dependencies.length > 0 && (
-          <TabsContent value="dependencies" className="mt-1">
-            <FeatureDependencies
-              dependencies={feature.dependencies}
-              currentFeaturePath={feature.path}
-              allFeatures={features}
-            />
-          </TabsContent>
-        )}
+        <TabsContent value="dependencies" className="mt-1">
+          <FeatureDependencies
+            dependencies={feature.dependencies}
+            currentFeaturePath={feature.path}
+            allFeatures={features}
+          />
+        </TabsContent>
         {metadataArrayKeys.map((key) => (
           <TabsContent key={key} value={key} className="mt-1">
             <FeatureMetadataTable

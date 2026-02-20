@@ -45,6 +45,7 @@ pub fn build_file_to_feature_map(
 }
 
 /// Recursively map all files in a directory to a feature path
+/// Only maps files that haven't been mapped yet (most specific feature wins)
 fn map_directory_files(dir: &Path, feature_path: &str, map: &mut HashMap<PathBuf, String>) {
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.flatten() {
@@ -52,11 +53,15 @@ fn map_directory_files(dir: &Path, feature_path: &str, map: &mut HashMap<PathBuf
 
             if path.is_file() {
                 // Canonicalize the path to resolve .. and .
-                if let Ok(canonical_path) = path.canonicalize() {
-                    map.insert(canonical_path, feature_path.to_string());
+                let canonical_path = if let Ok(canonical) = path.canonicalize() {
+                    canonical
                 } else {
-                    map.insert(path.clone(), feature_path.to_string());
-                }
+                    path.clone()
+                };
+
+                // Only insert if not already mapped (most specific feature takes precedence)
+                map.entry(canonical_path)
+                    .or_insert_with(|| feature_path.to_string());
             } else if path.is_dir()
                 && let Some(dir_name) = path.file_name().and_then(|n| n.to_str())
                 && !should_skip_directory(dir_name)

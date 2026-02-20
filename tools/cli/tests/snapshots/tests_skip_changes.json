@@ -35,7 +35,7 @@
                 "targetFilename": "features/feature-0/feature-1/index.tsx",
                 "line": 1,
                 "content": "import { feature1 } from '../index'",
-                "featurePath": "features/feature-0",
+                "featurePath": "features/feature-0/feature-1",
                 "type": "parent"
               }
             ]
@@ -62,7 +62,16 @@
       "todos_count": 0,
       "commits": {}
     },
-    "dependencies": []
+    "dependencies": [
+      {
+        "sourceFilename": "features/feature-0/file.tsx",
+        "targetFilename": "features/feature-0/feature-1/index.tsx",
+        "line": 1,
+        "content": "import { feature1 } from './feature-1'",
+        "featurePath": "features/feature-0/feature-1",
+        "type": "child"
+      }
+    ]
   },
   {
     "name": "Feature 1",
