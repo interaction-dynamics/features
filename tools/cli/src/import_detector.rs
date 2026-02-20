@@ -411,6 +411,23 @@ fn resolve_relative_import(
     // Try to resolve from source directory
     let candidate = source_dir.join(import_path);
 
+    // First, check if the path is a directory and try index files
+    // This handles: import foo from './folder' -> './folder/index.ts'
+    if candidate.is_dir() {
+        for index_name in ["index", "mod", "__init__"] {
+            for idx_ext in ["ts", "tsx", "js", "jsx", "rs", "py"] {
+                let index_path = candidate.join(format!("{}.{}", index_name, idx_ext));
+                if index_path.exists() && index_path.starts_with(base_path) {
+                    // Canonicalize to resolve .. and . in the path
+                    if let Ok(canonical) = index_path.canonicalize() {
+                        return Some(canonical);
+                    }
+                    return Some(index_path);
+                }
+            }
+        }
+    }
+
     // Try common extensions if no extension provided
     let extensions = [
         "", ".ts", ".tsx", ".js", ".jsx", ".rs", ".py", ".go", ".java", ".rb", ".php",
@@ -434,13 +451,13 @@ fn resolve_relative_import(
             return Some(path_with_ext);
         }
 
-        // Try as directory with index file
-        let candidate_as_dir = candidate.clone();
-        if candidate_as_dir.is_dir() {
+        // Also check if path with extension is a directory with index file
+        // This handles edge cases like './folder.component' -> './folder.component/index.ts'
+        if path_with_ext.is_dir() {
             for index_name in ["index", "mod", "__init__"] {
                 for idx_ext in ["ts", "tsx", "js", "jsx", "rs", "py"] {
-                    let index_path = candidate_as_dir.join(format!("{}.{}", index_name, idx_ext));
-                    if index_path.exists() {
+                    let index_path = path_with_ext.join(format!("{}.{}", index_name, idx_ext));
+                    if index_path.exists() && index_path.starts_with(base_path) {
                         return Some(index_path);
                     }
                 }

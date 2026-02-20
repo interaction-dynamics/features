@@ -89,6 +89,7 @@ fn compare_json_values(actual: &Value, expected: &Value, path: &str) -> Result<(
 fn test_tests_skip_changes_snapshot() {
     // Path to the test directory (relative to the workspace root when tests run)
     let test_path = PathBuf::from("../../examples/tests-skip-changes/src");
+    let test_path_dir = PathBuf::from("../../examples/tests-skip-changes");
 
     if !test_path.exists() {
         println!(
@@ -101,7 +102,8 @@ fn test_tests_skip_changes_snapshot() {
     // Scan the directory without changes
     let config = ScanConfig::new(&test_path)
         .skip_changes(true)
-        .with_coverage(false);
+        .project_dir(&test_path_dir)
+        .with_coverage(true);
 
     let result = scan_features(&test_path, config);
     assert!(

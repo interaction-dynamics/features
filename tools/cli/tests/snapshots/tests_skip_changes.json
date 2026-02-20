@@ -5,13 +5,60 @@
     "owner": "",
     "is_owner_inherited": false,
     "path": "features/feature-0",
-    "features": [],
+    "features": [
+      {
+        "name": "Feature 1",
+        "description": "",
+        "owner": "John Doe",
+        "is_owner_inherited": false,
+        "path": "features/feature-0/feature-1",
+        "features": [
+          {
+            "name": "Feature 2",
+            "description": "",
+            "owner": "John Doe",
+            "is_owner_inherited": true,
+            "path": "features/feature-0/feature-1/feature-2",
+            "features": [],
+            "meta": {},
+            "changes": [],
+            "decisions": [],
+            "stats": {
+              "files_count": 2,
+              "lines_count": 6,
+              "todos_count": 0,
+              "commits": {}
+            },
+            "dependencies": [
+              {
+                "sourceFilename": "features/feature-0/feature-1/feature-2/index.tsx",
+                "targetFilename": "features/feature-0/feature-1/index.tsx",
+                "line": 1,
+                "content": "import { feature1 } from '../index'",
+                "featurePath": "features/feature-0",
+                "type": "parent"
+              }
+            ]
+          }
+        ],
+        "meta": {},
+        "changes": [],
+        "decisions": [],
+        "stats": {
+          "files_count": 4,
+          "lines_count": 20,
+          "todos_count": 0,
+          "commits": {}
+        },
+        "dependencies": []
+      }
+    ],
     "meta": {},
     "changes": [],
     "decisions": [],
     "stats": {
-      "files_count": 1,
-      "lines_count": 1,
+      "files_count": 5,
+      "lines_count": 23,
       "todos_count": 0,
       "commits": {}
     },
@@ -58,16 +105,7 @@
           "todos_count": 0,
           "commits": {}
         },
-        "dependencies": [
-          {
-            "sourceFilename": "libs/features/feature-1/features/feature-3/__tests__/feature-4.test.ts",
-            "targetFilename": "libs/features/feature-1/features/feature-3/feature-4.ts",
-            "line": 2,
-            "content": "import { createFeature3 } from '../feature-4'",
-            "featurePath": "libs/features/feature-1/features/feature-3",
-            "type": "sibling"
-          }
-        ]
+        "dependencies": []
       },
       {
         "name": "Feature 4",
@@ -88,14 +126,32 @@
           "todos_count": 0,
           "commits": {}
         },
+        "dependencies": []
+      },
+      {
+        "name": "Feature 2",
+        "description": "",
+        "owner": "team1",
+        "is_owner_inherited": true,
+        "path": "features/feature-1/feature-2",
+        "features": [],
+        "meta": {},
+        "changes": [],
+        "decisions": [],
+        "stats": {
+          "files_count": 2,
+          "lines_count": 6,
+          "todos_count": 0,
+          "commits": {}
+        },
         "dependencies": [
           {
-            "sourceFilename": "routes/route-3/features/feature-4/__tests__/feature-4.test.ts",
-            "targetFilename": "routes/route-3/features/feature-4/feature-4.ts",
-            "line": 2,
-            "content": "import { createFeature4 } from '../feature-4'",
-            "featurePath": "routes/route-3/features/feature-4",
-            "type": "sibling"
+            "sourceFilename": "features/feature-1/feature-2/index.tsx",
+            "targetFilename": "features/feature-1/index.ts",
+            "line": 1,
+            "content": "import { feature1 } from '../index'",
+            "featurePath": "features/feature-1",
+            "type": "parent"
           }
         ]
       }
@@ -106,8 +162,8 @@
       "# Use Technology 1\n\n## Decision\n\n### Reasoning\n\nThis decision was made to use technology 1 because it provides the best performance and reliability for our application.\n\n### Implementation\n"
     ],
     "stats": {
-      "files_count": 8,
-      "lines_count": 43,
+      "files_count": 10,
+      "lines_count": 60,
       "todos_count": 0,
       "commits": {}
     },
@@ -137,7 +193,7 @@
         "sourceFilename": "features/feature-2/index.ts",
         "targetFilename": "features/feature-1/components/foo.tsx",
         "line": 1,
-        "content": "import { Foo } from '../feature-1/components/foo';",
+        "content": "import { Foo } from '../feature-1/components/foo'",
         "featurePath": "features/feature-1",
         "type": "sibling"
       }
@@ -171,7 +227,21 @@
       "files_count": 3,
       "lines_count": 37,
       "todos_count": 0,
-      "commits": {}
+      "commits": {},
+      "coverage": {
+        "lines_total": 1,
+        "lines_covered": 1,
+        "lines_missed": 0,
+        "line_coverage_percent": 100.0,
+        "files": {
+          "libs/features/feature-0/file.tsx": {
+            "lines_total": 1,
+            "lines_covered": 1,
+            "lines_missed": 0,
+            "line_coverage_percent": 100.0
+          }
+        }
+      }
     },
     "dependencies": [
       {
@@ -231,7 +301,27 @@
           "files_count": 3,
           "lines_count": 27,
           "todos_count": 0,
-          "commits": {}
+          "commits": {},
+          "coverage": {
+            "lines_total": 5,
+            "lines_covered": 1,
+            "lines_missed": 4,
+            "line_coverage_percent": 20.0,
+            "branches_total": 2,
+            "branches_covered": 0,
+            "branch_coverage_percent": 0.0,
+            "files": {
+              "libs/features/feature-1/features/feature-3/feature-4.ts": {
+                "lines_total": 5,
+                "lines_covered": 1,
+                "lines_missed": 4,
+                "line_coverage_percent": 20.0,
+                "branches_total": 2,
+                "branches_covered": 0,
+                "branch_coverage_percent": 0.0
+              }
+            }
+          }
         },
         "dependencies": []
       },
@@ -252,16 +342,36 @@
           "files_count": 3,
           "lines_count": 38,
           "todos_count": 0,
-          "commits": {}
+          "commits": {},
+          "coverage": {
+            "lines_total": 5,
+            "lines_covered": 1,
+            "lines_missed": 4,
+            "line_coverage_percent": 20.0,
+            "branches_total": 2,
+            "branches_covered": 0,
+            "branch_coverage_percent": 0.0,
+            "files": {
+              "libs/features/feature-1/features/feature-4/feature-4.ts": {
+                "lines_total": 5,
+                "lines_covered": 1,
+                "lines_missed": 4,
+                "line_coverage_percent": 20.0,
+                "branches_total": 2,
+                "branches_covered": 0,
+                "branch_coverage_percent": 0.0
+              }
+            }
+          }
         },
         "dependencies": [
           {
-            "sourceFilename": "routes/route-3/features/feature-4/__tests__/feature-4.test.ts",
-            "targetFilename": "routes/route-3/features/feature-4/feature-4.ts",
+            "sourceFilename": "libs/features/feature-1/features/feature-4/feature-4.ts",
+            "targetFilename": "libs/features/feature-1/components/foo.tsx",
             "line": 2,
-            "content": "import { createFeature4 } from '../feature-4'",
-            "featurePath": "routes/route-3/features/feature-4",
-            "type": "sibling"
+            "content": "import { Foo } from '../../components/foo';",
+            "featurePath": "libs/features/feature-1",
+            "type": "parent"
           }
         ]
       }
@@ -316,9 +426,40 @@
       "files_count": 17,
       "lines_count": 167,
       "todos_count": 0,
-      "commits": {}
+      "commits": {},
+      "coverage": {
+        "lines_total": 2,
+        "lines_covered": 0,
+        "lines_missed": 2,
+        "line_coverage_percent": 0.0,
+        "files": {
+          "libs/features/feature-1/components/foo.tsx": {
+            "lines_total": 2,
+            "lines_covered": 0,
+            "lines_missed": 2,
+            "line_coverage_percent": 0.0
+          }
+        }
+      }
     },
-    "dependencies": []
+    "dependencies": [
+      {
+        "sourceFilename": "libs/features/feature-1/components/foo.tsx",
+        "targetFilename": "libs/features/feature-0/file.tsx",
+        "line": 3,
+        "content": "import { createFeature0 } from \"../../feature-0/file\";",
+        "featurePath": "libs/features/feature-0",
+        "type": "sibling"
+      },
+      {
+        "sourceFilename": "libs/features/feature-1/index.ts",
+        "targetFilename": "libs/features/feature-1/features/feature-4/feature-4.ts",
+        "line": 2,
+        "content": "import { createFeature4 } from './features/feature-4/feature-4';",
+        "featurePath": "libs/features/feature-1/features/feature-4",
+        "type": "child"
+      }
+    ]
   },
   {
     "name": "The best Feature 2",
@@ -441,7 +582,21 @@
           "files_count": 3,
           "lines_count": 40,
           "todos_count": 0,
-          "commits": {}
+          "commits": {},
+          "coverage": {
+            "lines_total": 3,
+            "lines_covered": 1,
+            "lines_missed": 2,
+            "line_coverage_percent": 33.33333333333333,
+            "files": {
+              "routes/route-1/features/feature-0/route-utils.ts": {
+                "lines_total": 3,
+                "lines_covered": 1,
+                "lines_missed": 2,
+                "line_coverage_percent": 33.33333333333333
+              }
+            }
+          }
         },
         "dependencies": [
           {
@@ -512,7 +667,27 @@
           "files_count": 2,
           "lines_count": 28,
           "todos_count": 0,
-          "commits": {}
+          "commits": {},
+          "coverage": {
+            "lines_total": 5,
+            "lines_covered": 1,
+            "lines_missed": 4,
+            "line_coverage_percent": 20.0,
+            "branches_total": 2,
+            "branches_covered": 0,
+            "branch_coverage_percent": 0.0,
+            "files": {
+              "routes/route-1/features/feature-12-with-a-very-long-name-that-is-longer-than-sidebar/index.ts": {
+                "lines_total": 5,
+                "lines_covered": 1,
+                "lines_missed": 4,
+                "line_coverage_percent": 20.0,
+                "branches_total": 2,
+                "branches_covered": 0,
+                "branch_coverage_percent": 0.0
+              }
+            }
+          }
         },
         "dependencies": []
       }
@@ -616,7 +791,27 @@
           "files_count": 3,
           "lines_count": 34,
           "todos_count": 0,
-          "commits": {}
+          "commits": {},
+          "coverage": {
+            "lines_total": 5,
+            "lines_covered": 1,
+            "lines_missed": 4,
+            "line_coverage_percent": 20.0,
+            "branches_total": 2,
+            "branches_covered": 0,
+            "branch_coverage_percent": 0.0,
+            "files": {
+              "routes/route-3/features/feature-4/feature-4.ts": {
+                "lines_total": 5,
+                "lines_covered": 1,
+                "lines_missed": 4,
+                "line_coverage_percent": 20.0,
+                "branches_total": 2,
+                "branches_covered": 0,
+                "branch_coverage_percent": 0.0
+              }
+            }
+          }
         },
         "dependencies": []
       },

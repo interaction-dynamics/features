@@ -22,7 +22,17 @@ pub fn build_file_to_feature_map(
 ) -> HashMap<PathBuf, String> {
     let mut map = HashMap::new();
 
-    for feature in features {
+    // Sort features by path length (longest first) to ensure more specific features
+    // take precedence over parent features when mapping files
+    let mut sorted_features = features.to_vec();
+    sorted_features.sort_by(|a, b| {
+        b.path
+            .to_string_lossy()
+            .len()
+            .cmp(&a.path.to_string_lossy().len())
+    });
+
+    for feature in sorted_features {
         let feature_path = base_path.join(&feature.path);
 
         // Map all files within this feature directory using the feature's path as identifier
@@ -50,11 +60,33 @@ fn map_directory_files(dir: &Path, feature_path: &str, map: &mut HashMap<PathBuf
             } else if path.is_dir()
                 && let Some(dir_name) = path.file_name().and_then(|n| n.to_str())
                 && !should_skip_directory(dir_name)
+                && !is_nested_feature_directory(&path)
             {
                 map_directory_files(&path, feature_path, map);
             }
         }
     }
+}
+
+/// Check if a directory is a nested feature directory
+/// A directory is considered a feature if:
+/// 1. It's a direct child of a "features" directory, OR
+/// 2. It has a features.toml file
+fn is_nested_feature_directory(dir: &Path) -> bool {
+    // Check for features.toml
+    if dir.join("features.toml").exists() {
+        return true;
+    }
+
+    // Check if it's a direct child of a "features" directory
+    if let Some(parent) = dir.parent()
+        && let Some(parent_name) = parent.file_name()
+        && parent_name == "features"
+    {
+        return true;
+    }
+
+    false
 }
 
 /// Check if a directory should be skipped
