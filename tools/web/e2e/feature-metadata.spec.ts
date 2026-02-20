@@ -7,9 +7,12 @@ test.describe('Feature Metadata', () => {
     // Wait for sidebar to load
     await page.locator('[data-sidebar="sidebar"]').waitFor()
 
-    // Click on first feature to load feature details
-    const firstFeature = page.locator('[data-sidebar="menu-button"]').first()
-    await firstFeature.click()
+    // Click on a feature that has metadata (libs/features/feature-0)
+    const featureWithMeta = page.locator('[data-sidebar="menu-button"]', {
+      hasText: 'Feature 0',
+    })
+    // Get the one in libs/features path (not the root feature-0)
+    await featureWithMeta.nth(1).click()
     await page.waitForTimeout(500)
   })
 
