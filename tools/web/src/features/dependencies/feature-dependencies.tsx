@@ -1,10 +1,4 @@
-import {
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  Eye,
-} from 'lucide-react'
+import { ChevronDown, ChevronRight, ExternalLink, Eye } from 'lucide-react'
 import { useContext, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,6 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import { FeaturesContext } from '@/lib/features-context'
 import type { Dependency, Feature } from '@/models/feature'
 import {
@@ -161,14 +156,7 @@ export default function FeatureDependencies({
                     {alerts.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {alerts.map((alert) => (
-                          <Badge
-                            key={alert}
-                            variant="destructive"
-                            className="text-xs"
-                          >
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            {alert}
-                          </Badge>
+                          <AlertBadge key={alert} label={alert} />
                         ))}
                       </div>
                     )}
