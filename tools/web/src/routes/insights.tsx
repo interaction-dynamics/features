@@ -2,6 +2,7 @@ import { useContext } from 'react'
 import { Header } from '@/components/header'
 import { StatsCard } from '@/components/stats-card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { DependencyGraph } from '@/features/insights/dependency-graph'
 import { FeatureInsightsTable } from '@/features/insights/feature-insights-table'
 import { OwnerInsightsTable } from '@/features/insights/owner-insights-table'
 
@@ -58,9 +59,9 @@ export default function Insights() {
   )
 
   return (
-    <div className="absolute inset-0 overflow-auto">
+    <div className="absolute inset-0 flex flex-col">
       <Header>Insights</Header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
         <div className="space-y-4">
           {/* Overview Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs">
@@ -77,16 +78,20 @@ export default function Insights() {
             />
           </div>
         </div>
-        <Tabs defaultValue="feature" className="mt-1">
+        <Tabs defaultValue="feature" className="mt-1 flex min-h-0 flex-1 flex-col">
           <TabsList>
             <TabsTrigger value="feature">Features</TabsTrigger>
             <TabsTrigger value="owner">Ownership</TabsTrigger>
+            <TabsTrigger value="dependencies">Dependencies</TabsTrigger>
           </TabsList>
-          <TabsContent value="feature" className="mt-1">
+          <TabsContent value="feature" className="mt-1 overflow-auto">
             <FeatureInsightsTable features={allFeatures} />
           </TabsContent>
-          <TabsContent value="owner" className="mt-1">
+          <TabsContent value="owner" className="mt-1 overflow-auto">
             <OwnerInsightsTable features={allFeatures} />
+          </TabsContent>
+          <TabsContent value="dependencies" className="mt-1 flex min-h-0 flex-1 flex-col">
+            <DependencyGraph features={features} />
           </TabsContent>
         </Tabs>
       </div>
