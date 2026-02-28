@@ -2,8 +2,8 @@ name: Release CLI
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "v*"
+    branches:
+      - master
 
 env:
   CARGO_TERM_COLOR: always
@@ -15,6 +15,7 @@ jobs:
   check:
     name: Check version
     runs-on: ubuntu-latest
+    if: startsWith(github.event.head_commit.message, 'release') || github.event_name == 'workflow_dispatch'
     outputs:
       version: ${{ env.version }}
       should_release: ${{ env.should_release }}
