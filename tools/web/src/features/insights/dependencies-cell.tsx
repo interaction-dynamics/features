@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react'
 import { useContext } from 'react'
+import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import {
   Tooltip,
   TooltipContent,
@@ -88,15 +89,12 @@ export function DependenciesCell({
         <div className="space-y-1">
           <p className="font-semibold mb-2">Feature Dependencies</p>
           {featureDepsWithAlerts.map((dep) => (
-            <p key={dep.featurePath} className="text-xs">
-              {dep.featureName}
-              {dep.alerts.length > 0 && (
-                <span className="text-orange-500 font-semibold">
-                  {' '}
-                  ({dep.alerts.join(', ')})
-                </span>
-              )}
-            </p>
+            <div key={dep.featurePath} className="flex flex-wrap items-center gap-1.5 text-xs">
+              <span>{dep.featureName}</span>
+              {dep.alerts.map((alert) => (
+                <AlertBadge key={alert} label={alert} />
+              ))}
+            </div>
           ))}
         </div>
       </TooltipContent>

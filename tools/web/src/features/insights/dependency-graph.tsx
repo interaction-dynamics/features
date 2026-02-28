@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'r
 import { ArrowUpRight, FolderTree, User } from 'lucide-react'
 import { Link } from 'react-router'
 import { FeatureOwner } from '@/components/feature-owner'
+import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import {
   Tooltip,
   TooltipContent,
@@ -92,6 +93,52 @@ function buildGraph(features: Feature[]): { nodes: GraphNode[]; edges: GraphEdge
     (e) => nodeMap.has(e.source) && nodeMap.has(e.target),
   )
   return { nodes, edges }
+}
+
+const CYCLE_COLOR = 'hsl(0 75% 55%)'
+
+/**
+ * DFS-based cycle detection for directed graphs.
+ * Returns the set of edge keys ("source=>target") that participate in a cycle.
+ */
+function detectCycles(edges: GraphEdge[]): Set<string> {
+  const adj = new Map<string, string[]>()
+  for (const e of edges) {
+    if (!adj.has(e.source)) adj.set(e.source, [])
+    if (!adj.has(e.target)) adj.set(e.target, [])
+    adj.get(e.source)!.push(e.target)
+  }
+
+  // 0 = unvisited, 1 = in current stack, 2 = done
+  const color = new Map<string, 0 | 1 | 2>()
+  for (const id of adj.keys()) color.set(id, 0)
+
+  const cycleKeys = new Set<string>()
+  const stack: string[] = []
+
+  function dfs(u: string) {
+    color.set(u, 1)
+    stack.push(u)
+    for (const v of adj.get(u) ?? []) {
+      if (color.get(v) === 1) {
+        // Back edge → all edges from v's position in the stack up to u are part of the cycle
+        const idx = stack.indexOf(v)
+        for (let i = idx; i < stack.length - 1; i++) {
+          cycleKeys.add(`${stack[i]}=>${stack[i + 1]}`)
+        }
+        cycleKeys.add(`${stack[stack.length - 1]}=>${v}`)
+      } else if (color.get(v) === 0) {
+        dfs(v)
+      }
+    }
+    stack.pop()
+    color.set(u, 2)
+  }
+
+  for (const id of adj.keys()) {
+    if (color.get(id) === 0) dfs(id)
+  }
+  return cycleKeys
 }
 
 function simulateStep(
@@ -261,6 +308,8 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
 
   const nodeMap = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
 
+  const cycleEdgeKeys = useMemo(() => detectCycles(edges), [edges])
+
   const connected = useMemo(() => {
     if (!selected) return new Set<string>()
     const s = new Set<string>([selected])
@@ -288,6 +337,11 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
         <div className="flex items-center gap-4 text-muted-foreground">
           <span>{nodes.length} features</span>
           <span>{edges.length} dependencies</span>
+          {cycleEdgeKeys.size > 0 && (
+            <span style={{ color: CYCLE_COLOR }}>
+              {cycleEdgeKeys.size} circular
+            </span>
+          )}
           {simulating && (
             <span className="animate-pulse text-primary">Laying out graph…</span>
           )}
@@ -350,6 +404,9 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                 <path d="M0,0 L0,6 L8,3 Z" fill={edgeStroke(t)} />
               </marker>
             ))}
+            <marker id="arr-cycle" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 Z" fill={CYCLE_COLOR} />
+            </marker>
           </defs>
 
           <g transform={`translate(${transform.x},${transform.y}) scale(${transform.s})`}>
@@ -369,6 +426,8 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
               const hi = selected
                 ? connected.has(e.source) && connected.has(e.target)
                 : true
+              const isCycle = cycleEdgeKeys.has(`${e.source}=>${e.target}`)
+              const color = isCycle ? CYCLE_COLOR : edgeStroke(e.type)
               return (
                 <line
                   key={`${e.source}=>${e.target}`}
@@ -376,10 +435,11 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                   y1={sy}
                   x2={tx}
                   y2={ty}
-                  stroke={edgeStroke(e.type)}
-                  strokeWidth={hi ? 1.5 : 0.8}
-                  strokeOpacity={selected ? (hi ? 0.85 : 0.07) : 0.35}
-                  markerEnd={`url(#arr-${e.type})`}
+                  stroke={color}
+                  strokeWidth={hi ? (isCycle ? 2 : 1.5) : 0.8}
+                  strokeOpacity={selected ? (hi ? 0.9 : 0.07) : (isCycle ? 0.7 : 0.35)}
+                  strokeDasharray={isCycle ? '5 3' : undefined}
+                  markerEnd={isCycle ? 'url(#arr-cycle)' : `url(#arr-${e.type})`}
                 />
               )
             })}
@@ -507,17 +567,22 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                         const targetLabel = targetNode
                           ? formatFeatureName(targetNode.label)
                           : dep.featurePath
+                        const isCycle = cycleEdgeKeys.has(`${n.id}=>${dep.featurePath}`)
+                        const dotColor = isCycle ? CYCLE_COLOR : edgeStroke(dep.type)
                         return (
                           <Tooltip key={i}>
                             <TooltipTrigger asChild>
                               <li className="flex cursor-default items-center gap-1.5 rounded px-1 py-0.5 hover:bg-muted/50">
                                 <span
                                   className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                                  style={{ backgroundColor: edgeStroke(dep.type) }}
+                                  style={{ backgroundColor: dotColor }}
                                 />
                                 <span className="truncate text-xs text-muted-foreground">
                                   {targetLabel}
                                 </span>
+                                {isCycle && (
+                                  <AlertBadge label="Circular" size="sm" className="ml-auto shrink-0" />
+                                )}
                               </li>
                             </TooltipTrigger>
                             <TooltipContent
@@ -525,11 +590,17 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                               className="max-w-72 space-y-1.5 p-2.5 text-xs"
                             >
                               <div className="flex items-center gap-1.5">
-                                <span
-                                  className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                                  style={{ backgroundColor: edgeStroke(dep.type) }}
-                                />
-                                <span className="font-medium capitalize">{dep.type} dependency</span>
+                                {isCycle ? (
+                                  <AlertBadge label="Circular Dependency" />
+                                ) : (
+                                  <>
+                                    <span
+                                      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                                      style={{ backgroundColor: dotColor }}
+                                    />
+                                    <span className="font-medium capitalize">{dep.type} dependency</span>
+                                  </>
+                                )}
                               </div>
                               <div className="space-y-1 font-mono">
                                 <p className="text-background/70">From: {dep.sourceFilename}:{dep.line}</p>
