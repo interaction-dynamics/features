@@ -1,17 +1,12 @@
-import {
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  Eye,
-} from 'lucide-react'
+import { ChevronDown, ChevronRight, ExternalLink, Eye } from 'lucide-react'
 import { useContext, useState } from 'react'
-import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  å,
 } from '@/components/ui/popover'
 import {
   Table,
@@ -26,6 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import { FeaturesContext } from '@/lib/features-context'
 import type { Dependency, Feature } from '@/models/feature'
 import {
@@ -162,6 +158,7 @@ export default function FeatureDependencies({
                       <div className="flex flex-wrap gap-1">
                         {alerts.map((alert) => (
                           <AlertBadge key={alert} label={alert} />
+                        ))}
                       </div>
                     )}
                   </TableCell>

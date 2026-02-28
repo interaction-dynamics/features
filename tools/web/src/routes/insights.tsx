@@ -78,7 +78,10 @@ export default function Insights() {
             />
           </div>
         </div>
-        <Tabs defaultValue="feature" className="mt-1 flex min-h-0 flex-1 flex-col">
+        <Tabs
+          defaultValue="feature"
+          className="mt-1 flex min-h-0 flex-1 flex-col"
+        >
           <TabsList>
             <TabsTrigger value="feature">Features</TabsTrigger>
             <TabsTrigger value="owner">Ownership</TabsTrigger>
@@ -90,7 +93,10 @@ export default function Insights() {
           <TabsContent value="owner" className="mt-1 overflow-auto">
             <OwnerInsightsTable features={allFeatures} />
           </TabsContent>
-          <TabsContent value="dependencies" className="mt-1 flex min-h-0 flex-1 flex-col">
+          <TabsContent
+            value="dependencies"
+            className="mt-1 flex min-h-0 flex-1 flex-col"
+          >
             <DependencyGraph features={features} />
           </TabsContent>
         </Tabs>

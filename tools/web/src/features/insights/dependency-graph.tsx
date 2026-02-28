@@ -1,13 +1,21 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, FolderTree, User } from 'lucide-react'
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Link } from 'react-router'
 import { FeatureOwner } from '@/components/feature-owner'
-import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Dependency, Feature } from '@/models/feature'
@@ -45,13 +53,18 @@ function ownerColor(owner: string): string {
 
 function edgeStroke(type: GraphEdge['type']): string {
   return (
-    { parent: 'hsl(25 80% 55%)', child: 'hsl(210 80% 55%)', sibling: 'hsl(280 60% 55%)' }[
-      type
-    ] ?? 'hsl(0 0% 50%)'
+    {
+      parent: 'hsl(25 80% 55%)',
+      child: 'hsl(210 80% 55%)',
+      sibling: 'hsl(280 60% 55%)',
+    }[type] ?? 'hsl(0 0% 50%)'
   )
 }
 
-function buildGraph(features: Feature[]): { nodes: GraphNode[]; edges: GraphEdge[] } {
+function buildGraph(features: Feature[]): {
+  nodes: GraphNode[]
+  edges: GraphEdge[]
+} {
   const nodeMap = new Map<string, GraphNode>()
   const edgeMap = new Map<string, GraphEdge>()
 
@@ -70,7 +83,11 @@ function buildGraph(features: Feature[]): { nodes: GraphNode[]; edges: GraphEdge
     for (const dep of f.dependencies) {
       const key = `${f.path}=>${dep.featurePath}`
       if (f.path !== dep.featurePath && !edgeMap.has(key)) {
-        edgeMap.set(key, { source: f.path, target: dep.featurePath, type: dep.type })
+        edgeMap.set(key, {
+          source: f.path,
+          target: dep.featurePath,
+          type: dep.type,
+        })
       }
     }
     for (const child of f.features ?? []) visit(child)
@@ -226,7 +243,11 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
     const gW = maxX - minX,
       gH = maxY - minY
     const s = Math.min(W / gW, H / gH, 2)
-    setTransform({ x: (W - gW * s) / 2 - minX * s, y: (H - gH * s) / 2 - minY * s, s })
+    setTransform({
+      x: (W - gW * s) / 2 - minX * s,
+      y: (H - gH * s) / 2 - minY * s,
+      s,
+    })
   }, [])
 
   useEffect(() => {
@@ -320,7 +341,12 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
     return s
   }, [selected, edges])
 
-  const owners = useMemo(() => [...new Set(nodes.map((n) => n.owner))].sort(), [nodes])
+  const owners = useMemo(
+    () => [...new Set(nodes.map((n) => n.owner))].sort(),
+    [nodes],
+  )
+
+  const arrCycleId = useId()
 
   if (!simulating && nodes.length === 0) {
     return (
@@ -343,7 +369,9 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
             </span>
           )}
           {simulating && (
-            <span className="animate-pulse text-primary">Laying out graph…</span>
+            <span className="animate-pulse text-primary">
+              Laying out graph…
+            </span>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
@@ -370,7 +398,9 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                       className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: ownerColor(o) }}
                     />
-                    <span className="text-muted-foreground">{o || '(no owner)'}</span>
+                    <span className="text-muted-foreground">
+                      {o || '(no owner)'}
+                    </span>
                   </span>
                 ))}
               </div>
@@ -381,6 +411,7 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
 
       {/* Graph canvas */}
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border bg-muted/5">
+        {/** biome-ignore lint/a11y/useKeyWithClickEvents: should allow click */}
         <svg
           ref={svgRef}
           className="h-full w-full cursor-grab active:cursor-grabbing"
@@ -390,6 +421,7 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
           onPointerUp={onPointerUp}
           onClick={onSvgClick}
         >
+          <title>Graph</title>
           <defs>
             {(['parent', 'child', 'sibling'] as const).map((t) => (
               <marker
@@ -404,12 +436,21 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                 <path d="M0,0 L0,6 L8,3 Z" fill={edgeStroke(t)} />
               </marker>
             ))}
-            <marker id="arr-cycle" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <marker
+              id={arrCycleId}
+              markerWidth="8"
+              markerHeight="6"
+              refX="7"
+              refY="3"
+              orient="auto"
+            >
               <path d="M0,0 L0,6 L8,3 Z" fill={CYCLE_COLOR} />
             </marker>
           </defs>
 
-          <g transform={`translate(${transform.x},${transform.y}) scale(${transform.s})`}>
+          <g
+            transform={`translate(${transform.x},${transform.y}) scale(${transform.s})`}
+          >
             {/* Edges */}
             {edges.map((e) => {
               const src = nodeMap.get(e.source),
@@ -437,9 +478,13 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                   y2={ty}
                   stroke={color}
                   strokeWidth={hi ? (isCycle ? 2 : 1.5) : 0.8}
-                  strokeOpacity={selected ? (hi ? 0.9 : 0.07) : (isCycle ? 0.7 : 0.35)}
+                  strokeOpacity={
+                    selected ? (hi ? 0.9 : 0.07) : isCycle ? 0.7 : 0.35
+                  }
                   strokeDasharray={isCycle ? '5 3' : undefined}
-                  markerEnd={isCycle ? 'url(#arr-cycle)' : `url(#arr-${e.type})`}
+                  markerEnd={
+                    isCycle ? `url(#${arrCycleId})` : `url(#arr-${e.type})`
+                  }
                 />
               )
             })}
@@ -451,6 +496,7 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
               const label = formatFeatureName(n.label)
               const short = label.length > 15 ? `${label.slice(0, 13)}…` : label
               return (
+                // biome-ignore lint/a11y/noStaticElementInteractions: we should allow click
                 <g
                   key={n.id}
                   transform={`translate(${n.x},${n.y})`}
@@ -488,17 +534,20 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
             {
               label: '+',
               title: 'Zoom in',
-              fn: () => setTransform((p) => ({ ...p, s: Math.min(8, p.s * 1.2) })),
+              fn: () =>
+                setTransform((p) => ({ ...p, s: Math.min(8, p.s * 1.2) })),
             },
             {
               label: '−',
               title: 'Zoom out',
-              fn: () => setTransform((p) => ({ ...p, s: Math.max(0.1, p.s * 0.8) })),
+              fn: () =>
+                setTransform((p) => ({ ...p, s: Math.max(0.1, p.s * 0.8) })),
             },
             { label: '⊡', title: 'Fit to view', fn: () => fitToView(nodes) },
           ].map(({ label, title, fn }) => (
             <button
               key={label}
+              type="button"
               title={title}
               className="flex h-7 w-7 items-center justify-center rounded border bg-background text-sm shadow-sm hover:bg-muted"
               onClick={fn}
@@ -520,7 +569,9 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
               <div className="absolute left-3 top-3 flex max-h-[calc(100%-1.5rem)] w-72 flex-col gap-3 overflow-hidden rounded-lg border bg-background/95 p-3 text-sm shadow backdrop-blur-sm">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold leading-snug">{formatFeatureName(n.label)}</p>
+                  <p className="font-semibold leading-snug">
+                    {formatFeatureName(n.label)}
+                  </p>
                   <Link
                     to={`/?feature=${n.id}`}
                     className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
@@ -536,7 +587,9 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                     <FolderTree className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     <div className="min-w-0 flex-1">
                       <p className="mb-1 font-medium text-foreground">Path</p>
-                      <p className="break-all font-mono text-xs text-muted-foreground">{n.id}</p>
+                      <p className="break-all font-mono text-xs text-muted-foreground">
+                        {n.id}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -544,7 +597,11 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                     <div className="min-w-0 flex-1">
                       <p className="mb-1 font-medium text-foreground">Owner</p>
                       <div className="font-mono text-xs text-muted-foreground">
-                        {feature ? <FeatureOwner feature={feature} /> : n.owner || '—'}
+                        {feature ? (
+                          <FeatureOwner feature={feature} />
+                        ) : (
+                          n.owner || '—'
+                        )}
                       </div>
                     </div>
                   </div>
@@ -562,15 +619,19 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                     <p className="text-xs text-muted-foreground">None</p>
                   ) : (
                     <ul className="min-h-0 overflow-y-auto">
-                      {deps.map((dep, i) => {
+                      {deps.map((dep) => {
                         const targetNode = nodeMap.get(dep.featurePath)
                         const targetLabel = targetNode
                           ? formatFeatureName(targetNode.label)
                           : dep.featurePath
-                        const isCycle = cycleEdgeKeys.has(`${n.id}=>${dep.featurePath}`)
-                        const dotColor = isCycle ? CYCLE_COLOR : edgeStroke(dep.type)
+                        const isCycle = cycleEdgeKeys.has(
+                          `${n.id}=>${dep.featurePath}`,
+                        )
+                        const dotColor = isCycle
+                          ? CYCLE_COLOR
+                          : edgeStroke(dep.type)
                         return (
-                          <Tooltip key={i}>
+                          <Tooltip key={dep.line}>
                             <TooltipTrigger asChild>
                               <li className="flex cursor-default items-center gap-1.5 rounded px-1 py-0.5 hover:bg-muted/50">
                                 <span
@@ -581,7 +642,11 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                                   {targetLabel}
                                 </span>
                                 {isCycle && (
-                                  <AlertBadge label="Circular" size="sm" className="ml-auto shrink-0" />
+                                  <AlertBadge
+                                    label="Circular"
+                                    size="sm"
+                                    className="ml-auto shrink-0"
+                                  />
                                 )}
                               </li>
                             </TooltipTrigger>
@@ -598,13 +663,19 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                                       className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
                                       style={{ backgroundColor: dotColor }}
                                     />
-                                    <span className="font-medium capitalize">{dep.type} dependency</span>
+                                    <span className="font-medium capitalize">
+                                      {dep.type} dependency
+                                    </span>
                                   </>
                                 )}
                               </div>
                               <div className="space-y-1 font-mono">
-                                <p className="text-background/70">From: {dep.sourceFilename}:{dep.line}</p>
-                                <p className="text-background/70">To: {dep.targetFilename}</p>
+                                <p className="text-background/70">
+                                  From: {dep.sourceFilename}:{dep.line}
+                                </p>
+                                <p className="text-background/70">
+                                  To: {dep.targetFilename}
+                                </p>
                               </div>
                               {dep.content && (
                                 <p className="rounded bg-background/10 px-1.5 py-1 font-mono text-background/90">
@@ -622,7 +693,6 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
             )
           })()}
       </div>
-
     </div>
   )
 }

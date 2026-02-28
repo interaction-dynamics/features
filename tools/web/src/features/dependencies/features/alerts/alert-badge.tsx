@@ -9,7 +9,11 @@ interface AlertBadgeProps {
   className?: string
 }
 
-export function AlertBadge({ label, size = 'default', className }: AlertBadgeProps) {
+export function AlertBadge({
+  label,
+  size = 'default',
+  className,
+}: AlertBadgeProps) {
   const isSmall = size === 'sm'
   return (
     <Badge

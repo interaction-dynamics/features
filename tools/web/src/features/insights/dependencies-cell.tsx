@@ -89,7 +89,10 @@ export function DependenciesCell({
         <div className="space-y-1">
           <p className="font-semibold mb-2">Feature Dependencies</p>
           {featureDepsWithAlerts.map((dep) => (
-            <div key={dep.featurePath} className="flex flex-wrap items-center gap-1.5 text-xs">
+            <div
+              key={dep.featurePath}
+              className="flex flex-wrap items-center gap-1.5 text-xs"
+            >
               <span>{dep.featureName}</span>
               {dep.alerts.map((alert) => (
                 <AlertBadge key={alert} label={alert} />
