@@ -5,7 +5,7 @@
 //! easy-to-use API.
 
 use anyhow::Result;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::coverage_parser::{self, map_coverage_to_features, parse_coverage_reports};
 use crate::file_scanner::{list_files_recursive, list_files_recursive_with_changes};
@@ -29,6 +29,9 @@ pub struct ScanConfig<'a> {
 
     /// Optional project directory (used for finding coverage)
     pub project_dir: Option<&'a Path>,
+
+    /// Paths to ignore (and all their subfolders) when scanning for features
+    pub ignore_paths: Vec<PathBuf>,
 }
 
 impl<'a> ScanConfig<'a> {
@@ -40,6 +43,7 @@ impl<'a> ScanConfig<'a> {
             coverage_dir_override: None,
             current_dir,
             project_dir: None,
+            ignore_paths: Vec::new(),
         }
     }
 
@@ -64,6 +68,12 @@ impl<'a> ScanConfig<'a> {
     /// Set the project directory for finding coverage
     pub fn project_dir(mut self, dir: &'a Path) -> Self {
         self.project_dir = Some(dir);
+        self
+    }
+
+    /// Set the paths to ignore (and all their subfolders) when scanning for features
+    pub fn ignore_paths(mut self, paths: Vec<PathBuf>) -> Self {
+        self.ignore_paths = paths;
         self
     }
 }
@@ -96,9 +106,9 @@ impl<'a> ScanConfig<'a> {
 pub fn scan_features(base_path: &Path, config: ScanConfig) -> Result<Vec<Feature>> {
     // Step 1: Scan features with or without git history
     let mut features = if config.skip_changes {
-        list_files_recursive(base_path)?
+        list_files_recursive(base_path, &config.ignore_paths)?
     } else {
-        list_files_recursive_with_changes(base_path)?
+        list_files_recursive_with_changes(base_path, &config.ignore_paths)?
     };
 
     // Step 2: Add coverage if requested
