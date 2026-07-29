@@ -71,37 +71,48 @@ fn find_readme_file(dir_path: &Path) -> Option<std::path::PathBuf> {
     None
 }
 
+/// Read the `feature` boolean from a directory's README front matter, if present.
+fn feature_flag_in_readme(dir_path: &Path) -> Option<bool> {
+    let readme_path = find_readme_file(dir_path)?;
+    let content = fs::read_to_string(&readme_path).ok()?;
+
+    // Check if content starts with YAML front matter (---)
+    let stripped = content.strip_prefix("---\n")?;
+    let end_pos = stripped.find("\n---\n")?;
+    let yaml_content = &stripped[..end_pos];
+
+    // Parse YAML front matter
+    let yaml_value = serde_yaml::from_str::<serde_yaml::Value>(yaml_content).ok()?;
+    let mapping = yaml_value.as_mapping()?;
+    let feature_value = mapping.get(serde_yaml::Value::String("feature".to_string()))?;
+
+    feature_value.as_bool()
+}
+
 /// Check if a directory has a README with `feature: true` in front matter
 fn has_feature_flag_in_readme(dir_path: &Path) -> bool {
-    if let Some(readme_path) = find_readme_file(dir_path)
-        && let Ok(content) = fs::read_to_string(&readme_path)
-    {
-        // Check if content starts with YAML front matter (---)
-        if let Some(stripped) = content.strip_prefix("---\n")
-            && let Some(end_pos) = stripped.find("\n---\n")
-        {
-            let yaml_content = &stripped[..end_pos];
+    feature_flag_in_readme(dir_path) == Some(true)
+}
 
-            // Parse YAML front matter
-            if let Ok(yaml_value) = serde_yaml::from_str::<serde_yaml::Value>(yaml_content)
-                && let Some(mapping) = yaml_value.as_mapping()
-            {
-                // Check for feature: true
-                if let Some(feature_value) =
-                    mapping.get(serde_yaml::Value::String("feature".to_string()))
-                {
-                    return feature_value.as_bool() == Some(true);
-                }
-            }
-        }
-    }
-    false
+/// Check if a directory has a README with `feature: false` in front matter.
+/// This is used to explicitly skip a directory from being treated as a feature,
+/// even when it would otherwise qualify (e.g. a direct subfolder of `features`).
+fn has_feature_false_in_readme(dir_path: &Path) -> bool {
+    feature_flag_in_readme(dir_path) == Some(false)
 }
 
 /// Check if a directory should be treated as a feature
 fn is_feature_directory(dir_path: &Path) -> bool {
     // Skip documentation directories
     if is_documentation_directory(dir_path) || is_inside_documentation_directory(dir_path) {
+        return false;
+    }
+
+    // An explicit `feature: false` in the README always skips this directory
+    // from being a feature itself, even if it would otherwise qualify (e.g. a
+    // direct subfolder of `features`). Its own subfolders are still scanned
+    // normally, so any nested features it contains are kept.
+    if has_feature_false_in_readme(dir_path) {
         return false;
     }
 
@@ -1081,5 +1092,139 @@ mod tests {
             extract_commit_type("feat(scope)(weird): nested parens"),
             "feat"
         );
+    }
+
+    fn write_readme(dir: &Path, content: &str) {
+        fs::write(dir.join("README.md"), content).unwrap();
+    }
+
+    #[test]
+    fn test_feature_flag_in_readme_true() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        write_readme(temp_dir.path(), "---\nfeature: true\n---\n\n# Feature\n");
+
+        assert_eq!(feature_flag_in_readme(temp_dir.path()), Some(true));
+        assert!(has_feature_flag_in_readme(temp_dir.path()));
+        assert!(!has_feature_false_in_readme(temp_dir.path()));
+    }
+
+    #[test]
+    fn test_feature_flag_in_readme_false() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        write_readme(temp_dir.path(), "---\nfeature: false\n---\n\n# Feature\n");
+
+        assert_eq!(feature_flag_in_readme(temp_dir.path()), Some(false));
+        assert!(!has_feature_flag_in_readme(temp_dir.path()));
+        assert!(has_feature_false_in_readme(temp_dir.path()));
+    }
+
+    #[test]
+    fn test_feature_flag_in_readme_missing() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+
+        // No README at all
+        assert_eq!(feature_flag_in_readme(temp_dir.path()), None);
+        assert!(!has_feature_flag_in_readme(temp_dir.path()));
+        assert!(!has_feature_false_in_readme(temp_dir.path()));
+
+        // README without a `feature` property
+        write_readme(temp_dir.path(), "---\nowner: team\n---\n\n# Feature\n");
+        assert_eq!(feature_flag_in_readme(temp_dir.path()), None);
+        assert!(!has_feature_flag_in_readme(temp_dir.path()));
+        assert!(!has_feature_false_in_readme(temp_dir.path()));
+    }
+
+    #[test]
+    fn test_is_feature_directory_direct_subfolder_of_features() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let features_dir = temp_dir.path().join("features");
+        let feature_dir = features_dir.join("my-feature");
+        fs::create_dir_all(&feature_dir).unwrap();
+
+        // No README needed: a direct subfolder of `features` is a feature by default
+        assert!(is_feature_directory(&feature_dir));
+    }
+
+    #[test]
+    fn test_is_feature_directory_skips_when_feature_false_even_under_features_folder() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let features_dir = temp_dir.path().join("features");
+        let feature_dir = features_dir.join("my-feature");
+        fs::create_dir_all(&feature_dir).unwrap();
+        write_readme(&feature_dir, "---\nfeature: false\n---\n\n# My Feature\n");
+
+        // Explicit `feature: false` overrides the "direct subfolder of `features`" rule
+        assert!(!is_feature_directory(&feature_dir));
+    }
+
+    #[test]
+    fn test_is_feature_directory_readme_feature_true_outside_features_folder() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let feature_dir = temp_dir.path().join("some-dir");
+        fs::create_dir_all(&feature_dir).unwrap();
+        write_readme(&feature_dir, "---\nfeature: true\n---\n\n# Some Dir\n");
+
+        assert!(is_feature_directory(&feature_dir));
+    }
+
+    #[test]
+    fn test_is_feature_directory_readme_feature_false_outside_features_folder() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let feature_dir = temp_dir.path().join("some-dir");
+        fs::create_dir_all(&feature_dir).unwrap();
+        write_readme(&feature_dir, "---\nfeature: false\n---\n\n# Some Dir\n");
+
+        assert!(!is_feature_directory(&feature_dir));
+    }
+
+    /// Skipping a feature via `feature: false` must keep its sub-children discoverable:
+    /// both a nested `features/` folder and a subfolder with its own `feature: true` README.
+    #[test]
+    fn test_list_files_recursive_skips_feature_but_keeps_sub_children() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let base = temp_dir.path();
+
+        let features_dir = base.join("features");
+        let skipped_dir = features_dir.join("skipped-feature");
+        fs::create_dir_all(&skipped_dir).unwrap();
+        write_readme(
+            &skipped_dir,
+            "---\nfeature: false\nowner: skipped-owner\n---\n\n# Skipped Feature\n",
+        );
+
+        // A nested `features` folder inside the skipped directory.
+        let nested_via_features_folder = skipped_dir.join("features").join("child-a");
+        fs::create_dir_all(&nested_via_features_folder).unwrap();
+
+        // A subfolder marked as a feature via its own README.
+        let nested_via_readme = skipped_dir.join("child-b");
+        fs::create_dir_all(&nested_via_readme).unwrap();
+        write_readme(
+            &nested_via_readme,
+            "---\nfeature: true\nowner: child-b-owner\n---\n\n# Child B\n",
+        );
+
+        let features = list_files_recursive(base, &[]).unwrap();
+
+        // The skipped feature itself must not appear anywhere in the tree.
+        fn collect_names(features: &[Feature], out: &mut Vec<String>) {
+            for feature in features {
+                out.push(feature.name.clone());
+                collect_names(&feature.features, out);
+            }
+        }
+        let mut names = Vec::new();
+        collect_names(&features, &mut names);
+        assert!(!names.contains(&"skipped-feature".to_string()));
+        assert!(!names.contains(&"Skipped Feature".to_string()));
+
+        // Both sub-children are still discovered, as top-level features (since their
+        // skipped parent no longer exists as a node in the tree).
+        assert!(names.contains(&"child-a".to_string()));
+        let child_b = features
+            .iter()
+            .find(|f| f.name == "Child B")
+            .expect("child-b feature should be present");
+        assert_eq!(child_b.owner, "child-b-owner");
     }
 }

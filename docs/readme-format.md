@@ -16,3 +16,13 @@ deprecated: true # true, false
 # Feature Name (Override the feature folder name if provided)
 
 ```
+
+### Skipping a feature
+
+Setting `feature: false` explicitly skips a folder from being detected as a feature, even if it's a direct subfolder of a `features` folder. Unlike `--ignore-path`, its subfolders are still scanned, so any nested features it contains (via its own `features` folder or their own `feature: true` README) are still discovered:
+
+```markdown
+---
+feature: false
+---
+```
