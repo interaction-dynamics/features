@@ -115,6 +115,14 @@ owner: backend-team
 
 This allows features to be organized anywhere in your codebase while still being discoverable by the tools.
 
+Conversely, adding `feature: false` skips a folder from being detected as a feature, even if it's a direct subfolder of a `features` folder. Unlike `--ignore-path`, its subfolders are still scanned, so any nested features it contains are still discovered:
+
+```yaml
+---
+feature: false
+---
+```
+
 ### Feature Metadata Annotations
 
 You can annotate your code with feature metadata using special comments. These annotations can be placed **anywhere in your codebase** and will be automatically associated with the matching feature:
