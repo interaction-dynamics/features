@@ -68,31 +68,31 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            tools/cli/target/
+            projects/cli/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       # Install web dependencies
       - name: Install web dependencies 🔧
-        working-directory: ./tools/web
+        working-directory: ./projects/web
         run: pnpm install
 
       - name: Prepare public folder
-        working-directory: ./tools/cli
+        working-directory: ./projects/cli
         run: mkdir -p public
 
       # Build CLI
       - name: Build CLI 🦀
-        working-directory: ./tools/cli
+        working-directory: ./projects/cli
         run: cargo build --release
 
       # Ensure public directory exists
       - name: Create public directory 📁
-        working-directory: ./tools/web
+        working-directory: ./projects/web
         run: mkdir -p public
 
       # Generate features JSON
       - name: Generate features data 📊
-        working-directory: ./tools/cli
+        working-directory: ./projects/cli
         run: |
           if [ ! -d "../../examples/demo/" ]; then
             echo "Error: demo example directory not found"
@@ -107,7 +107,7 @@ jobs:
 
       # Generate metadata.json with version from Cargo.toml
       - name: Generate metadata.json 📋
-        working-directory: ./tools/cli
+        working-directory: ./projects/cli
         run: |
           VERSION=$(grep "^version" Cargo.toml | head -n1 | cut -d'"' -f2)
           echo "{\"version\": \"$VERSION\", \"repository\": \"git@github.com:interaction-dynamics/features.git\" }" > ../web/public/metadata.json
@@ -115,7 +115,7 @@ jobs:
 
       # Build web application
       - name: Build web application 🏗️
-        working-directory: ./tools/web
+        working-directory: ./projects/web
         env:
           BASE_URL: "/features"
         run: |
@@ -140,7 +140,7 @@ jobs:
       - name: Upload artifact 📦
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./tools/web/dist
+          path: ./projects/web/dist
 
   # Deployment job
   deploy:

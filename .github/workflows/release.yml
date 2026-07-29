@@ -25,7 +25,7 @@ jobs:
       - name: Get version from Cargo.toml
         id: version
         run: |
-          VERSION=$(grep '^version = ' tools/cli/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          VERSION=$(grep '^version = ' projects/cli/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
           echo "version=$VERSION" >> $GITHUB_ENV
           echo "should_release=true" >> $GITHUB_ENV
           echo "Version found: $VERSION"
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./tools/cli
+        working-directory: ./projects/cli
     steps:
       - uses: actions/checkout@v5
         with:
@@ -50,7 +50,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            tools/cli/target/
+            projects/cli/target/
           key: ${{ runner.os }}-cargo-validate-${{ hashFiles('**/Cargo.lock') }}
       - name: Check Formatting 👕
         run: cargo fmt --all -- --check
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./tools/web
+        working-directory: ./projects/web
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -111,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: public
-          path: tools/web/dist/
+          path: projects/web/dist/
           if-no-files-found: error
 
   build:
@@ -182,7 +182,7 @@ jobs:
 
       - name: Move public directory
         run: |
-          mv ./public/ tools/cli/public
+          mv ./public/ projects/cli/public
 
       - name: Setup cache
         uses: actions/cache@v3
@@ -192,18 +192,18 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            tools/cli/target/
+            projects/cli/target/
           key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build binary with cross compilation
-        working-directory: tools/cli
+        working-directory: projects/cli
         if: matrix.target != 'x86_64-unknown-linux-gnu' && runner.os == 'Linux'
         run: cross build --release --target ${{ matrix.target }}
         env:
           RUSTFLAGS: "-C strip=symbols -C codegen-units=1"
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
       - name: Build binary for with cargo
-        working-directory: tools/cli
+        working-directory: projects/cli
         if: matrix.target == 'x86_64-unknown-linux-gnu' || runner.os != 'Linux'
         run: cargo build --release --target ${{ matrix.target }}
         env:
@@ -212,7 +212,7 @@ jobs:
       - name: Copy binary
         run: |
           mkdir -p dist
-          cp tools/cli/target/${{ matrix.target }}/release/features${{ matrix.ext }} ./dist/features-${{ matrix.code-target }}${{ matrix.ext }}
+          cp projects/cli/target/${{ matrix.target }}/release/features${{ matrix.ext }} ./dist/features-${{ matrix.code-target }}${{ matrix.ext }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -244,7 +244,7 @@ jobs:
 
       - name: Move public directory
         run: |
-          mv ./public/ tools/cli/public
+          mv ./public/ projects/cli/public
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -257,14 +257,14 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            tools/cli/target/
+            projects/cli/target/
           key: ${{ runner.os }}-cargo-publish-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Prepare public folder
-        run: mkdir -p tools/cli/public
+        run: mkdir -p projects/cli/public
 
       - name: Check if version already exists on crates.io
-        working-directory: tools/cli
+        working-directory: projects/cli
         run: |
           VERSION="${{ needs.check.outputs.version }}"
           if cargo search features-cli --limit 1 | grep -q "\"$VERSION\""; then
@@ -276,14 +276,14 @@ jobs:
           fi
 
       - name: Dry run publish
-        working-directory: tools/cli
+        working-directory: projects/cli
         if: env.SKIP_PUBLISH == 'false'
         run: cargo publish --dry-run --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
         env:
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
 
       - name: Publish to crates.io
-        working-directory: tools/cli
+        working-directory: projects/cli
         if: env.SKIP_PUBLISH == 'false'
         run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
         env:

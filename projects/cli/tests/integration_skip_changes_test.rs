@@ -132,7 +132,7 @@ fn test_tests_skip_changes_snapshot() {
     // Compare with detailed error messages
     if let Err(diff_msg) = compare_json_values(&actual_json, &expected_json, "") {
         panic!(
-            "Features JSON does not match snapshot exactly.\n\n{}\n\nTo update snapshot, run:\n./tools/cli/target/debug/features ./examples/tests-skip-changes/src --json --skip-changes > tools/cli/tests/snapshots/tests_skip_changes.json",
+            "Features JSON does not match snapshot exactly.\n\n{}\n\nTo update snapshot, run:\n./projects/cli/target/debug/features ./examples/tests-skip-changes/src --json --skip-changes > projects/cli/tests/snapshots/tests_skip_changes.json",
             diff_msg
         );
     }

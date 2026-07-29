@@ -21,7 +21,7 @@ Thank you for your interest in contributing to the Features CLI project! This do
 
 2. Build the CLI:
    ```bash
-   cd tools/cli
+   cd projects/cli
    cargo build
    ```
 
@@ -87,7 +87,7 @@ The workflow uses these environments (configure in repository settings):
 
 ### Version Management
 
-1. Update the version in `tools/cli/Cargo.toml`
+1. Update the version in `projects/cli/Cargo.toml`
 2. Commit the change: `git commit -am "chore: bump version to X.Y.Z"`
 3. Create and push a tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
 4. The GitHub Actions workflow will handle the rest
@@ -98,7 +98,7 @@ If automated publishing fails, you can publish manually:
 
 #### To crates.io:
 ```bash
-cd tools/cli
+cd projects/cli
 cargo publish
 ```
 
@@ -109,7 +109,7 @@ Follow the steps in the GitHub workflow or use the existing npm publishing scrip
 
 ```
 features/
-├── tools/
+├── projects/
 │   ├── cli/          # Rust CLI source code
 │   └── web/          # Web dashboard
 ├── examples/         # Example projects
