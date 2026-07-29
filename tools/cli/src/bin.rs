@@ -110,6 +110,41 @@ struct Cli {
     /// Custom prefix for owner names in CODEOWNERS file (default: @)
     #[arg(long, default_value = "@")]
     codeowners_prefix: String,
+
+    /// Ignore a folder and all its subfolders when scanning for features (can be repeated)
+    #[arg(long)]
+    ignore_path: Vec<std::path::PathBuf>,
+}
+
+/// Resolve `--ignore-path` values to canonical absolute paths.
+///
+/// Relative paths are resolved against `current_dir`. Paths that don't exist are
+/// skipped with a warning rather than causing a hard error.
+fn resolve_ignore_paths(
+    ignore_paths: &[std::path::PathBuf],
+    current_dir: &std::path::Path,
+) -> Vec<std::path::PathBuf> {
+    ignore_paths
+        .iter()
+        .filter_map(|raw_path| {
+            let candidate = if raw_path.is_absolute() {
+                raw_path.clone()
+            } else {
+                current_dir.join(raw_path)
+            };
+
+            match std::fs::canonicalize(&candidate) {
+                Ok(canonical) => Some(canonical),
+                Err(_) => {
+                    eprintln!(
+                        "Warning: --ignore-path '{}' does not exist, skipping.",
+                        raw_path.display()
+                    );
+                    None
+                }
+            }
+        })
+        .collect()
 }
 
 fn flatten_features(features: &[Feature]) -> Vec<Feature> {
@@ -285,7 +320,10 @@ async fn main() -> Result<()> {
         };
 
         let current_dir = std::env::current_dir()?;
-        let config = ScanConfig::new(&current_dir).skip_changes(args.skip_changes);
+        let ignore_paths = resolve_ignore_paths(&args.ignore_path, &current_dir);
+        let config = ScanConfig::new(&current_dir)
+            .skip_changes(args.skip_changes)
+            .ignore_paths(ignore_paths);
 
         let features = scan_features(&base_path, config)?;
 
@@ -351,10 +389,12 @@ async fn main() -> Result<()> {
     // Build scan configuration
     let current_dir = std::env::current_dir()?;
     let should_add_coverage = args.serve || args.build || args.json || args.coverage;
+    let ignore_paths = resolve_ignore_paths(&args.ignore_path, &current_dir);
 
     let mut config = ScanConfig::new(&current_dir)
         .skip_changes(args.skip_changes)
-        .with_coverage(should_add_coverage);
+        .with_coverage(should_add_coverage)
+        .ignore_paths(ignore_paths.clone());
 
     if let Some(ref coverage_dir) = args.coverage_dir {
         config = config.coverage_dir(coverage_dir);
@@ -392,6 +432,7 @@ async fn main() -> Result<()> {
                     pb_clone.finish_and_clear();
                 })),
                 args.skip_changes,
+                ignore_paths.clone(),
             )
             .await?;
         } else {
@@ -401,6 +442,7 @@ async fn main() -> Result<()> {
                 path.clone(),
                 None,
                 args.skip_changes,
+                ignore_paths.clone(),
             )
             .await?;
         }

@@ -79,6 +79,7 @@ pub async fn serve_features_with_watching(
     watch_path: PathBuf,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
     skip_changes: bool,
+    ignore_paths: Vec<PathBuf>,
 ) -> Result<()> {
     let config = ServerConfig::new(port);
     serve_features_with_config_and_watching(
@@ -87,6 +88,7 @@ pub async fn serve_features_with_watching(
         Some(watch_path.clone()),
         on_ready,
         skip_changes,
+        ignore_paths,
     )
     .await
 }
@@ -110,6 +112,7 @@ pub async fn serve_features_with_config_and_watching(
     watch_path: Option<PathBuf>,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
     skip_changes: bool,
+    ignore_paths: Vec<PathBuf>,
 ) -> Result<()> {
     // Create shared state for features
     let features_data = Arc::new(RwLock::new(features.to_vec()));
@@ -125,7 +128,9 @@ pub async fn serve_features_with_config_and_watching(
         let watch_path_clone = path.clone();
 
         tokio::spawn(async move {
-            if let Err(e) = setup_file_watcher(features_data_clone, watch_path_clone).await {
+            if let Err(e) =
+                setup_file_watcher(features_data_clone, watch_path_clone, ignore_paths).await
+            {
                 eprintln!("File watcher error: {}", e);
             }
         });
@@ -226,6 +231,7 @@ pub async fn serve_features_with_config_and_watching(
 async fn setup_file_watcher(
     features_data: Arc<RwLock<Vec<Feature>>>,
     watch_path: PathBuf,
+    ignore_paths: Vec<PathBuf>,
 ) -> Result<()> {
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
@@ -267,7 +273,7 @@ async fn setup_file_watcher(
             // Add a small delay to avoid excessive recomputation during rapid changes
             sleep(Duration::from_millis(500)).await;
 
-            match list_files_recursive_with_changes(&watch_path) {
+            match list_files_recursive_with_changes(&watch_path, &ignore_paths) {
                 Ok(new_features) => {
                     let mut features = features_data.write().await;
                     *features = new_features;
