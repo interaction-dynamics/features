@@ -22,10 +22,10 @@ target
 
 node_modules/
 
-tools/cli/public
-tools/cli/*.js
-tools/cli/package.json
-tools/cli/build
+projects/cli/public
+projects/cli/*.js
+projects/cli/package.json
+projects/cli/build
 
 
 # Logs
@@ -53,8 +53,8 @@ dist-ssr
 *.sln
 *.sw?
 
-tools/web/public/features.json
-tools/web/public/metadata.json
+projects/web/public/features.json
+projects/web/public/metadata.json
 coverage
-tools/web/playwright-report/
-tools/web/test-results/
+projects/web/playwright-report/
+projects/web/test-results/

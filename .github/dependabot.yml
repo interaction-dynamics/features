@@ -6,6 +6,6 @@
 version: 2
 updates:
   - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/tools/web" # Location of package manifests
+    directory: "/projects/web" # Location of package manifests
     schedule:
       interval: "weekly"

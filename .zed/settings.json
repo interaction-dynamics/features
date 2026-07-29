@@ -2,7 +2,7 @@
 	"lsp": {
 		"biome": {
 			"settings": {
-				"config_path": "tools/web/biome.json"
+				"config_path": "projects/web/biome.json"
 			}
 		}
 	}

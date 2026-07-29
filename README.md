@@ -1,5 +1,5 @@
 <div align="center">
-    <img width="100" src="./tools/web/public/feature-icon.svg" alt="feature logo" />
+    <img width="100" src="./projects/web/public/feature-icon.svg" alt="feature logo" />
 </div>
 <h1 align="center">Features</h1>
 

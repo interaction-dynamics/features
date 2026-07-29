@@ -5,7 +5,7 @@ pnpm install
 
 pnpm test 
 
-cd ../../tools/cli
+cd ../../projects/cli
 
 cargo run  ../../examples/tests-skip-changes/src --project-dir ../../examples/tests-skip-changes --skip-changes --json > tests/snapshots/tests_skip_changes.json
 
