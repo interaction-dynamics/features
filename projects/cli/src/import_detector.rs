@@ -9,6 +9,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+use crate::skip_dirs::is_non_source_dir;
+
 #[derive(Debug, Clone)]
 pub struct ImportStatement {
     pub file_path: String,
@@ -334,27 +336,12 @@ pub fn scan_file_for_imports(file_path: &Path) -> Result<Vec<ImportStatement>> {
 pub fn build_file_map(base_path: &Path) -> HashMap<String, PathBuf> {
     let mut file_map = HashMap::new();
 
-    let skip_dirs = [
-        "node_modules",
-        "target",
-        "dist",
-        "build",
-        ".git",
-        ".svn",
-        ".hg",
-        "vendor",
-        "__pycache__",
-        ".next",
-        ".nuxt",
-        "coverage",
-    ];
-
     for entry in WalkDir::new(base_path)
         .into_iter()
         .filter_entry(|e| {
             if e.file_type().is_dir() {
                 let dir_name = e.file_name().to_string_lossy();
-                !skip_dirs.contains(&dir_name.as_ref())
+                !is_non_source_dir(&dir_name)
             } else {
                 true
             }

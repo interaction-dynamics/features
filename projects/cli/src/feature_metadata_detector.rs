@@ -11,6 +11,8 @@ use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 
+use crate::skip_dirs::is_non_source_dir;
+
 /// Represents a single metadata entry's properties (key-value pairs)
 /// Uses IndexMap to preserve insertion order from comments
 type MetadataProperties = IndexMap<String, String>;
@@ -242,29 +244,13 @@ fn infer_feature_path_from_file(file_path: &Path, base_path: &Path) -> Option<St
 pub fn scan_directory_for_feature_metadata(dir_path: &Path) -> Result<FeatureMetadataMap> {
     let mut feature_metadata = FeatureMetadataMap::new();
 
-    // Skip common directories that shouldn't be scanned
-    let skip_dirs = [
-        "node_modules",
-        "target",
-        "dist",
-        "build",
-        ".git",
-        ".svn",
-        ".hg",
-        "vendor",
-        "__pycache__",
-        ".next",
-        ".nuxt",
-        "coverage",
-    ];
-
     // Collect all entries first
     let mut entries: Vec<_> = WalkDir::new(dir_path)
         .into_iter()
         .filter_entry(|e| {
             if e.file_type().is_dir() {
                 let dir_name = e.file_name().to_string_lossy();
-                !skip_dirs.contains(&dir_name.as_ref())
+                !is_non_source_dir(&dir_name)
             } else {
                 true
             }

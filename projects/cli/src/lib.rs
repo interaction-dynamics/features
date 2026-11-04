@@ -13,3 +13,4 @@ pub mod models;
 pub mod printer;
 pub mod readme_parser;
 pub mod scan;
+pub mod skip_dirs;

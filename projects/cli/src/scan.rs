@@ -38,6 +38,9 @@ pub struct ScanConfig<'a> {
     /// Only resolve feature ownership (name, owner, path, nested features).
     /// Skips git history, stats, decisions, metadata, dependencies and coverage.
     pub ownership_only: bool,
+
+    /// Scan folders that are skipped by default (see `skip_dirs::SKIPPED_DIRS`)
+    pub include_skipped_dirs: bool,
 }
 
 impl<'a> ScanConfig<'a> {
@@ -51,6 +54,7 @@ impl<'a> ScanConfig<'a> {
             project_dir: None,
             ignore_paths: Vec::new(),
             ownership_only: false,
+            include_skipped_dirs: false,
         }
     }
 
@@ -89,6 +93,12 @@ impl<'a> ScanConfig<'a> {
         self.ownership_only = ownership_only;
         self
     }
+
+    /// Set whether to scan folders that are skipped by default
+    pub fn include_skipped_dirs(mut self, include_skipped_dirs: bool) -> Self {
+        self.include_skipped_dirs = include_skipped_dirs;
+        self
+    }
 }
 
 /// Scan features in a directory with the given configuration
@@ -118,14 +128,22 @@ impl<'a> ScanConfig<'a> {
 /// ```
 pub fn scan_features(base_path: &Path, config: ScanConfig) -> Result<Vec<Feature>> {
     if config.ownership_only {
-        return list_features_ownership_only(base_path, &config.ignore_paths);
+        return list_features_ownership_only(
+            base_path,
+            &config.ignore_paths,
+            config.include_skipped_dirs,
+        );
     }
 
     // Step 1: Scan features with or without git history
     let mut features = if config.skip_changes {
-        list_files_recursive(base_path, &config.ignore_paths)?
+        list_files_recursive(base_path, &config.ignore_paths, config.include_skipped_dirs)?
     } else {
-        list_files_recursive_with_changes(base_path, &config.ignore_paths)?
+        list_files_recursive_with_changes(
+            base_path,
+            &config.ignore_paths,
+            config.include_skipped_dirs,
+        )?
     };
 
     // Step 2: Add coverage if requested
@@ -254,6 +272,7 @@ mod tests {
         assert!(config.coverage_dir_override.is_none());
         assert!(config.project_dir.is_none());
         assert!(!config.ownership_only);
+        assert!(!config.include_skipped_dirs);
     }
 
     #[test]

@@ -18,6 +18,7 @@ mod models;
 mod printer;
 mod readme_parser;
 mod scan;
+mod skip_dirs;
 
 use build::{BuildConfig, create_build};
 use checker::run_checks;
@@ -114,6 +115,10 @@ struct Cli {
     /// Ignore a folder and all its subfolders when scanning for features (can be repeated)
     #[arg(long)]
     ignore_path: Vec<std::path::PathBuf>,
+
+    /// Also scan folders skipped by default (node_modules) for features, stats and imports
+    #[arg(long)]
+    include_skipped_dirs: bool,
 }
 
 /// Resolve `--ignore-path` values to canonical absolute paths.
@@ -324,7 +329,8 @@ async fn main() -> Result<()> {
         let config = ScanConfig::new(&current_dir)
             .skip_changes(args.skip_changes)
             .ignore_paths(ignore_paths)
-            .ownership_only(true);
+            .ownership_only(true)
+            .include_skipped_dirs(args.include_skipped_dirs);
 
         let features = scan_features(&base_path, config)?;
 
@@ -400,7 +406,8 @@ async fn main() -> Result<()> {
         .skip_changes(args.skip_changes)
         .with_coverage(should_add_coverage)
         .ignore_paths(ignore_paths.clone())
-        .ownership_only(ownership_only);
+        .ownership_only(ownership_only)
+        .include_skipped_dirs(args.include_skipped_dirs);
 
     if let Some(ref coverage_dir) = args.coverage_dir {
         config = config.coverage_dir(coverage_dir);
@@ -439,6 +446,7 @@ async fn main() -> Result<()> {
                 })),
                 args.skip_changes,
                 ignore_paths.clone(),
+                args.include_skipped_dirs,
             )
             .await?;
         } else {
@@ -449,6 +457,7 @@ async fn main() -> Result<()> {
                 None,
                 args.skip_changes,
                 ignore_paths.clone(),
+                args.include_skipped_dirs,
             )
             .await?;
         }
