@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 
 /// Information extracted from a README file
+#[derive(Clone, Default)]
 pub struct ReadmeInfo {
     /// Optional title extracted from the first markdown heading
     pub title: Option<String>,
@@ -13,6 +14,8 @@ pub struct ReadmeInfo {
     pub description: String,
     /// Additional metadata from YAML frontmatter
     pub meta: BTreeMap<String, serde_json::Value>,
+    /// The `feature` boolean from YAML frontmatter, if present
+    pub feature_flag: Option<bool>,
 }
 
 fn extract_first_title(content: &str) -> Option<String> {
@@ -59,21 +62,22 @@ fn read_readme_content(content: &str) -> String {
 /// The title is extracted from the first markdown heading (# Title)
 pub fn read_readme_info(readme_path: &Path) -> Result<ReadmeInfo> {
     if !readme_path.exists() {
-        return Ok(ReadmeInfo {
-            title: None,
-            owner: "".to_string(),
-            description: "".to_string(),
-            meta: BTreeMap::new(),
-        });
+        return Ok(ReadmeInfo::default());
     }
 
     let content = fs::read_to_string(readme_path)
         .with_context(|| format!("could not read README file at `{}`", readme_path.display()))?;
 
+    Ok(parse_readme_info(&content))
+}
+
+/// Parses README information from the content of a README file
+pub fn parse_readme_info(content: &str) -> ReadmeInfo {
     let mut title: Option<String> = None;
     let mut owner = "".to_string();
     let mut description = "".to_string();
     let mut meta: BTreeMap<String, serde_json::Value> = BTreeMap::new();
+    let mut feature_flag = None;
 
     // Check if content starts with YAML front matter (---)
     if let Some(stripped) = content.strip_prefix("---\n") {
@@ -92,6 +96,10 @@ pub fn read_readme_info(readme_path: &Path) -> Result<ReadmeInfo> {
                                 owner = owner_value.to_string();
                             }
                         } else {
+                            if key_str == "feature" {
+                                feature_flag = value.as_bool();
+                            }
+
                             // Convert YAML value to JSON value for meta
                             if let Ok(json_value) = serde_json::to_value(value) {
                                 meta.insert(key_str.to_string(), json_value);
@@ -107,14 +115,15 @@ pub fn read_readme_info(readme_path: &Path) -> Result<ReadmeInfo> {
         }
     } else {
         // No frontmatter, extract title and description from full content
-        title = extract_first_title(&content);
-        description = read_readme_content(&content)
+        title = extract_first_title(content);
+        description = read_readme_content(content)
     }
 
-    Ok(ReadmeInfo {
+    ReadmeInfo {
         title,
         owner,
         description,
         meta,
-    })
+        feature_flag,
+    }
 }

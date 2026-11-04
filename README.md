@@ -60,6 +60,7 @@ Commands and their descriptions are listed below:
 | `--check` | Run validation checks on features (e.g., duplicate names) |
 | `--skip-changes` | Skip computing git commit history (faster for large repos) |
 | `--ignore-path <path>` | Ignore a folder and all its subfolders when scanning for features. Can be repeated to ignore multiple folders |
+| `--include-skipped-dirs` | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
 | `--serve` | Start an HTTP server to serve features and the web dashboard UI |
 | `--port <port>` | Change the port (default: 3000). Should be used with `--serve` |
 | `--build` | Build a static version of the web dashboard UI |

@@ -1,18 +1,21 @@
 use anyhow::{Context, Result};
 use git2::Repository;
-use std::collections::HashMap;
+use std::cell::RefCell;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use crate::dependency_resolver::{
     build_file_to_feature_map, collect_feature_info, resolve_feature_dependencies,
 };
 use crate::feature_metadata_detector::{self, FeatureMetadataMap};
 use crate::features_toml_parser::{find_features_toml, read_features_toml};
-use crate::git_helper::get_all_commits_by_path;
+use crate::git_helper::{CommitHistory, get_all_commits_by_path};
 use crate::import_detector::{ImportStatement, build_file_map, scan_file_for_imports};
 use crate::models::{Change, Feature, Stats};
-use crate::readme_parser::read_readme_info;
+use crate::readme_parser::{ReadmeInfo, parse_readme_info, read_readme_info};
+use crate::skip_dirs::SKIPPED_DIRS;
 
 fn is_documentation_directory(dir_path: &Path) -> bool {
     let dir_name = dir_path
@@ -49,6 +52,10 @@ fn is_direct_subfolder_of_features(dir_path: &Path) -> bool {
 /// paths passed via `--ignore-path`. Ignored directories and all their subfolders
 /// are excluded from feature detection entirely.
 fn is_ignored_path(dir_path: &Path, ignore_paths: &[PathBuf]) -> bool {
+    if ignore_paths.is_empty() {
+        return false;
+    }
+
     let Ok(canonical) = fs::canonicalize(dir_path) else {
         return false;
     };
@@ -56,6 +63,26 @@ fn is_ignored_path(dir_path: &Path, ignore_paths: &[PathBuf]) -> bool {
     ignore_paths
         .iter()
         .any(|ignored| canonical.starts_with(ignored))
+}
+
+/// Decides which folders the feature, stats and import walkers leave out
+#[derive(Clone, Copy)]
+struct WalkFilter<'a> {
+    ignore_paths: &'a [PathBuf],
+    /// Scan the folders in `SKIPPED_DIRS` instead of skipping them
+    include_skipped_dirs: bool,
+}
+
+impl WalkFilter<'_> {
+    fn skips(&self, dir_path: &Path) -> bool {
+        let is_skipped_name = !self.include_skipped_dirs
+            && dir_path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| SKIPPED_DIRS.contains(&name));
+
+        is_skipped_name || is_ignored_path(dir_path, self.ignore_paths)
+    }
 }
 
 fn find_readme_file(dir_path: &Path) -> Option<std::path::PathBuf> {
@@ -71,38 +98,43 @@ fn find_readme_file(dir_path: &Path) -> Option<std::path::PathBuf> {
     None
 }
 
-/// Read the `feature` boolean from a directory's README front matter, if present.
-fn feature_flag_in_readme(dir_path: &Path) -> Option<bool> {
-    let readme_path = find_readme_file(dir_path)?;
-    let content = fs::read_to_string(&readme_path).ok()?;
-
-    // Check if content starts with YAML front matter (---)
-    let stripped = content.strip_prefix("---\n")?;
-    let end_pos = stripped.find("\n---\n")?;
-    let yaml_content = &stripped[..end_pos];
-
-    // Parse YAML front matter
-    let yaml_value = serde_yaml::from_str::<serde_yaml::Value>(yaml_content).ok()?;
-    let mapping = yaml_value.as_mapping()?;
-    let feature_value = mapping.get(serde_yaml::Value::String("feature".to_string()))?;
-
-    feature_value.as_bool()
+/// A directory's README, read and parsed at most once per scan
+struct Readme {
+    path: PathBuf,
+    /// None when the file exists but can't be read as text
+    info: Option<ReadmeInfo>,
 }
 
-/// Check if a directory has a README with `feature: true` in front matter
-fn has_feature_flag_in_readme(dir_path: &Path) -> bool {
-    feature_flag_in_readme(dir_path) == Some(true)
-}
+#[derive(Default)]
+struct ReadmeCache(RefCell<HashMap<PathBuf, Option<Rc<Readme>>>>);
 
-/// Check if a directory has a README with `feature: false` in front matter.
-/// This is used to explicitly skip a directory from being treated as a feature,
-/// even when it would otherwise qualify (e.g. a direct subfolder of `features`).
-fn has_feature_false_in_readme(dir_path: &Path) -> bool {
-    feature_flag_in_readme(dir_path) == Some(false)
+impl ReadmeCache {
+    fn get(&self, dir_path: &Path) -> Option<Rc<Readme>> {
+        if let Some(cached) = self.0.borrow().get(dir_path) {
+            return cached.clone();
+        }
+
+        let readme = find_readme_file(dir_path).map(|path| {
+            let info = fs::read_to_string(&path)
+                .ok()
+                .map(|content| parse_readme_info(&content));
+            Rc::new(Readme { path, info })
+        });
+
+        self.0
+            .borrow_mut()
+            .insert(dir_path.to_path_buf(), readme.clone());
+        readme
+    }
+
+    /// The `feature` boolean from a directory's README front matter, if present.
+    fn feature_flag(&self, dir_path: &Path) -> Option<bool> {
+        self.get(dir_path)?.info.as_ref()?.feature_flag
+    }
 }
 
 /// Check if a directory should be treated as a feature
-fn is_feature_directory(dir_path: &Path) -> bool {
+fn is_feature_directory(dir_path: &Path, readmes: &ReadmeCache) -> bool {
     // Skip documentation directories
     if is_documentation_directory(dir_path) || is_inside_documentation_directory(dir_path) {
         return false;
@@ -112,7 +144,8 @@ fn is_feature_directory(dir_path: &Path) -> bool {
     // from being a feature itself, even if it would otherwise qualify (e.g. a
     // direct subfolder of `features`). Its own subfolders are still scanned
     // normally, so any nested features it contains are kept.
-    if has_feature_false_in_readme(dir_path) {
+    let feature_flag = readmes.feature_flag(dir_path);
+    if feature_flag == Some(false) {
         return false;
     }
 
@@ -122,52 +155,120 @@ fn is_feature_directory(dir_path: &Path) -> bool {
     }
 
     // Check if the directory has a README with feature: true
-    has_feature_flag_in_readme(dir_path)
+    feature_flag == Some(true)
 }
 
-pub fn list_files_recursive(dir: &Path, ignore_paths: &[PathBuf]) -> Result<Vec<Feature>> {
+/// Inputs shared by every level of the recursive feature scan
+#[derive(Clone, Copy)]
+struct ScanContext<'a> {
+    base_path: &'a Path,
+    history: Option<&'a CommitHistory>,
+    feature_metadata_map: &'a FeatureMetadataMap,
+    filter: WalkFilter<'a>,
+    readmes: &'a ReadmeCache,
+    /// Skip everything not needed to resolve feature ownership
+    ownership_only: bool,
+}
+
+pub fn list_files_recursive(
+    dir: &Path,
+    ignore_paths: &[PathBuf],
+    include_skipped_dirs: bool,
+) -> Result<Vec<Feature>> {
     // Scan entire base_path for feature metadata once
     let feature_metadata =
         feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
 
     // First pass: build feature structure without dependencies
-    let mut features =
-        list_files_recursive_impl(dir, dir, None, None, &feature_metadata, ignore_paths)?;
+    let filter = WalkFilter {
+        ignore_paths,
+        include_skipped_dirs,
+    };
+    let readmes = ReadmeCache::default();
+    let ctx = ScanContext {
+        base_path: dir,
+        history: None,
+        feature_metadata_map: &feature_metadata,
+        filter,
+        readmes: &readmes,
+        ownership_only: false,
+    };
+    let mut features = list_files_recursive_impl(dir, None, &ctx)?;
 
     // Second pass: scan for imports and resolve dependencies
-    populate_dependencies(&mut features, dir)?;
+    populate_dependencies(&mut features, dir, &ctx)?;
 
     Ok(features)
+}
+
+/// Build the feature tree with only what is needed to know who owns what:
+/// name, owner, path, meta from README/FEATURES.toml and nested features.
+///
+/// Skips everything that reads source files or git history (changes, stats,
+/// decisions, feature metadata comments and dependencies), which makes it
+/// suitable for CODEOWNERS generation on large repositories.
+pub fn list_features_ownership_only(
+    dir: &Path,
+    ignore_paths: &[PathBuf],
+    include_skipped_dirs: bool,
+) -> Result<Vec<Feature>> {
+    let feature_metadata = FeatureMetadataMap::new();
+
+    let filter = WalkFilter {
+        ignore_paths,
+        include_skipped_dirs,
+    };
+    let readmes = ReadmeCache::default();
+    let ctx = ScanContext {
+        base_path: dir,
+        history: None,
+        feature_metadata_map: &feature_metadata,
+        filter,
+        readmes: &readmes,
+        ownership_only: true,
+    };
+    list_files_recursive_impl(dir, None, &ctx)
 }
 
 pub fn list_files_recursive_with_changes(
     dir: &Path,
     ignore_paths: &[PathBuf],
+    include_skipped_dirs: bool,
 ) -> Result<Vec<Feature>> {
     // Get all commits once at the beginning for efficiency
-    let all_commits = get_all_commits_by_path(dir).unwrap_or_default();
+    let history = get_all_commits_by_path(dir).unwrap_or_default();
     // Scan entire base_path for feature metadata once
     let feature_metadata =
         feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
 
     // First pass: build feature structure without dependencies
-    let mut features = list_files_recursive_impl(
-        dir,
-        dir,
-        Some(&all_commits),
-        None,
-        &feature_metadata,
+    let filter = WalkFilter {
         ignore_paths,
-    )?;
+        include_skipped_dirs,
+    };
+    let readmes = ReadmeCache::default();
+    let ctx = ScanContext {
+        base_path: dir,
+        history: Some(&history),
+        feature_metadata_map: &feature_metadata,
+        filter,
+        readmes: &readmes,
+        ownership_only: false,
+    };
+    let mut features = list_files_recursive_impl(dir, None, &ctx)?;
 
     // Second pass: scan for imports and resolve dependencies
-    populate_dependencies(&mut features, dir)?;
+    populate_dependencies(&mut features, dir, &ctx)?;
 
     Ok(features)
 }
 
 /// Populate dependencies for all features by scanning imports
-fn populate_dependencies(features: &mut [Feature], base_path: &Path) -> Result<()> {
+fn populate_dependencies(
+    features: &mut [Feature],
+    base_path: &Path,
+    ctx: &ScanContext,
+) -> Result<()> {
     // Build file map for quick path resolution
     let file_map = build_file_map(base_path);
 
@@ -189,7 +290,7 @@ fn populate_dependencies(features: &mut [Feature], base_path: &Path) -> Result<(
 
     for feature_info in &feature_info_list {
         let feature_path = base_path.join(&feature_info.path);
-        let imports = scan_feature_directory_for_imports(&feature_path);
+        let imports = scan_feature_directory_for_imports(&feature_path, ctx);
         // Use feature path as key instead of name to handle features with duplicate names
         feature_imports.insert(feature_info.path.to_string_lossy().to_string(), imports);
     }
@@ -208,7 +309,10 @@ fn populate_dependencies(features: &mut [Feature], base_path: &Path) -> Result<(
 }
 
 /// Scan a feature directory for all import statements
-fn scan_feature_directory_for_imports(feature_path: &Path) -> Vec<ImportStatement> {
+fn scan_feature_directory_for_imports(
+    feature_path: &Path,
+    ctx: &ScanContext,
+) -> Vec<ImportStatement> {
     let mut all_imports = Vec::new();
 
     if let Ok(entries) = fs::read_dir(feature_path) {
@@ -233,17 +337,17 @@ fn scan_feature_directory_for_imports(feature_path: &Path) -> Vec<ImportStatemen
             } else if path.is_dir() {
                 // Skip 'features' subdirectory (contains nested features)
                 let dir_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if dir_name == "features" {
+                if dir_name == "features" || ctx.filter.skips(&path) {
                     continue;
                 }
 
                 // Skip nested feature directories (check if it's a direct child of "features" directory with README)
-                if is_feature_directory(&path) {
+                if is_feature_directory(&path, ctx.readmes) {
                     continue;
                 }
 
                 // Recursively scan subdirectories
-                let nested_imports = scan_feature_directory_for_imports(&path);
+                let nested_imports = scan_feature_directory_for_imports(&path, ctx);
                 all_imports.extend(nested_imports);
             }
         }
@@ -352,302 +456,112 @@ fn read_decision_files(feature_path: &Path) -> Result<Vec<String>> {
     Ok(decisions)
 }
 
-/// Count the number of files in a feature directory (excluding documentation)
-fn count_files(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
-    let mut file_count = 0;
-
-    if let Ok(entries) = fs::read_dir(feature_path) {
-        // Collect and sort entries alphabetically by filename
-        let mut paths: Vec<_> = entries.flatten().map(|e| e.path()).collect();
-        paths.sort_by(|a, b| {
-            let name_a = a.file_name().unwrap_or_default().to_string_lossy();
-            let name_b = b.file_name().unwrap_or_default().to_string_lossy();
-            name_a.cmp(&name_b)
-        });
-
-        for path in paths {
-            let path_str = path.to_string_lossy().to_string();
-
-            // Skip documentation directories
-            if is_documentation_directory(&path) {
-                continue;
-            }
-
-            // Skip nested feature directories
-            if nested_feature_paths
-                .iter()
-                .any(|nfp| path_str.starts_with(nfp))
-            {
-                continue;
-            }
-
-            if path.is_file() {
-                file_count += 1;
-            } else if path.is_dir() {
-                // Recursively count files in subdirectories
-                file_count += count_files(&path, nested_feature_paths);
-            }
-        }
-    }
-
-    file_count
+/// File, line and TODO totals for a feature directory
+#[derive(Default)]
+struct FileCounts {
+    files: usize,
+    lines: usize,
+    todos: usize,
 }
 
-/// Count the total number of lines in all files in a feature directory (excluding documentation)
-fn count_lines(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
-    let mut line_count = 0;
-
-    if let Ok(entries) = fs::read_dir(feature_path) {
-        // Collect and sort entries alphabetically by filename
-        let mut paths: Vec<_> = entries.flatten().map(|e| e.path()).collect();
-        paths.sort_by(|a, b| {
-            let name_a = a.file_name().unwrap_or_default().to_string_lossy();
-            let name_b = b.file_name().unwrap_or_default().to_string_lossy();
-            name_a.cmp(&name_b)
-        });
-
-        for path in paths {
-            let path_str = path.to_string_lossy().to_string();
-
-            // Skip documentation directories
-            if is_documentation_directory(&path) {
-                continue;
-            }
-
-            // Skip nested feature directories
-            if nested_feature_paths
-                .iter()
-                .any(|nfp| path_str.starts_with(nfp))
-            {
-                continue;
-            }
-
-            if path.is_file() {
-                // Try to read the file and count lines
-                if let Ok(content) = fs::read_to_string(&path) {
-                    line_count += content.lines().count();
-                }
-            } else if path.is_dir() {
-                // Recursively count lines in subdirectories
-                line_count += count_lines(&path, nested_feature_paths);
-            }
-        }
-    }
-
-    line_count
+/// Case-insensitive search for "TODO", without allocating
+fn contains_todo(line: &str) -> bool {
+    line.as_bytes()
+        .windows(4)
+        .any(|window| window.eq_ignore_ascii_case(b"TODO"))
 }
 
-/// Count the total number of TODO comments in all files in a feature directory (excluding documentation)
-fn count_todos(feature_path: &Path, nested_feature_paths: &[String]) -> usize {
-    let mut todo_count = 0;
+/// Count files, lines and TODO comments in a feature directory (excluding
+/// documentation), reading each file once
+fn count_feature_files(
+    dir: &Path,
+    nested_feature_paths: &[String],
+    filter: &WalkFilter,
+    counts: &mut FileCounts,
+) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
 
-    if let Ok(entries) = fs::read_dir(feature_path) {
-        // Collect and sort entries alphabetically by filename
-        let mut paths: Vec<_> = entries.flatten().map(|e| e.path()).collect();
-        paths.sort_by(|a, b| {
-            let name_a = a.file_name().unwrap_or_default().to_string_lossy();
-            let name_b = b.file_name().unwrap_or_default().to_string_lossy();
-            name_a.cmp(&name_b)
-        });
+    for entry in entries.flatten() {
+        let path = entry.path();
 
-        for path in paths {
-            let path_str = path.to_string_lossy().to_string();
+        // Skip documentation directories
+        if is_documentation_directory(&path) {
+            continue;
+        }
 
-            // Skip documentation directories
-            if is_documentation_directory(&path) {
-                continue;
-            }
+        // Skip nested feature directories
+        let path_str = path.to_string_lossy();
+        if nested_feature_paths
+            .iter()
+            .any(|nfp| path_str.starts_with(nfp.as_str()))
+        {
+            continue;
+        }
 
-            // Skip nested feature directories
-            if nested_feature_paths
-                .iter()
-                .any(|nfp| path_str.starts_with(nfp))
-            {
-                continue;
-            }
+        if path.is_file() {
+            counts.files += 1;
 
-            if path.is_file() {
-                // Try to read the file and count TODO comments
-                if let Ok(content) = fs::read_to_string(&path) {
-                    for line in content.lines() {
-                        // Look for TODO in comments (case-insensitive)
-                        let line_upper = line.to_uppercase();
-                        if line_upper.contains("TODO") {
-                            todo_count += 1;
-                        }
+            // Files that aren't text only count towards the number of files
+            if let Ok(content) = fs::read_to_string(&path) {
+                for line in content.lines() {
+                    counts.lines += 1;
+                    if contains_todo(line) {
+                        counts.todos += 1;
                     }
                 }
-            } else if path.is_dir() {
-                // Recursively count TODOs in subdirectories
-                todo_count += count_todos(&path, nested_feature_paths);
             }
-        }
-    }
-
-    todo_count
-}
-
-/// Get the paths affected by a specific commit
-fn get_commit_affected_paths(repo: &Repository, commit_hash: &str) -> Vec<String> {
-    let Ok(oid) = git2::Oid::from_str(commit_hash) else {
-        return Vec::new();
-    };
-
-    let Ok(commit) = repo.find_commit(oid) else {
-        return Vec::new();
-    };
-
-    let mut paths = Vec::new();
-
-    // For the first commit (no parents), get all files in the tree
-    if commit.parent_count() == 0 {
-        if let Ok(tree) = commit.tree() {
-            collect_all_tree_paths(repo, &tree, "", &mut paths);
-        }
-        return paths;
-    }
-
-    // For commits with parents, check the diff
-    let Ok(tree) = commit.tree() else {
-        return Vec::new();
-    };
-
-    let Ok(parent) = commit.parent(0) else {
-        return Vec::new();
-    };
-
-    let Ok(parent_tree) = parent.tree() else {
-        return Vec::new();
-    };
-
-    if let Ok(diff) = repo.diff_tree_to_tree(Some(&parent_tree), Some(&tree), None) {
-        let _ = diff.foreach(
-            &mut |delta, _| {
-                if let Some(path) = delta.new_file().path()
-                    && let Some(path_str) = path.to_str()
-                {
-                    paths.push(path_str.to_string());
-                }
-                if let Some(path) = delta.old_file().path()
-                    && let Some(path_str) = path.to_str()
-                    && !paths.contains(&path_str.to_string())
-                {
-                    paths.push(path_str.to_string());
-                }
-                true
-            },
-            None,
-            None,
-            None,
-        );
-    }
-
-    paths
-}
-
-/// Collect all file paths in a tree (helper for get_commit_affected_paths)
-fn collect_all_tree_paths(
-    repo: &Repository,
-    tree: &git2::Tree,
-    prefix: &str,
-    paths: &mut Vec<String>,
-) {
-    for entry in tree.iter() {
-        if let Some(name) = entry.name() {
-            let path = if prefix.is_empty() {
-                name.to_string()
-            } else {
-                format!("{}/{}", prefix, name)
-            };
-
-            paths.push(path.clone());
-
-            if entry.kind() == Some(git2::ObjectType::Tree)
-                && let Ok(obj) = entry.to_object(repo)
-                && let Ok(subtree) = obj.peel_to_tree()
-            {
-                collect_all_tree_paths(repo, &subtree, &path, paths);
-            }
+        } else if path.is_dir() && !filter.skips(&path) {
+            count_feature_files(&path, nested_feature_paths, filter, counts);
         }
     }
 }
 
-/// Compute statistics from changes for a feature
-fn compute_stats_from_changes(
-    changes: &[Change],
-    feature_path: &Path,
+/// A feature's changes and where it sits in its repository
+struct FeatureHistory {
+    changes: Vec<Change>,
+    repo_workdir: PathBuf,
+    relative_path: String,
+}
+
+/// Compute commit statistics for a feature
+fn compute_commit_stats(
+    feature_history: &FeatureHistory,
+    history: &CommitHistory,
     nested_features: &[Feature],
-) -> Option<Stats> {
-    if changes.is_empty() {
-        return None;
-    }
-
-    // Collect paths of nested features to exclude from commit counts
-    let nested_feature_paths: Vec<String> =
-        nested_features.iter().map(|f| f.path.clone()).collect();
-
-    // Get repository to check commit details
-    let repo = Repository::discover(feature_path).ok();
-
-    // Get the feature's relative path from repo root
-    let feature_relative_path = if let Some(ref r) = repo {
-        if let Ok(canonical_path) = std::fs::canonicalize(feature_path) {
-            if let Some(workdir) = r.workdir() {
-                canonical_path
-                    .strip_prefix(workdir)
-                    .ok()
-                    .map(|p| p.to_string_lossy().to_string())
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    } else {
-        None
-    };
+) -> BTreeMap<String, serde_json::Value> {
+    // Convert nested feature paths to repo-relative paths once for all commits
+    let nested_relative_paths: Vec<String> = nested_features
+        .iter()
+        .filter_map(|feature| {
+            let canonical = fs::canonicalize(&feature.path).ok()?;
+            let relative = canonical.strip_prefix(&feature_history.repo_workdir).ok()?;
+            Some(relative.to_string_lossy().to_string())
+        })
+        .collect();
 
     // Filter changes to only include those that affect files in this feature
     // (not exclusively in nested features)
-    let filtered_changes: Vec<&Change> = changes
+    let filtered_changes: Vec<&Change> = feature_history
+        .changes
         .iter()
         .filter(|change| {
-            // If we don't have repo access, include all changes
-            let Some(ref r) = repo else {
-                return true;
+            let Some(affected_files) = history.affected_paths.get(&change.hash) else {
+                return false;
             };
-
-            let Some(ref feature_rel_path) = feature_relative_path else {
-                return true;
-            };
-
-            // Get the files affected by this commit
-            let affected_files = get_commit_affected_paths(r, &change.hash);
 
             // Check if any affected file is in this feature but not in a nested feature
             affected_files.iter().any(|file_path| {
-                // File must be in this feature
-                let in_feature = file_path.starts_with(feature_rel_path);
-
-                // File must not be exclusively in a nested feature
-                let in_nested = nested_feature_paths.iter().any(|nested_path| {
-                    // Convert nested absolute path to relative path
-                    if let Ok(nested_canonical) = std::fs::canonicalize(nested_path)
-                        && let Some(workdir) = r.workdir()
-                        && let Ok(nested_rel) = nested_canonical.strip_prefix(workdir)
-                    {
-                        let nested_rel_str = nested_rel.to_string_lossy();
-                        return file_path.starts_with(nested_rel_str.as_ref());
-                    }
-                    false
-                });
-
-                in_feature && !in_nested
+                file_path.starts_with(&feature_history.relative_path)
+                    && !nested_relative_paths
+                        .iter()
+                        .any(|nested_path| file_path.starts_with(nested_path.as_str()))
             })
         })
         .collect();
 
-    let mut commits = std::collections::BTreeMap::new();
+    let mut commits = BTreeMap::new();
 
     // Add total commit count
     commits.insert(
@@ -690,18 +604,7 @@ fn compute_stats_from_changes(
         );
     }
 
-    // Count files and lines in the feature directory (excluding nested features)
-    let files_count = count_files(feature_path, &nested_feature_paths);
-    let lines_count = count_lines(feature_path, &nested_feature_paths);
-    let todos_count = count_todos(feature_path, &nested_feature_paths);
-
-    Some(Stats {
-        files_count: Some(files_count),
-        lines_count: Some(lines_count),
-        todos_count: Some(todos_count),
-        commits,
-        coverage: None,
-    })
+    commits
 }
 
 /// Extract the commit type from a conventional commit title
@@ -737,13 +640,19 @@ fn extract_commit_type(title: &str) -> String {
 
 fn process_feature_directory(
     path: &Path,
-    base_path: &Path,
     name: &str,
-    changes_map: Option<&HashMap<String, Vec<Change>>>,
     parent_owner: Option<&str>,
-    feature_metadata_map: &FeatureMetadataMap,
-    ignore_paths: &[PathBuf],
+    ctx: &ScanContext,
 ) -> Result<Feature> {
+    let ScanContext {
+        base_path,
+        history,
+        feature_metadata_map,
+        filter,
+        readmes,
+        ownership_only,
+    } = *ctx;
+
     // First try to find and read FEATURES.toml file
     let (title, owner, description, mut meta) = if let Some(toml_path) = find_features_toml(path) {
         if let Ok(toml_data) = read_features_toml(&toml_path) {
@@ -763,16 +672,13 @@ fn process_feature_directory(
         }
     } else {
         // Fall back to README file if FEATURES.toml not found
-        let readme_info = if let Some(readme_path) = find_readme_file(path) {
-            read_readme_info(&readme_path)?
-        } else {
-            use crate::readme_parser::ReadmeInfo;
-            ReadmeInfo {
-                title: None,
-                owner: "".to_string(),
-                description: "".to_string(),
-                meta: std::collections::BTreeMap::new(),
-            }
+        let readme_info = match readmes.get(path) {
+            Some(readme) => match &readme.info {
+                Some(info) => info.clone(),
+                // Read it again to report why it can't be read
+                None => read_readme_info(&readme.path)?,
+            },
+            None => ReadmeInfo::default(),
         };
         (
             readme_info.title,
@@ -819,15 +725,15 @@ fn process_feature_directory(
         }
     }
 
-    let changes = if let Some(map) = changes_map {
-        // Convert the absolute path to a repo-relative path and look up changes
-        get_changes_for_path(path, map).unwrap_or_default()
-    } else {
-        Vec::new()
-    };
+    // Convert the absolute path to a repo-relative path and look up changes
+    let feature_history = history.and_then(|h| get_feature_history(path, h).ok());
 
     // Always include decisions regardless of include_changes flag
-    let decisions = read_decision_files(path).unwrap_or_default();
+    let decisions = if ownership_only {
+        Vec::new()
+    } else {
+        read_decision_files(path).unwrap_or_default()
+    };
 
     // Determine the actual owner and whether it's inherited
     let (actual_owner, is_owner_inherited) = if owner.is_empty() {
@@ -844,17 +750,10 @@ fn process_feature_directory(
     let nested_features_path = path.join("features");
     let mut nested_features = if nested_features_path.exists()
         && nested_features_path.is_dir()
-        && !is_ignored_path(&nested_features_path, ignore_paths)
+        && !filter.skips(&nested_features_path)
     {
-        list_files_recursive_impl(
-            &nested_features_path,
-            base_path,
-            changes_map,
-            Some(&actual_owner),
-            feature_metadata_map,
-            ignore_paths,
-        )
-        .unwrap_or_default()
+        list_files_recursive_impl(&nested_features_path, Some(&actual_owner), ctx)
+            .unwrap_or_default()
     } else {
         Vec::new()
     };
@@ -873,60 +772,49 @@ fn process_feature_directory(
         if entry_path.is_dir()
             && entry_name != "features" // Don't process 'features' folder twice
             && !is_documentation_directory(&entry_path)
-            && !is_ignored_path(&entry_path, ignore_paths)
+            && !filter.skips(&entry_path)
         {
-            if has_feature_flag_in_readme(&entry_path) {
+            if readmes.feature_flag(&entry_path) == Some(true) {
                 // This directory is a feature itself
-                let nested_feature = process_feature_directory(
-                    &entry_path,
-                    base_path,
-                    &entry_name,
-                    changes_map,
-                    Some(&actual_owner),
-                    feature_metadata_map,
-                    ignore_paths,
-                )?;
+                let nested_feature =
+                    process_feature_directory(&entry_path, &entry_name, Some(&actual_owner), ctx)?;
                 nested_features.push(nested_feature);
             } else {
                 // This directory is not a feature, but might contain features
                 // Recursively search for features inside it
-                let deeper_features = list_files_recursive_impl(
-                    &entry_path,
-                    base_path,
-                    changes_map,
-                    Some(&actual_owner),
-                    feature_metadata_map,
-                    ignore_paths,
-                )?;
+                let deeper_features =
+                    list_files_recursive_impl(&entry_path, Some(&actual_owner), ctx)?;
                 nested_features.extend(deeper_features);
             }
         }
     }
 
-    // Collect paths of nested features to exclude from file/line counts
-    let nested_feature_paths: Vec<String> =
-        nested_features.iter().map(|f| f.path.clone()).collect();
+    let stats = if ownership_only {
+        None
+    } else {
+        // Collect paths of nested features to exclude from file/line counts
+        let nested_feature_paths: Vec<String> =
+            nested_features.iter().map(|f| f.path.clone()).collect();
 
-    // Always compute file, line, and TODO counts
-    let files_count = count_files(path, &nested_feature_paths);
-    let lines_count = count_lines(path, &nested_feature_paths);
-    let todos_count = count_todos(path, &nested_feature_paths);
+        let mut counts = FileCounts::default();
+        count_feature_files(path, &nested_feature_paths, &filter, &mut counts);
 
-    // Compute stats from changes if available, otherwise create basic stats
-    let stats =
-        if let Some(change_stats) = compute_stats_from_changes(&changes, path, &nested_features) {
-            // If we have change stats, they already include files/lines/todos counts
-            Some(change_stats)
-        } else {
-            // No changes, but we still want to include file/line/todo counts
-            Some(Stats {
-                files_count: Some(files_count),
-                lines_count: Some(lines_count),
-                todos_count: Some(todos_count),
-                commits: std::collections::BTreeMap::new(),
-                coverage: None,
-            })
+        // Commit statistics are only available if the feature has changes
+        let commits = match (&feature_history, history) {
+            (Some(feature_history), Some(history)) if !feature_history.changes.is_empty() => {
+                compute_commit_stats(feature_history, history, &nested_features)
+            }
+            _ => BTreeMap::new(),
         };
+
+        Some(Stats {
+            files_count: Some(counts.files),
+            lines_count: Some(counts.lines),
+            todos_count: Some(counts.todos),
+            commits,
+            coverage: None,
+        })
+    };
 
     // Make path relative to base_path
     let relative_path = path
@@ -943,7 +831,7 @@ fn process_feature_directory(
         path: relative_path,
         features: nested_features,
         meta,
-        changes,
+        changes: feature_history.map(|fh| fh.changes).unwrap_or_default(),
         decisions,
         stats,
         dependencies: Vec::new(), // Will be populated in second pass
@@ -952,11 +840,8 @@ fn process_feature_directory(
 
 fn list_files_recursive_impl(
     dir: &Path,
-    base_path: &Path,
-    changes_map: Option<&HashMap<String, Vec<Change>>>,
     parent_owner: Option<&str>,
-    feature_metadata_map: &FeatureMetadataMap,
-    ignore_paths: &[PathBuf],
+    ctx: &ScanContext,
 ) -> Result<Vec<Feature>> {
     let entries = fs::read_dir(dir)
         .with_context(|| format!("could not read directory `{}`", dir.display()))?;
@@ -971,33 +856,18 @@ fn list_files_recursive_impl(
         let name = path.file_name().unwrap().to_string_lossy();
 
         if path.is_dir() {
-            if is_ignored_path(&path, ignore_paths) {
+            if ctx.filter.skips(&path) {
                 continue;
             }
 
-            if is_feature_directory(&path) {
-                let feature = process_feature_directory(
-                    &path,
-                    base_path,
-                    &name,
-                    changes_map,
-                    parent_owner,
-                    feature_metadata_map,
-                    ignore_paths,
-                )?;
+            if is_feature_directory(&path, ctx.readmes) {
+                let feature = process_feature_directory(&path, &name, parent_owner, ctx)?;
                 features.push(feature);
             } else if !is_documentation_directory(&path)
                 && !is_inside_documentation_directory(&path)
             {
                 // Recursively search for features in non-documentation subdirectories
-                let new_features = list_files_recursive_impl(
-                    &path,
-                    base_path,
-                    changes_map,
-                    parent_owner,
-                    feature_metadata_map,
-                    ignore_paths,
-                )?;
+                let new_features = list_files_recursive_impl(&path, parent_owner, ctx)?;
                 features.extend(new_features);
             }
         }
@@ -1006,11 +876,8 @@ fn list_files_recursive_impl(
     Ok(features)
 }
 
-/// Get changes for a specific path from the pre-computed changes map
-fn get_changes_for_path(
-    path: &Path,
-    changes_map: &HashMap<String, Vec<Change>>,
-) -> Result<Vec<Change>> {
+/// Get a feature's changes from the pre-computed commit history
+fn get_feature_history(path: &Path, history: &CommitHistory) -> Result<FeatureHistory> {
     // Canonicalize the path
     let canonical_path = std::fs::canonicalize(path)?;
 
@@ -1023,15 +890,22 @@ fn get_changes_for_path(
     // Convert to relative path from repo root
     let relative_path = canonical_path
         .strip_prefix(repo_workdir)
-        .context("path is not within repository")?;
-
-    let relative_path_str = relative_path.to_string_lossy().to_string();
+        .context("path is not within repository")?
+        .to_string_lossy()
+        .to_string();
 
     // Look up the changes in the map
-    Ok(changes_map
-        .get(&relative_path_str)
+    let changes = history
+        .changes_by_path
+        .get(&relative_path)
         .cloned()
-        .unwrap_or_default())
+        .unwrap_or_default();
+
+    Ok(FeatureHistory {
+        changes,
+        repo_workdir: repo_workdir.to_path_buf(),
+        relative_path,
+    })
 }
 
 #[cfg(test)]
@@ -1103,9 +977,8 @@ mod tests {
         let temp_dir = tempfile::TempDir::new().unwrap();
         write_readme(temp_dir.path(), "---\nfeature: true\n---\n\n# Feature\n");
 
-        assert_eq!(feature_flag_in_readme(temp_dir.path()), Some(true));
-        assert!(has_feature_flag_in_readme(temp_dir.path()));
-        assert!(!has_feature_false_in_readme(temp_dir.path()));
+        let readmes = ReadmeCache::default();
+        assert_eq!(readmes.feature_flag(temp_dir.path()), Some(true));
     }
 
     #[test]
@@ -1113,9 +986,8 @@ mod tests {
         let temp_dir = tempfile::TempDir::new().unwrap();
         write_readme(temp_dir.path(), "---\nfeature: false\n---\n\n# Feature\n");
 
-        assert_eq!(feature_flag_in_readme(temp_dir.path()), Some(false));
-        assert!(!has_feature_flag_in_readme(temp_dir.path()));
-        assert!(has_feature_false_in_readme(temp_dir.path()));
+        let readmes = ReadmeCache::default();
+        assert_eq!(readmes.feature_flag(temp_dir.path()), Some(false));
     }
 
     #[test]
@@ -1123,15 +995,66 @@ mod tests {
         let temp_dir = tempfile::TempDir::new().unwrap();
 
         // No README at all
-        assert_eq!(feature_flag_in_readme(temp_dir.path()), None);
-        assert!(!has_feature_flag_in_readme(temp_dir.path()));
-        assert!(!has_feature_false_in_readme(temp_dir.path()));
+        assert_eq!(ReadmeCache::default().feature_flag(temp_dir.path()), None);
 
         // README without a `feature` property
         write_readme(temp_dir.path(), "---\nowner: team\n---\n\n# Feature\n");
-        assert_eq!(feature_flag_in_readme(temp_dir.path()), None);
-        assert!(!has_feature_flag_in_readme(temp_dir.path()));
-        assert!(!has_feature_false_in_readme(temp_dir.path()));
+        assert_eq!(ReadmeCache::default().feature_flag(temp_dir.path()), None);
+    }
+
+    #[test]
+    fn test_readme_cache_reads_each_readme_once() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        write_readme(temp_dir.path(), "---\nfeature: true\n---\n\n# Feature\n");
+
+        let readmes = ReadmeCache::default();
+        assert_eq!(readmes.feature_flag(temp_dir.path()), Some(true));
+
+        // A later change on disk isn't seen, because the file isn't read again
+        write_readme(temp_dir.path(), "---\nfeature: false\n---\n\n# Feature\n");
+        assert_eq!(readmes.feature_flag(temp_dir.path()), Some(true));
+    }
+
+    #[test]
+    fn test_contains_todo() {
+        assert!(contains_todo("// TODO: fix"));
+        assert!(contains_todo("// todo: fix"));
+        assert!(contains_todo("// ToDo"));
+        assert!(contains_todo("todo"));
+        assert!(contains_todo("écrit // tOdO é"));
+        assert!(!contains_todo(""));
+        assert!(!contains_todo("tod"));
+        assert!(!contains_todo("to do"));
+    }
+
+    #[test]
+    fn test_count_feature_files() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let base = temp_dir.path();
+        fs::create_dir_all(base.join("sub")).unwrap();
+        fs::create_dir_all(base.join("docs")).unwrap();
+        fs::create_dir_all(base.join("node_modules")).unwrap();
+        fs::write(base.join("a.ts"), "// todo one\nline\n// TODO two\n").unwrap();
+        fs::write(base.join("sub/b.ts"), "todo\n").unwrap();
+        fs::write(base.join("binary"), [0xff, 0xfe]).unwrap();
+        fs::write(base.join("docs/doc.md"), "todo\n").unwrap();
+        fs::write(base.join("node_modules/c.js"), "todo\n").unwrap();
+
+        let filter = WalkFilter {
+            ignore_paths: &[],
+            include_skipped_dirs: false,
+        };
+        let mut counts = FileCounts::default();
+        count_feature_files(base, &[], &filter, &mut counts);
+        assert_eq!((counts.files, counts.lines, counts.todos), (3, 4, 3));
+
+        let filter = WalkFilter {
+            ignore_paths: &[],
+            include_skipped_dirs: true,
+        };
+        let mut counts = FileCounts::default();
+        count_feature_files(base, &[], &filter, &mut counts);
+        assert_eq!((counts.files, counts.lines, counts.todos), (4, 5, 4));
     }
 
     #[test]
@@ -1142,7 +1065,7 @@ mod tests {
         fs::create_dir_all(&feature_dir).unwrap();
 
         // No README needed: a direct subfolder of `features` is a feature by default
-        assert!(is_feature_directory(&feature_dir));
+        assert!(is_feature_directory(&feature_dir, &ReadmeCache::default()));
     }
 
     #[test]
@@ -1154,7 +1077,7 @@ mod tests {
         write_readme(&feature_dir, "---\nfeature: false\n---\n\n# My Feature\n");
 
         // Explicit `feature: false` overrides the "direct subfolder of `features`" rule
-        assert!(!is_feature_directory(&feature_dir));
+        assert!(!is_feature_directory(&feature_dir, &ReadmeCache::default()));
     }
 
     #[test]
@@ -1164,7 +1087,7 @@ mod tests {
         fs::create_dir_all(&feature_dir).unwrap();
         write_readme(&feature_dir, "---\nfeature: true\n---\n\n# Some Dir\n");
 
-        assert!(is_feature_directory(&feature_dir));
+        assert!(is_feature_directory(&feature_dir, &ReadmeCache::default()));
     }
 
     #[test]
@@ -1174,7 +1097,7 @@ mod tests {
         fs::create_dir_all(&feature_dir).unwrap();
         write_readme(&feature_dir, "---\nfeature: false\n---\n\n# Some Dir\n");
 
-        assert!(!is_feature_directory(&feature_dir));
+        assert!(!is_feature_directory(&feature_dir, &ReadmeCache::default()));
     }
 
     /// Skipping a feature via `feature: false` must keep its sub-children discoverable:
@@ -1204,7 +1127,7 @@ mod tests {
             "---\nfeature: true\nowner: child-b-owner\n---\n\n# Child B\n",
         );
 
-        let features = list_files_recursive(base, &[]).unwrap();
+        let features = list_files_recursive(base, &[], false).unwrap();
 
         // The skipped feature itself must not appear anywhere in the tree.
         fn collect_names(features: &[Feature], out: &mut Vec<String>) {

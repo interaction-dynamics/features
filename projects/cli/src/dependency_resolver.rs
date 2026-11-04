@@ -5,6 +5,7 @@
 
 use crate::import_detector::{ImportStatement, resolve_import_path};
 use crate::models::{Dependency, DependencyType};
+use crate::skip_dirs::SKIPPED_DIRS;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -96,10 +97,11 @@ fn is_nested_feature_directory(dir: &Path) -> bool {
 
 /// Check if a directory should be skipped
 fn should_skip_directory(dir_name: &str) -> bool {
-    matches!(
-        dir_name,
-        "node_modules" | "target" | "dist" | "build" | ".git" | "__pycache__" | "coverage"
-    )
+    SKIPPED_DIRS.contains(&dir_name)
+        || matches!(
+            dir_name,
+            "target" | "dist" | "build" | ".git" | "__pycache__" | "coverage"
+        )
 }
 
 /// Determine the relationship type between two features based on their paths

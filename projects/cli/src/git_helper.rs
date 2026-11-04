@@ -27,10 +27,18 @@ fn format_timestamp(time: git2::Time) -> String {
     datetime.format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
+/// The commit history of a repository, indexed for lookups by path and by commit.
+#[derive(Default)]
+pub struct CommitHistory {
+    /// Changes for each repo-relative directory, in the order they were walked
+    pub changes_by_path: HashMap<String, Vec<Change>>,
+    /// Paths affected by each commit, by commit hash
+    pub affected_paths: HashMap<String, Vec<String>>,
+}
+
 /// Get all commits for all paths in the repository at once.
-/// Returns a HashMap where keys are relative paths and values are lists of changes.
 /// This is much more efficient than calling get_commits_for_path for each path individually.
-pub fn get_all_commits_by_path(repo_path: &Path) -> Result<HashMap<String, Vec<Change>>> {
+pub fn get_all_commits_by_path(repo_path: &Path) -> Result<CommitHistory> {
     let repo = Repository::discover(repo_path).with_context(|| {
         format!(
             "failed to discover git repository at `{}`",
@@ -42,8 +50,7 @@ pub fn get_all_commits_by_path(repo_path: &Path) -> Result<HashMap<String, Vec<C
     revwalk.push_head()?;
     revwalk.set_sorting(git2::Sort::TIME)?;
 
-    // Map from path to list of changes
-    let mut path_changes: HashMap<String, Vec<Change>> = HashMap::new();
+    let mut history = CommitHistory::default();
 
     for oid in revwalk {
         let oid = oid?;
@@ -74,8 +81,8 @@ pub fn get_all_commits_by_path(repo_path: &Path) -> Result<HashMap<String, Vec<C
 
         // For each affected file path, add the change to all ancestor directories
         // This matches the behavior of commit_affects_path which uses starts_with
-        for file_path in affected_paths {
-            let path_obj = Path::new(&file_path);
+        for file_path in &affected_paths {
+            let path_obj = Path::new(file_path);
 
             // Add to all ancestor directories (not the file itself, only dirs)
             for ancestor in path_obj.ancestors().skip(1) {
@@ -84,16 +91,20 @@ pub fn get_all_commits_by_path(repo_path: &Path) -> Result<HashMap<String, Vec<C
                 }
                 let ancestor_str = ancestor.to_string_lossy().to_string();
 
-                // Only add if not already present (to avoid duplicates)
-                let changes_list = path_changes.entry(ancestor_str).or_default();
-                if !changes_list.iter().any(|c| c.hash == change.hash) {
-                    changes_list.push(change.clone());
+                // Commits arrive one at a time, so this commit can only be the last
+                // entry. If it's there, all higher ancestors already have it as well.
+                let changes_list = history.changes_by_path.entry(ancestor_str).or_default();
+                if changes_list.last().is_some_and(|c| c.hash == change.hash) {
+                    break;
                 }
+                changes_list.push(change.clone());
             }
         }
+
+        history.affected_paths.insert(change.hash, affected_paths);
     }
 
-    Ok(path_changes)
+    Ok(history)
 }
 
 /// Get all paths affected by a commit
@@ -116,14 +127,13 @@ fn get_affected_paths(repo: &Repository, commit: &git2::Commit) -> Result<Vec<St
 
     diff.foreach(
         &mut |delta, _| {
-            if let Some(path) = delta.new_file().path()
-                && let Some(path_str) = path.to_str()
-            {
+            let new_path = delta.new_file().path().and_then(|p| p.to_str());
+            if let Some(path_str) = new_path {
                 paths.push(path_str.to_string());
             }
-            if let Some(path) = delta.old_file().path()
-                && let Some(path_str) = path.to_str()
-                && !paths.contains(&path_str.to_string())
+            if let Some(path_str) = delta.old_file().path().and_then(|p| p.to_str())
+                && new_path != Some(path_str)
+                && !paths.iter().any(|p| p == path_str)
             {
                 paths.push(path_str.to_string());
             }

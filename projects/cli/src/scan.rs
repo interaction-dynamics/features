@@ -8,7 +8,9 @@ use anyhow::Result;
 use std::path::{Path, PathBuf};
 
 use crate::coverage_parser::{self, map_coverage_to_features, parse_coverage_reports};
-use crate::file_scanner::{list_files_recursive, list_files_recursive_with_changes};
+use crate::file_scanner::{
+    list_features_ownership_only, list_files_recursive, list_files_recursive_with_changes,
+};
 use crate::models::Feature;
 
 /// Configuration options for scanning features
@@ -32,6 +34,13 @@ pub struct ScanConfig<'a> {
 
     /// Paths to ignore (and all their subfolders) when scanning for features
     pub ignore_paths: Vec<PathBuf>,
+
+    /// Only resolve feature ownership (name, owner, path, nested features).
+    /// Skips git history, stats, decisions, metadata, dependencies and coverage.
+    pub ownership_only: bool,
+
+    /// Scan folders that are skipped by default (see `skip_dirs::SKIPPED_DIRS`)
+    pub include_skipped_dirs: bool,
 }
 
 impl<'a> ScanConfig<'a> {
@@ -44,6 +53,8 @@ impl<'a> ScanConfig<'a> {
             current_dir,
             project_dir: None,
             ignore_paths: Vec::new(),
+            ownership_only: false,
+            include_skipped_dirs: false,
         }
     }
 
@@ -76,6 +87,18 @@ impl<'a> ScanConfig<'a> {
         self.ignore_paths = paths;
         self
     }
+
+    /// Set whether to only resolve feature ownership (e.g. for CODEOWNERS generation)
+    pub fn ownership_only(mut self, ownership_only: bool) -> Self {
+        self.ownership_only = ownership_only;
+        self
+    }
+
+    /// Set whether to scan folders that are skipped by default
+    pub fn include_skipped_dirs(mut self, include_skipped_dirs: bool) -> Self {
+        self.include_skipped_dirs = include_skipped_dirs;
+        self
+    }
 }
 
 /// Scan features in a directory with the given configuration
@@ -104,11 +127,23 @@ impl<'a> ScanConfig<'a> {
 /// println!("Found {} features", features.len());
 /// ```
 pub fn scan_features(base_path: &Path, config: ScanConfig) -> Result<Vec<Feature>> {
+    if config.ownership_only {
+        return list_features_ownership_only(
+            base_path,
+            &config.ignore_paths,
+            config.include_skipped_dirs,
+        );
+    }
+
     // Step 1: Scan features with or without git history
     let mut features = if config.skip_changes {
-        list_files_recursive(base_path, &config.ignore_paths)?
+        list_files_recursive(base_path, &config.ignore_paths, config.include_skipped_dirs)?
     } else {
-        list_files_recursive_with_changes(base_path, &config.ignore_paths)?
+        list_files_recursive_with_changes(
+            base_path,
+            &config.ignore_paths,
+            config.include_skipped_dirs,
+        )?
     };
 
     // Step 2: Add coverage if requested
@@ -236,6 +271,8 @@ mod tests {
         assert!(!config.should_add_coverage);
         assert!(config.coverage_dir_override.is_none());
         assert!(config.project_dir.is_none());
+        assert!(!config.ownership_only);
+        assert!(!config.include_skipped_dirs);
     }
 
     #[test]
