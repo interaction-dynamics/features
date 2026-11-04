@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - uses: pnpm/action-setup@v4.2.0
+      - uses: pnpm/action-setup@v5.0.0
         name: Install pnpm
         with:
           version: 10
@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         name: Setup pnpm cache
         with:
           path: ${{ env.STORE_PATH }}
@@ -62,7 +62,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/bin/
@@ -93,7 +93,7 @@ jobs:
       # Setup Rust for building features.json and metadata.json
       - uses: dtolnay/rust-toolchain@stable
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         name: Cache Rust dependencies
         with:
           path: |
@@ -146,7 +146,7 @@ jobs:
         with:
           node-version: 22
 
-      - uses: pnpm/action-setup@v4.2.0
+      - uses: pnpm/action-setup@v5.0.0
         name: Install pnpm
         with:
           version: 10
@@ -158,7 +158,7 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         name: Setup pnpm cache
         with:
           path: ${{ env.STORE_PATH }}
@@ -180,7 +180,7 @@ jobs:
 
       - name: Upload test results 📤
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: projects/web/playwright-report/
