@@ -457,26 +457,25 @@ fn create_default_index_html() -> String {
 async fn handle_rejection(
     err: warp::Rejection,
 ) -> Result<impl warp::Reply, std::convert::Infallible> {
-    let code;
-    let message;
-
-    if err.is_not_found() {
-        code = warp::http::StatusCode::NOT_FOUND;
-        message = "NOT_FOUND";
+    let (code, message) = if err.is_not_found() {
+        (warp::http::StatusCode::NOT_FOUND, "NOT_FOUND")
     } else if err
         .find::<warp::filters::body::BodyDeserializeError>()
         .is_some()
     {
-        code = warp::http::StatusCode::BAD_REQUEST;
-        message = "BAD_REQUEST";
+        (warp::http::StatusCode::BAD_REQUEST, "BAD_REQUEST")
     } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
-        code = warp::http::StatusCode::METHOD_NOT_ALLOWED;
-        message = "METHOD_NOT_ALLOWED";
+        (
+            warp::http::StatusCode::METHOD_NOT_ALLOWED,
+            "METHOD_NOT_ALLOWED",
+        )
     } else {
         eprintln!("Unhandled rejection: {:?}", err);
-        code = warp::http::StatusCode::INTERNAL_SERVER_ERROR;
-        message = "INTERNAL_SERVER_ERROR";
-    }
+        (
+            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+            "INTERNAL_SERVER_ERROR",
+        )
+    };
 
     Ok(warp::reply::with_status(message, code))
 }
