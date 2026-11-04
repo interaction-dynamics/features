@@ -323,7 +323,8 @@ async fn main() -> Result<()> {
         let ignore_paths = resolve_ignore_paths(&args.ignore_path, &current_dir);
         let config = ScanConfig::new(&current_dir)
             .skip_changes(args.skip_changes)
-            .ignore_paths(ignore_paths);
+            .ignore_paths(ignore_paths)
+            .ownership_only(true);
 
         let features = scan_features(&base_path, config)?;
 
@@ -391,10 +392,15 @@ async fn main() -> Result<()> {
     let should_add_coverage = args.serve || args.build || args.json || args.coverage;
     let ignore_paths = resolve_ignore_paths(&args.ignore_path, &current_dir);
 
+    // CODEOWNERS only needs ownership; skip the expensive parts of the scan
+    // unless another action that uses the full feature data is requested.
+    let ownership_only = args.generate_codeowners && !args.serve && !args.build && !args.check;
+
     let mut config = ScanConfig::new(&current_dir)
         .skip_changes(args.skip_changes)
         .with_coverage(should_add_coverage)
-        .ignore_paths(ignore_paths.clone());
+        .ignore_paths(ignore_paths.clone())
+        .ownership_only(ownership_only);
 
     if let Some(ref coverage_dir) = args.coverage_dir {
         config = config.coverage_dir(coverage_dir);

@@ -49,6 +49,10 @@ fn is_direct_subfolder_of_features(dir_path: &Path) -> bool {
 /// paths passed via `--ignore-path`. Ignored directories and all their subfolders
 /// are excluded from feature detection entirely.
 fn is_ignored_path(dir_path: &Path, ignore_paths: &[PathBuf]) -> bool {
+    if ignore_paths.is_empty() {
+        return false;
+    }
+
     let Ok(canonical) = fs::canonicalize(dir_path) else {
         return false;
     };
@@ -125,19 +129,55 @@ fn is_feature_directory(dir_path: &Path) -> bool {
     has_feature_flag_in_readme(dir_path)
 }
 
+/// Inputs shared by every level of the recursive feature scan
+#[derive(Clone, Copy)]
+struct ScanContext<'a> {
+    base_path: &'a Path,
+    changes_map: Option<&'a HashMap<String, Vec<Change>>>,
+    feature_metadata_map: &'a FeatureMetadataMap,
+    ignore_paths: &'a [PathBuf],
+    /// Skip everything not needed to resolve feature ownership
+    ownership_only: bool,
+}
+
 pub fn list_files_recursive(dir: &Path, ignore_paths: &[PathBuf]) -> Result<Vec<Feature>> {
     // Scan entire base_path for feature metadata once
     let feature_metadata =
         feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
 
     // First pass: build feature structure without dependencies
-    let mut features =
-        list_files_recursive_impl(dir, dir, None, None, &feature_metadata, ignore_paths)?;
+    let ctx = ScanContext {
+        base_path: dir,
+        changes_map: None,
+        feature_metadata_map: &feature_metadata,
+        ignore_paths,
+        ownership_only: false,
+    };
+    let mut features = list_files_recursive_impl(dir, None, &ctx)?;
 
     // Second pass: scan for imports and resolve dependencies
     populate_dependencies(&mut features, dir)?;
 
     Ok(features)
+}
+
+/// Build the feature tree with only what is needed to know who owns what:
+/// name, owner, path, meta from README/FEATURES.toml and nested features.
+///
+/// Skips everything that reads source files or git history (changes, stats,
+/// decisions, feature metadata comments and dependencies), which makes it
+/// suitable for CODEOWNERS generation on large repositories.
+pub fn list_features_ownership_only(dir: &Path, ignore_paths: &[PathBuf]) -> Result<Vec<Feature>> {
+    let feature_metadata = FeatureMetadataMap::new();
+
+    let ctx = ScanContext {
+        base_path: dir,
+        changes_map: None,
+        feature_metadata_map: &feature_metadata,
+        ignore_paths,
+        ownership_only: true,
+    };
+    list_files_recursive_impl(dir, None, &ctx)
 }
 
 pub fn list_files_recursive_with_changes(
@@ -151,14 +191,14 @@ pub fn list_files_recursive_with_changes(
         feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
 
     // First pass: build feature structure without dependencies
-    let mut features = list_files_recursive_impl(
-        dir,
-        dir,
-        Some(&all_commits),
-        None,
-        &feature_metadata,
+    let ctx = ScanContext {
+        base_path: dir,
+        changes_map: Some(&all_commits),
+        feature_metadata_map: &feature_metadata,
         ignore_paths,
-    )?;
+        ownership_only: false,
+    };
+    let mut features = list_files_recursive_impl(dir, None, &ctx)?;
 
     // Second pass: scan for imports and resolve dependencies
     populate_dependencies(&mut features, dir)?;
@@ -737,13 +777,18 @@ fn extract_commit_type(title: &str) -> String {
 
 fn process_feature_directory(
     path: &Path,
-    base_path: &Path,
     name: &str,
-    changes_map: Option<&HashMap<String, Vec<Change>>>,
     parent_owner: Option<&str>,
-    feature_metadata_map: &FeatureMetadataMap,
-    ignore_paths: &[PathBuf],
+    ctx: &ScanContext,
 ) -> Result<Feature> {
+    let ScanContext {
+        base_path,
+        changes_map,
+        feature_metadata_map,
+        ignore_paths,
+        ownership_only,
+    } = *ctx;
+
     // First try to find and read FEATURES.toml file
     let (title, owner, description, mut meta) = if let Some(toml_path) = find_features_toml(path) {
         if let Ok(toml_data) = read_features_toml(&toml_path) {
@@ -827,7 +872,11 @@ fn process_feature_directory(
     };
 
     // Always include decisions regardless of include_changes flag
-    let decisions = read_decision_files(path).unwrap_or_default();
+    let decisions = if ownership_only {
+        Vec::new()
+    } else {
+        read_decision_files(path).unwrap_or_default()
+    };
 
     // Determine the actual owner and whether it's inherited
     let (actual_owner, is_owner_inherited) = if owner.is_empty() {
@@ -846,15 +895,8 @@ fn process_feature_directory(
         && nested_features_path.is_dir()
         && !is_ignored_path(&nested_features_path, ignore_paths)
     {
-        list_files_recursive_impl(
-            &nested_features_path,
-            base_path,
-            changes_map,
-            Some(&actual_owner),
-            feature_metadata_map,
-            ignore_paths,
-        )
-        .unwrap_or_default()
+        list_files_recursive_impl(&nested_features_path, Some(&actual_owner), ctx)
+            .unwrap_or_default()
     } else {
         Vec::new()
     };
@@ -877,56 +919,40 @@ fn process_feature_directory(
         {
             if has_feature_flag_in_readme(&entry_path) {
                 // This directory is a feature itself
-                let nested_feature = process_feature_directory(
-                    &entry_path,
-                    base_path,
-                    &entry_name,
-                    changes_map,
-                    Some(&actual_owner),
-                    feature_metadata_map,
-                    ignore_paths,
-                )?;
+                let nested_feature =
+                    process_feature_directory(&entry_path, &entry_name, Some(&actual_owner), ctx)?;
                 nested_features.push(nested_feature);
             } else {
                 // This directory is not a feature, but might contain features
                 // Recursively search for features inside it
-                let deeper_features = list_files_recursive_impl(
-                    &entry_path,
-                    base_path,
-                    changes_map,
-                    Some(&actual_owner),
-                    feature_metadata_map,
-                    ignore_paths,
-                )?;
+                let deeper_features =
+                    list_files_recursive_impl(&entry_path, Some(&actual_owner), ctx)?;
                 nested_features.extend(deeper_features);
             }
         }
     }
 
-    // Collect paths of nested features to exclude from file/line counts
-    let nested_feature_paths: Vec<String> =
-        nested_features.iter().map(|f| f.path.clone()).collect();
-
-    // Always compute file, line, and TODO counts
-    let files_count = count_files(path, &nested_feature_paths);
-    let lines_count = count_lines(path, &nested_feature_paths);
-    let todos_count = count_todos(path, &nested_feature_paths);
-
     // Compute stats from changes if available, otherwise create basic stats
-    let stats =
-        if let Some(change_stats) = compute_stats_from_changes(&changes, path, &nested_features) {
-            // If we have change stats, they already include files/lines/todos counts
-            Some(change_stats)
-        } else {
-            // No changes, but we still want to include file/line/todo counts
-            Some(Stats {
-                files_count: Some(files_count),
-                lines_count: Some(lines_count),
-                todos_count: Some(todos_count),
-                commits: std::collections::BTreeMap::new(),
-                coverage: None,
-            })
-        };
+    let stats = if ownership_only {
+        None
+    } else if let Some(change_stats) = compute_stats_from_changes(&changes, path, &nested_features)
+    {
+        // If we have change stats, they already include files/lines/todos counts
+        Some(change_stats)
+    } else {
+        // Collect paths of nested features to exclude from file/line counts
+        let nested_feature_paths: Vec<String> =
+            nested_features.iter().map(|f| f.path.clone()).collect();
+
+        // No changes, but we still want to include file/line/todo counts
+        Some(Stats {
+            files_count: Some(count_files(path, &nested_feature_paths)),
+            lines_count: Some(count_lines(path, &nested_feature_paths)),
+            todos_count: Some(count_todos(path, &nested_feature_paths)),
+            commits: std::collections::BTreeMap::new(),
+            coverage: None,
+        })
+    };
 
     // Make path relative to base_path
     let relative_path = path
@@ -952,12 +978,11 @@ fn process_feature_directory(
 
 fn list_files_recursive_impl(
     dir: &Path,
-    base_path: &Path,
-    changes_map: Option<&HashMap<String, Vec<Change>>>,
     parent_owner: Option<&str>,
-    feature_metadata_map: &FeatureMetadataMap,
-    ignore_paths: &[PathBuf],
+    ctx: &ScanContext,
 ) -> Result<Vec<Feature>> {
+    let ignore_paths = ctx.ignore_paths;
+
     let entries = fs::read_dir(dir)
         .with_context(|| format!("could not read directory `{}`", dir.display()))?;
 
@@ -976,28 +1001,13 @@ fn list_files_recursive_impl(
             }
 
             if is_feature_directory(&path) {
-                let feature = process_feature_directory(
-                    &path,
-                    base_path,
-                    &name,
-                    changes_map,
-                    parent_owner,
-                    feature_metadata_map,
-                    ignore_paths,
-                )?;
+                let feature = process_feature_directory(&path, &name, parent_owner, ctx)?;
                 features.push(feature);
             } else if !is_documentation_directory(&path)
                 && !is_inside_documentation_directory(&path)
             {
                 // Recursively search for features in non-documentation subdirectories
-                let new_features = list_files_recursive_impl(
-                    &path,
-                    base_path,
-                    changes_map,
-                    parent_owner,
-                    feature_metadata_map,
-                    ignore_paths,
-                )?;
+                let new_features = list_files_recursive_impl(&path, parent_owner, ctx)?;
                 features.extend(new_features);
             }
         }
