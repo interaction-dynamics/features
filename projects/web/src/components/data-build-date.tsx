@@ -1,5 +1,6 @@
 import { useMetadata } from '@/hooks/use-metadata'
-import { formatDateTime } from '@/lib/format-date'
+import { formatDate, formatDateTime } from '@/lib/format-date'
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
 export function DataBuildDate() {
   const { metadata } = useMetadata()
@@ -9,11 +10,13 @@ export function DataBuildDate() {
   if (!builtAt) return null
 
   return (
-    <time
-      dateTime={builtAt}
-      className="hidden md:inline text-muted-foreground text-xs whitespace-nowrap"
-    >
-      Data built {formatDateTime(builtAt)}
-    </time>
+    <Tooltip>
+      <TooltipTrigger className="hidden md:inline text-muted-foreground text-xs whitespace-nowrap">
+        <time dateTime={builtAt}>Data built {formatDate(builtAt)}</time>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={8}>
+        {formatDateTime(builtAt)}
+      </TooltipContent>
+    </Tooltip>
   )
 }
