@@ -18,6 +18,7 @@ use tokio::sync::RwLock;
 use tokio::time::sleep;
 use warp::{Filter, Reply};
 
+use crate::build::current_build_timestamp;
 use crate::file_scanner::list_files_recursive_with_changes;
 use crate::git_helper::get_repository_url;
 use crate::models::Feature;
@@ -124,6 +125,9 @@ pub async fn serve_features_with_config_and_watching(
     // Create shared state for features
     let features_data = Arc::new(RwLock::new(features.to_vec()));
 
+    // When the features data was last built, refreshed by the file watcher
+    let built_at = Arc::new(RwLock::new(current_build_timestamp()));
+
     // Get repository URL from git config
     let repository_url = watch_path
         .as_ref()
@@ -132,11 +136,13 @@ pub async fn serve_features_with_config_and_watching(
     // Set up file watching if watch_path is provided
     if let Some(ref path) = watch_path {
         let features_data_clone = Arc::clone(&features_data);
+        let built_at_clone = Arc::clone(&built_at);
         let watch_path_clone = path.clone();
 
         tokio::spawn(async move {
             if let Err(e) = setup_file_watcher(
                 features_data_clone,
+                built_at_clone,
                 watch_path_clone,
                 ignore_paths,
                 include_skipped_dirs,
@@ -177,10 +183,13 @@ pub async fn serve_features_with_config_and_watching(
         .and(warp::get())
         .and_then(move || {
             let repo_url = repository_url.clone();
+            let built_at = Arc::clone(&built_at);
             async move {
+                let built_at = built_at.read().await.clone();
                 let mut metadata = serde_json::json!({
                     "version": env!("CARGO_PKG_VERSION"),
-                    "skipChanges": skip_changes
+                    "skipChanges": skip_changes,
+                    "builtAt": built_at
                 });
 
                 // Add repository URL if available
@@ -242,6 +251,7 @@ pub async fn serve_features_with_config_and_watching(
 /// Sets up file system watching for the specified path.
 async fn setup_file_watcher(
     features_data: Arc<RwLock<Vec<Feature>>>,
+    built_at: Arc<RwLock<String>>,
     watch_path: PathBuf,
     ignore_paths: Vec<PathBuf>,
     include_skipped_dirs: bool,
@@ -294,6 +304,7 @@ async fn setup_file_watcher(
                 Ok(new_features) => {
                     let mut features = features_data.write().await;
                     *features = new_features;
+                    *built_at.write().await = current_build_timestamp();
                     println!("✅ Features updated successfully");
                 }
                 Err(e) => {

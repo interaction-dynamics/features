@@ -65,7 +65,7 @@ impl BuildConfig {
 /// The build directory will contain:
 /// * All static files from the embedded public directory
 /// * `features.json` - Generated features data
-/// * `metadata.json` - Generated metadata with version and skipChanges flag
+/// * `metadata.json` - Generated metadata with version, skipChanges flag and data build date
 ///
 /// # Example
 ///
@@ -175,13 +175,19 @@ async fn generate_features_json(features: &[Feature], output_dir: &Path) -> Resu
     Ok(())
 }
 
+/// Returns the current time in the format used for `builtAt` in metadata.json
+pub fn current_build_timestamp() -> String {
+    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+}
+
 /// Generates the metadata.json file
 async fn generate_metadata_json(output_dir: &Path, skip_changes: bool) -> Result<()> {
     println!("Generating metadata.json...");
 
     let metadata = serde_json::json!({
         "version": env!("CARGO_PKG_VERSION"),
-        "skipChanges": skip_changes
+        "skipChanges": skip_changes,
+        "builtAt": current_build_timestamp()
     });
 
     let metadata_json = serde_json::to_string_pretty(&metadata)
@@ -193,4 +199,26 @@ async fn generate_metadata_json(output_dir: &Path, skip_changes: bool) -> Result
     println!("  Created: {}", metadata_path.display());
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn metadata_json_contains_data_build_date() {
+        let output_dir = tempfile::tempdir().unwrap();
+
+        generate_metadata_json(output_dir.path(), false)
+            .await
+            .unwrap();
+
+        let content = fs::read_to_string(output_dir.path().join("metadata.json"))
+            .await
+            .unwrap();
+        let metadata: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let built_at = metadata["builtAt"].as_str().unwrap();
+
+        assert!(chrono::DateTime::parse_from_rfc3339(built_at).is_ok());
+    }
 }
