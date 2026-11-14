@@ -264,91 +264,138 @@ const owners = (): Node[] => {
 }
 
 /**
- * Intent kept in the repository: a chip and its datasheets standing behind
- * it, the spec in front with its task progress, older decision records
- * behind, the superseded one at the back. In a loop, the next task of the
- * spec gets done.
+ * Intent kept in the repository: every feature is a chip in its folder,
+ * its own datasheets standing right behind it and wired to it: decision
+ * records, the spec in front, a superseded record dashed at the back. In a
+ * loop, the next task of the middle feature's spec gets done.
  */
 const specs = (): Node[] => {
-  const width = 6.4
-  const thickness = 0.12
-  const sheets: { height: number; stroke: Stroke; dashed?: boolean }[] = [
-    { height: 3.4, stroke: 'faint', dashed: true },
-    { height: 2.9, stroke: 'base' },
-    { height: 2.4, stroke: 'base' },
-    { height: 1.9, stroke: 'strong' },
+  const width = 2.2
+  const thickness = 0.1
+  const spacing = 0.55
+  const pitch = 3.2
+  const chipAt = 2.0
+  type Sheet = { height: number; stroke: Stroke; dashed?: boolean }
+  const features: { owner: Owner; sheets: Sheet[]; focus?: boolean }[] = [
+    {
+      owner: 'b',
+      sheets: [
+        { height: 2.2, stroke: 'base' },
+        { height: 1.7, stroke: 'base' },
+      ],
+    },
+    {
+      owner: 'a',
+      focus: true,
+      sheets: [
+        { height: 2.8, stroke: 'faint', dashed: true },
+        { height: 2.3, stroke: 'base' },
+        { height: 1.8, stroke: 'strong' },
+      ],
+    },
+    {
+      owner: 'c',
+      sheets: [
+        { height: 2.0, stroke: 'base' },
+        { height: 1.6, stroke: 'base' },
+      ],
+    },
   ]
-  const spacing = 0.7
-  const front = (sheets.length - 1) * spacing + thickness
   const nodes: Node[] = []
 
-  // The trace from the chip to its datasheets, under everything else.
-  nodes.push(
-    group(
-      [
-        line(
-          [
-            [6.9, 2.7, 0],
-            [3.2, 2.7, 0],
-            [3.2, front, 0],
-          ],
-          { dashed: true, anim: 'anim-iso-flow' },
-        ),
-      ],
-      { anim: 'anim-iso-fade', delay: 1200 },
-    ),
-  )
+  features.forEach(({ owner, sheets, focus }, column) => {
+    const x = column * pitch
+    const delay = 150 + column * 250
+    const back = chipAt - 0.45 - (sheets.length - 1) * spacing - thickness
+    const front = back + (sheets.length - 1) * spacing + thickness
 
-  sheets.forEach(({ height, stroke, dashed }, index) =>
+    // The folder of the feature, around its chip and its datasheets.
     nodes.push(
       group(
-        box([0, index * spacing, 0], [width, thickness, height], {
-          stroke,
-          dashed,
-        }),
-        {
-          anim: 'anim-iso-drop',
-          delay: 150 + index * 120,
-        },
+        [
+          rect(
+            [x - 0.35, back - 0.35, 0],
+            [width + 0.7, chipAt + width + 0.35 - back + 0.35],
+            {
+              stroke: 'faint',
+              dashed: true,
+            },
+          ),
+        ],
+        { anim: 'anim-iso-fade', delay },
       ),
-    ),
-  )
+      // The trace from the chip to its datasheets.
+      group(
+        [
+          line(
+            [
+              [x + width / 2, chipAt, 0],
+              [x + width / 2, front, 0],
+            ],
+            { dashed: true, anim: 'anim-iso-flow' },
+          ),
+        ],
+        { anim: 'anim-iso-fade', delay: delay + 700 },
+      ),
+    )
 
-  // On the face of the spec: its title, then its tasks, half done.
-  const progress = 0.5
-  nodes.push(
-    group(
-      [
-        textLine([0.6, front, 1.45], 3.2, { stroke: 'base' }),
-        textLine([0.6, front, 1.05], 4.2),
-        textLine([0.6, front, progress], 5.2),
-      ],
-      { anim: 'anim-iso-fade', delay: 750 },
-    ),
-    textLine([0.6, front, progress], 2.6, {
-      stroke: 'strong',
-      draw: true,
-      anim: 'anim-iso-draw',
-      delay: 1000,
-    }),
-    textLine([3.2, front, progress], 1.2, {
-      stroke: 'strong',
-      draw: true,
-      anim: 'anim-iso-tick',
-      delay: 2600,
-    }),
-  )
+    // The datasheets, back to front.
+    sheets.forEach(({ height, stroke, dashed }, index) =>
+      nodes.push(
+        group(
+          box([x, back + index * spacing, 0], [width, thickness, height], {
+            stroke,
+            dashed,
+          }),
+          {
+            anim: 'anim-iso-drop',
+            delay: delay + 100 + index * 100,
+          },
+        ),
+      ),
+    )
 
-  // The chip the datasheets describe.
-  nodes.push(
-    group(
-      [
-        ...slab([7.0, 1.0, 0], [2.6, 2.6, 0.7], { pins: true, top: 'strong' }),
-        mark([8.3, 2.3, 0.7], 'a', 0.3),
-      ],
-      { anim: 'anim-iso-drop', delay: 650 },
-    ),
-  )
+    // On the face of the spec: its title, then its tasks, half done.
+    if (focus) {
+      const progress = 0.45
+      nodes.push(
+        group(
+          [
+            textLine([x + 0.3, front, 1.3], 1.3, { stroke: 'base' }),
+            textLine([x + 0.3, front, 0.95], 1.6),
+            textLine([x + 0.3, front, progress], 1.6),
+          ],
+          { anim: 'anim-iso-fade', delay: delay + 500 },
+        ),
+        textLine([x + 0.3, front, progress], 0.8, {
+          stroke: 'strong',
+          draw: true,
+          anim: 'anim-iso-draw',
+          delay: delay + 700,
+        }),
+        textLine([x + 1.1, front, progress], 0.4, {
+          stroke: 'strong',
+          draw: true,
+          anim: 'anim-iso-tick',
+          delay: 2600,
+        }),
+      )
+    }
+
+    // The chip, in front of its datasheets.
+    nodes.push(
+      group(
+        [
+          ...slab([x, chipAt, 0], [width, width, 0.6], {
+            pins: true,
+            top: focus ? 'strong' : 'base',
+          }),
+          mark([x + width / 2, chipAt + width / 2, 0.6], owner, 0.28),
+        ],
+        { anim: 'anim-iso-drop', delay: delay + 400 },
+      ),
+    )
+  })
   return nodes
 }
 

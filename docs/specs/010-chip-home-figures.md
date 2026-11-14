@@ -14,7 +14,7 @@ The three isometric figures of the "Built for the age of AI" section were drawn 
 - A few large objects per figure with rounded corners, thin lines and almost no text; chips show their legs as a dotted band along the bottom.
 - FIG 0.1 (Every feature, mapped): the layers of a board stacked with gaps and dotted corner guides, the chip on top printed with a 3×3 grid of features. In a loop, features are picked one by one and stand out of the grid.
 - FIG 0.2 (Owned and connected): four chips of different heights side by side, each marked with its owner (dot, ring or square). A pull request hovers over the chip it changes, tied to it by dotted lines. In a loop, the change pings, then the chips importing it.
-- FIG 0.3 (Intent kept in the repository): datasheets standing in a row, the superseded one dashed at the back, decision records, the spec in front with its title and task progress; the chip they describe beside them, wired to them by a flowing trace. In a loop, the next task of the spec gets done.
+- FIG 0.3 (Intent kept in the repository): specs mapped to features. Three features, each a chip inside its dashed folder footprint, with its own datasheets standing right behind it and wired to it. The middle feature carries a superseded record (dashed, at the back), a decision record, and its spec in front with its title and task progress. In a loop, the next task of that spec gets done.
 - The three figures have a similar visual weight in their 224×176 frame.
 - Same monochrome strokes, animation classes and reveal-on-scroll behavior as before; the final state stays readable without animations.
 
