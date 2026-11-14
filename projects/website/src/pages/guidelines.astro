@@ -92,43 +92,43 @@ const flagged: TreeNode[] = [
 const rules = [
   {
     level: 'MUST',
-    color: 'text-magenta border-magenta/40 bg-magenta/10',
+    color: 'text-accent-2 border-accent-2/40 bg-accent-2/10',
     text: 'Create features in a features folder, or add feature: true to the README front matter.',
     example: 'features/feature-1/',
   },
   {
     level: 'MUST',
-    color: 'text-magenta border-magenta/40 bg-magenta/10',
+    color: 'text-accent-2 border-accent-2/40 bg-accent-2/10',
     text: 'Put the code related to the feature inside the feature folder.',
     example: 'feature-1/file.js',
   },
   {
     level: 'SHOULD',
-    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    color: 'text-accent border-accent/40 bg-accent/10',
     text: 'Add a README.md or README.mdx file into the feature folder.',
     example: 'features/feature-1/README.md',
   },
   {
     level: 'SHOULD',
-    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    color: 'text-accent border-accent/40 bg-accent/10',
     text: 'Add a line of text describing the feature right after the README title.',
     example: 'Handles user login and logout',
   },
   {
     level: 'SHOULD',
-    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    color: 'text-accent border-accent/40 bg-accent/10',
     text: 'Add front matter to the README with an owner property.',
     example: 'owner: backend-team',
   },
   {
     level: 'MAY',
-    color: 'text-lime border-lime/40 bg-lime/10',
+    color: 'text-accent-3 border-accent-3/40 bg-accent-3/10',
     text: 'Add any other properties you want to the front matter.',
     example: 'figma: <url>',
   },
   {
     level: 'MAY',
-    color: 'text-lime border-lime/40 bg-lime/10',
+    color: 'text-accent-3 border-accent-3/40 bg-accent-3/10',
     text: 'Add MADR decision records into the feature decisions folder.',
     example: '__docs__/decisions/001-use-jwt-tokens.md',
   },
@@ -327,9 +327,9 @@ const howTo = {
     lead="Special comments attach metadata to a feature from anywhere in the codebase. The metadata key becomes a tab in the web UI, and properties are free-form key-value pairs."
   >
     <div class="card mb-6 p-5 font-mono text-sm">
-      <span class="text-muted">--feature-</span><span class="text-magenta">&lt;metadata-key&gt;</span>
-      <span class="text-cyan">feature:</span><span class="text-text">&lt;feature-folder-basename&gt;</span><span class="text-muted">,</span>
-      <span class="text-lime">property:</span> <span class="text-text">value</span><span class="text-muted">, ...</span>
+      <span class="text-muted">--feature-</span><span class="text-accent-2">&lt;metadata-key&gt;</span>
+      <span class="text-accent">feature:</span><span class="text-text">&lt;feature-folder-basename&gt;</span><span class="text-muted">,</span>
+      <span class="text-accent-3">property:</span> <span class="text-text">value</span><span class="text-muted">, ...</span>
       <p class="mt-3 font-sans text-xs text-muted">
         <code>feature:</code> is optional when the comment is already inside the feature folder.
       </p>

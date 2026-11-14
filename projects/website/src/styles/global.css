@@ -1,21 +1,25 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @theme {
-  --color-ink: #0b0f17;
-  --color-surface: #121826;
-  --color-surface-2: #1a202c;
-  --color-line: #263044;
-  --color-text: #e7ecf3;
-  --color-muted: #9aa6b8;
-  --color-magenta: #ff3df2;
-  --color-cyan: #2ef2ff;
-  --color-lime: #e8ff3a;
+  /* Monochrome palette, in the spirit of Linear: near-black, off-white and grays. */
+  --color-ink: #08090a;
+  --color-surface: #0f1011;
+  --color-surface-2: #161718;
+  --color-line: #23252a;
+  --color-text: #f7f8f8;
+  --color-muted: #8a8f98;
+  /* Three gray levels replace the old neon trio for emphasis and data series. */
+  --color-accent: #edeef0;
+  --color-accent-2: #b4b8c0;
+  --color-accent-3: #80858e;
+  /* Same light falloff as the logo. */
+  --color-gradient-from: #f9f9f9;
+  --color-gradient-to: #b3b3b3;
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
   --font-mono:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono',
     monospace;
 }
 
@@ -32,49 +36,39 @@ html {
 body {
   background:
     radial-gradient(
-      60rem 30rem at 85% -10%,
-      color-mix(in oklab, var(--color-magenta) 14%, transparent),
+      60rem 30rem at 50% -10%,
+      color-mix(in oklab, var(--color-text) 6%, transparent),
       transparent 70%
     ),
-    radial-gradient(
-      50rem 30rem at -10% 10%,
-      color-mix(in oklab, var(--color-cyan) 10%, transparent),
-      transparent 70%
-    ), var(--color-ink);
+    var(--color-ink);
   background-repeat: no-repeat;
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @utility text-gradient {
   background-image: linear-gradient(
-    120deg,
-    var(--color-magenta),
-    var(--color-cyan) 55%,
-    var(--color-lime)
+    180deg,
+    var(--color-gradient-from),
+    var(--color-gradient-to)
   );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @utility bg-gradient-brand {
   background-image: linear-gradient(
-    120deg,
-    var(--color-magenta),
-    var(--color-cyan) 55%,
-    var(--color-lime)
+    180deg,
+    var(--color-gradient-from),
+    var(--color-gradient-to)
   );
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @utility card {
   border: 1px solid var(--color-line);
   background: color-mix(in oklab, var(--color-surface) 85%, transparent);
   border-radius: 1rem;
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @utility grid-bg {
   background-image:
     linear-gradient(var(--color-line) 1px, transparent 1px),
@@ -90,19 +84,19 @@ body {
 
 .prose-site a,
 a.link {
-  color: var(--color-cyan);
+  color: var(--color-accent);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-color: color-mix(
     in oklab,
-    var(--color-cyan) 40%,
+    var(--color-accent) 40%,
     transparent
   );
 }
 
 .prose-site a:hover,
 a.link:hover {
-  text-decoration-color: var(--color-cyan);
+  text-decoration-color: var(--color-accent);
 }
 
 code:not(pre code) {
@@ -130,7 +124,7 @@ pre.astro-code {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-cyan);
+  outline: 2px solid var(--color-accent);
   outline-offset: 3px;
   border-radius: 4px;
 }

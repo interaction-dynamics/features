@@ -31,7 +31,7 @@ use std::path::Path;
 
 use crate::coverage_parser::CoverageStats;
 use crate::feature_key::slugify_key;
-use crate::models::{Change, Dependency, Stats};
+use crate::models::{Change, Dependency, Record, Stats};
 
 /// A feature as found in a features JSON report, or as produced by the aggregation.
 ///
@@ -53,6 +53,7 @@ pub struct AggregatedFeature {
     pub links: BTreeMap<String, String>,
     pub changes: Vec<Change>,
     pub decisions: Vec<String>,
+    pub records: Vec<Record>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats: Option<Stats>,
     pub dependencies: Vec<Dependency>,
@@ -627,6 +628,19 @@ fn merge_occurrences(key: &NodeKey, ctx: &BuildContext<'_>) -> AggregatedFeature
         }
     }
 
+    // Records with the same path in several repositories are the same record
+    let mut records: Vec<Record> = Vec::new();
+    for occurrence in &members {
+        for record in &occurrence.feature.records {
+            if !records
+                .iter()
+                .any(|r| r.path == record.path && r.id == record.id)
+            {
+                records.push(record.clone());
+            }
+        }
+    }
+
     let dependencies = members
         .iter()
         .flat_map(|o| {
@@ -662,6 +676,7 @@ fn merge_occurrences(key: &NodeKey, ctx: &BuildContext<'_>) -> AggregatedFeature
         links,
         changes,
         decisions,
+        records,
         stats,
         dependencies,
         external,

@@ -34,9 +34,9 @@ const rows = flatten(nodes)
 const colors: Record<NonNullable<TreeNode['kind']>, string> = {
   folder: 'text-text',
   file: 'text-muted',
-  feature: 'text-cyan font-semibold',
-  features: 'text-magenta font-semibold',
-  readme: 'text-lime',
+  feature: 'text-accent font-semibold',
+  features: 'text-accent-2 font-semibold',
+  readme: 'text-accent-3',
 }
 ---
 
@@ -55,7 +55,7 @@ const colors: Record<NonNullable<TreeNode['kind']>, string> = {
           <span class="whitespace-pre text-line" aria-hidden="true">{prefix}</span>
           <span class={colors[node.kind ?? (node.children ? 'folder' : 'file')]}>{`${node.name}${node.children ? '/' : ''}`}</span>
           {node.owner && (
-            <span class="ml-3 rounded-full border border-cyan/40 bg-cyan/10 px-2 font-sans text-[0.7rem] leading-5 text-cyan">
+            <span class="ml-3 rounded-full border border-accent/40 bg-accent/10 px-2 font-sans text-[0.7rem] leading-5 text-accent">
               owner: {node.owner}
             </span>
           )}

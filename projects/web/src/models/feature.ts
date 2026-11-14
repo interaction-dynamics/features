@@ -60,6 +60,54 @@ export type FeatureRepository = {
   path: string
 }
 
+export type RecordKind = 'spec' | 'decision'
+
+export type RecordLinks = {
+  /** Related decisions (`decisions:` frontmatter, mostly on specs) */
+  decisions: string[]
+  /** Related specs (`spec:` / `specs:` frontmatter, mostly on decisions) */
+  specs: string[]
+  /** Records this one replaces */
+  supersedes: string[]
+  /** Records replacing this one */
+  superseded_by: string[]
+}
+
+export type RecordFile = {
+  name: string
+  path: string
+  content: string
+}
+
+/**
+ * A spec or a decision record read from a `specs`, `decisions` or `adr`
+ * folder. Named `FeatureRecord` to avoid shadowing TypeScript's `Record`.
+ */
+export type FeatureRecord = {
+  kind: RecordKind
+  /** File stem, or folder name for a folder record (e.g. `002-use-jwt`) */
+  id: string
+  title: string
+  /** Lowercased status: draft, proposed, accepted, implemented, superseded... */
+  status?: string
+  date?: string
+  /** Path of the main file, relative to the scanned folder */
+  path: string
+  /** Markdown of the main file, without its frontmatter */
+  content: string
+  /** Other markdown files of a folder record (plan.md, tasks.md...) */
+  files?: RecordFile[]
+  links: RecordLinks
+  tasks?: { done: number; total: number }
+  /** Feature a project-level record is attached to (`feature:` frontmatter) */
+  feature?: string
+}
+
+/** records.json: the project-level records (`features serve` / `build`) */
+export type ProjectRecords = {
+  records: FeatureRecord[]
+}
+
 /** Value of a metric imported from an external tool with `--data` */
 export type ExternalValue = string | number | boolean
 
@@ -80,6 +128,8 @@ export type Feature = {
   parent?: Feature
   changes: Change[]
   decisions: string[]
+  /** Specs and decision records; missing in reports from older versions */
+  records?: FeatureRecord[]
   stats?: Stats
   dependencies: Dependency[]
   /** Only set on aggregated reports (`features --aggregate`) */
@@ -164,6 +214,37 @@ export const DependencySchema: z.ZodType<Dependency> = z.object({
   type: z.enum(['parent', 'child', 'sibling']),
 })
 
+export const RecordLinksSchema: z.ZodType<RecordLinks> = z.object({
+  decisions: z.array(z.string()),
+  specs: z.array(z.string()),
+  supersedes: z.array(z.string()),
+  superseded_by: z.array(z.string()),
+})
+
+export const RecordFileSchema: z.ZodType<RecordFile> = z.object({
+  name: z.string(),
+  path: z.string(),
+  content: z.string(),
+})
+
+export const FeatureRecordSchema: z.ZodType<FeatureRecord> = z.object({
+  kind: z.enum(['spec', 'decision']),
+  id: z.string(),
+  title: z.string(),
+  status: z.string().optional(),
+  date: z.string().optional(),
+  path: z.string(),
+  content: z.string(),
+  files: z.array(RecordFileSchema).optional(),
+  links: RecordLinksSchema,
+  tasks: z.object({ done: z.number(), total: z.number() }).optional(),
+  feature: z.string().optional(),
+})
+
+export const ProjectRecordsSchema: z.ZodType<ProjectRecords> = z.object({
+  records: z.array(FeatureRecordSchema),
+})
+
 export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
   z.object({
     name: z.string(),
@@ -181,6 +262,7 @@ export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
     parent: FeatureSchema.optional(),
     changes: z.array(ChangeSchema),
     decisions: z.array(z.string()),
+    records: z.array(FeatureRecordSchema).optional(),
     stats: StatsSchema.optional(),
     dependencies: z.array(DependencySchema),
     repositories: z

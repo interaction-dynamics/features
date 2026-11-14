@@ -31,7 +31,6 @@ import { formatDate } from '@/lib/format-date'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import { cn } from '@/lib/utils'
 import type { Feature } from '@/models/feature'
-
 import { DependenciesCell } from './dependencies-cell'
 
 type FeatureInsightsTableProps = {

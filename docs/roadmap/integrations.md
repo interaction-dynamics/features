@@ -37,7 +37,7 @@ Every inbound integration needs one of these matching strategies, from most to l
 
 ## Phase 0: foundations (no network)
 
-These items unblock everything else and keep the CLI offline. ✅ = shipped, see [spec 002](../specs/002-feature-key-links-and-data-import.md).
+These items unblock everything else and keep the CLI offline. ✅ = shipped, see [spec 004](../specs/004-feature-key-links-and-data-import.md).
 
 | Item | What it does | Value | Effort |
 | ---- | ------------ | ----- | ------ |

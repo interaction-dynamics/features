@@ -15,7 +15,7 @@ If `features` isn't installed, use `npx features-cli@latest` in place of `featur
 features scan PATH --json --skip-changes > "${TMPDIR:-/tmp}/features.json"
 ```
 
-`PATH` is the source root (e.g. `./src`). The **explore-features** skill explains how to read this report without loading it all at once (`scripts/feature_map.py` prints a compact index). The report is a tree of features, each with `name`, `path`, `owner`, `is_owner_inherited`, `description`, nested `features`, `decisions`, `stats` (`files_count`, `lines_count`, `todos_count`) and `dependencies` (imports into other features, typed `parent`, `child` or `sibling`). An empty array means no feature exists yet.
+`PATH` is the source root (e.g. `./src`). The **explore-features** skill explains how to read this report without loading it all at once (`scripts/feature_map.py` prints a compact index). The report is a tree of features, each with `name`, `path`, `owner`, `is_owner_inherited`, `description`, nested `features`, `decisions` (raw markdown), `records` (specs and decision records with `kind`, `id`, `title`, `status`, `date`, `links`, `tasks`), `stats` (`files_count`, `lines_count`, `todos_count`) and `dependencies` (imports into other features, typed `parent`, `child` or `sibling`). An empty array means no feature exists yet.
 
 Keep existing features: extend them rather than replacing them, unless the user asks.
 
