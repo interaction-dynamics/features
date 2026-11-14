@@ -145,19 +145,6 @@ export const circle = (
   stroke: options.stroke ?? 'base',
 })
 
-/** A flat polygon on the plane z, from points given relative to (x, y). */
-export const shape = (
-  [x, y, z]: Point3,
-  points: [number, number][],
-  options: ShapeOptions & { fill?: Fill } = {},
-): Shape => ({
-  ...options,
-  kind: 'polygon',
-  fill: options.fill ?? 'none',
-  stroke: options.stroke ?? 'base',
-  points: points.map(([dx, dy]): Point3 => [x + dx, y + dy, z]),
-})
-
 /**
  * A short cylinder standing on the plane z, like a node of a graph: its
  * visible side (the front half of the bottom circle up to the top circle),
