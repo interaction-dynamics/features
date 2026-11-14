@@ -1,6 +1,6 @@
 // Captures screenshots of the live dashboard demo into public/screenshots.
 //
-// Uses Playwright from the dashboard project (projects/web), so run `pnpm install`
+// Uses Playwright from the dashboard project (projects/web), so run `bun install`
 // there first. Then, from projects/website:
 //
 //   node scripts/capture-screenshots.mjs [demo-url]

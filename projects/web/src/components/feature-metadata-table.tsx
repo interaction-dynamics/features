@@ -57,7 +57,7 @@ export function FeatureMetadataTable({
           </TableHeader>
           <TableBody>
             {data.map((item, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: we have no other option
+              // oxlint-disable-next-line react/no-array-index-key -- we have no other option
               <TableRow key={index}>
                 {allKeys.map((key) => (
                   <TableCell key={key} className="py-3">

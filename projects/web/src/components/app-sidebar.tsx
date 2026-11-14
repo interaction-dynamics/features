@@ -2,7 +2,6 @@ import { BarChart3, ScrollText, TriangleAlert } from 'lucide-react'
 import type * as React from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { Link, NavLink } from 'react-router'
-
 import {
   Sidebar,
   SidebarContent,

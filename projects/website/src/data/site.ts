@@ -17,6 +17,7 @@ export const nav = [
   { href: '/feature-based-architecture', label: 'Concept' },
   { href: '/guidelines', label: 'Guidelines' },
   { href: '/cli', label: 'CLI' },
+  { href: '/ai', label: 'AI' },
   { href: '/faq', label: 'FAQ' },
 ]
 

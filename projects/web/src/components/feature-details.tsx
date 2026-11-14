@@ -19,7 +19,6 @@ import { featureRecords } from '@/features/records/utils'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
-
 import { FeatureMeta } from './feature-meta'
 import { FeatureOwner } from './feature-owner'
 
