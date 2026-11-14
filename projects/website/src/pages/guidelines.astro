@@ -1,0 +1,360 @@
+---
+import { Code } from 'astro:components'
+import CallToAction from '../components/CallToAction.astro'
+import FileTree, { type TreeNode } from '../components/FileTree.astro'
+import PageHero from '../components/PageHero.astro'
+import Screenshot from '../components/Screenshot.astro'
+import Section from '../components/Section.astro'
+import { githubUrl } from '../data/site'
+import Base from '../layouts/Base.astro'
+
+const description =
+  'How to structure a project so Features detects every feature: the features folder convention, README front matter, owners, decision records and feature flag annotations.'
+
+const featuresFolder: TreeNode[] = [
+  {
+    name: 'src',
+    children: [
+      {
+        name: 'features',
+        kind: 'features',
+        children: [
+          {
+            name: 'saveUser',
+            kind: 'feature',
+            children: [
+              {
+                name: 'components',
+                children: [{ name: 'UserForm.ts' }, { name: 'EmailInput.ts' }],
+              },
+              {
+                name: 'utils',
+                children: [
+                  { name: 'useSaveUser.ts' },
+                  { name: 'useFetchUser.ts' },
+                  { name: 'transformUser.ts' },
+                ],
+              },
+              {
+                name: 'README.md',
+                kind: 'readme',
+                note: 'helps for large features',
+              },
+            ],
+          },
+          { name: 'feature-2', kind: 'feature', children: [{ name: '...' }] },
+        ],
+      },
+      {
+        name: 'components',
+        note: 'common components used across features',
+        children: [],
+      },
+      {
+        name: 'utils',
+        note: 'common utils/hooks used across features',
+        children: [],
+      },
+    ],
+  },
+]
+
+const flagged: TreeNode[] = [
+  {
+    name: 'services',
+    children: [
+      {
+        name: 'payments',
+        kind: 'feature',
+        owner: 'backend-team',
+        children: [
+          { name: 'README.md', kind: 'readme', note: 'feature: true' },
+          { name: 'stripe.go' },
+        ],
+      },
+      {
+        name: 'shared',
+        note: 'feature: false → skipped, children still scanned',
+        children: [
+          {
+            name: 'notifications',
+            kind: 'feature',
+            children: [
+              { name: 'README.md', kind: 'readme', note: 'feature: true' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+]
+
+const rules = [
+  {
+    level: 'MUST',
+    color: 'text-magenta border-magenta/40 bg-magenta/10',
+    text: 'Create features in a features folder, or add feature: true to the README front matter.',
+    example: 'features/feature-1/',
+  },
+  {
+    level: 'MUST',
+    color: 'text-magenta border-magenta/40 bg-magenta/10',
+    text: 'Put the code related to the feature inside the feature folder.',
+    example: 'feature-1/file.js',
+  },
+  {
+    level: 'SHOULD',
+    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    text: 'Add a README.md or README.mdx file into the feature folder.',
+    example: 'features/feature-1/README.md',
+  },
+  {
+    level: 'SHOULD',
+    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    text: 'Add a line of text describing the feature right after the README title.',
+    example: 'Handles user login and logout',
+  },
+  {
+    level: 'SHOULD',
+    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    text: 'Add front matter to the README with an owner property.',
+    example: 'owner: backend-team',
+  },
+  {
+    level: 'MAY',
+    color: 'text-lime border-lime/40 bg-lime/10',
+    text: 'Add any other properties you want to the front matter.',
+    example: 'figma: <url>',
+  },
+  {
+    level: 'MAY',
+    color: 'text-lime border-lime/40 bg-lime/10',
+    text: 'Add MADR decision records into the feature decisions folder.',
+    example: '__docs__/decisions/001-use-jwt-tokens.md',
+  },
+]
+
+// A literal front matter fence would end the Astro component script.
+const fence = '-'.repeat(3)
+const readme = `${fence}
+feature: true # required if not in a \`features\` folder
+owner: team_1
+creation_date: 2022-01-01 # overrides the first commit date
+status: active # active, deprecated, archived
+deprecated: false
+${fence}
+
+# Save user
+
+Creates and updates user accounts from the profile page.`
+
+const annotations = [
+  {
+    lang: 'ts',
+    label: 'TypeScript',
+    code: `// --feature-flag feature: feature-1, name: feature-flag1, type: experiment, owner: team-a, introduced_on: 2025-01-01
+
+export function experimentalLoginFlow() {
+  // implementation
+}`,
+  },
+  {
+    lang: 'python',
+    label: 'Python',
+    code: '# --feature-flag name: feature-flag1, type: processing, language: python',
+  },
+  {
+    lang: 'rust',
+    label: 'Rust',
+    code: '// --feature-flag name: feature-flag1, type: core, status: stable',
+  },
+  {
+    lang: 'bash',
+    label: 'Bash',
+    code: '# --feature-flag name: feature-flag1, environment: production, region: us-west-2',
+  },
+] as const
+
+const howTo = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to add a feature that Features can detect',
+  description,
+  step: [
+    {
+      '@type': 'HowToStep',
+      name: 'Create a features folder',
+      text: 'Create a folder named features anywhere in your source code directory. It can be in a subdirectory.',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Create a feature folder',
+      text: 'Inside the features folder, create a folder named after the business feature, in snake_case, camelCase or kebab-case.',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Describe the feature',
+      text: 'Add a README.md with a description after the title and an owner property in its front matter.',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Run the CLI',
+      text: 'Run features serve on the folder: the feature is detected and displayed in the web interface.',
+    },
+  ],
+}
+---
+
+<Base
+  title="Guidelines: structure your features"
+  description={description}
+  breadcrumbs={[{ name: 'Guidelines', path: '/guidelines' }]}
+  jsonLd={[howTo]}
+>
+  <PageHero
+    eyebrow="Guidelines"
+    title="Structure your project so every feature is found"
+    lead="A few conventions are all Features needs. Follow them and the CLI detects your features, their owners and their documentation automatically."
+  />
+
+  <Section
+    id="folder-structure"
+    eyebrow="Two ways to declare a feature"
+    title="A features folder, or a flag in a README"
+    lead="Both methods can be mixed in the same codebase. Folder names can use snake_case, camelCase or kebab-case."
+  >
+    <div class="grid items-start gap-6 lg:grid-cols-2">
+      <div>
+        <div class="mb-4 flex items-center gap-3">
+          <span class="rounded-full bg-gradient-brand px-2.5 py-0.5 text-xs font-semibold text-ink">Recommended</span>
+          <h3 class="font-semibold">Method 1 · Features folder</h3>
+        </div>
+        <FileTree title="every direct subfolder of features/ is a feature" nodes={featuresFolder} />
+      </div>
+      <div>
+        <div class="mb-4 flex items-center gap-3">
+          <span class="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">Anywhere</span>
+          <h3 class="font-semibold">Method 2 · Feature flag</h3>
+        </div>
+        <FileTree title="any folder with feature: true in its README" nodes={flagged} />
+        <p class="mt-4 text-sm text-muted">
+          <code>feature: false</code> skips a folder even inside <code>features/</code>. Unlike
+          <code>--ignore-path</code>, its subfolders are still scanned, so nested features are still discovered.
+        </p>
+      </div>
+    </div>
+  </Section>
+
+  <Section
+    id="rules"
+    eyebrow="Checklist"
+    title="Must, should, may"
+    lead="Only the first two rules are required. The others unlock descriptions, ownership and decisions in the dashboard."
+  >
+    <ol class="space-y-3">
+      {
+        rules.map((rule) => (
+          <li class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-5">
+            <span class:list={['w-20 shrink-0 rounded-md border px-2 py-1 text-center font-mono text-xs font-bold', rule.color]}>
+              {rule.level}
+            </span>
+            <span class="flex-1 text-sm">{rule.text}</span>
+            <code class="w-fit max-w-full overflow-x-auto !text-xs whitespace-nowrap text-muted">{rule.example}</code>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section
+    id="readme"
+    eyebrow="README format"
+    title="One README, all the metadata"
+    lead="Every front matter property is optional and you can add your own. The title overrides the folder name; the first line of text becomes the description."
+  >
+    <div class="grid items-start gap-6 lg:grid-cols-[1.2fr_1fr]">
+      <Code code={readme} lang="markdown" theme="github-dark-default" />
+      <ul class="space-y-3 text-sm">
+        <li class="card p-4"><code>owner</code> <span class="text-muted">— the team shown in the dashboard and written to CODEOWNERS.</span></li>
+        <li class="card p-4"><code>feature</code> <span class="text-muted">— <code>true</code> declares a feature anywhere, <code>false</code> skips one.</span></li>
+        <li class="card p-4"><code>creation_date</code> <span class="text-muted">— overrides the date of the first commit in the feature.</span></li>
+        <li class="card p-4"><code>status</code> / <code>deprecated</code> <span class="text-muted">— lifecycle of the feature: active, deprecated, archived.</span></li>
+      </ul>
+    </div>
+    <Screenshot
+      name="feature"
+      alt="Feature page in the Features dashboard showing the path, the owner, front matter properties as badges and the README description"
+      caption="The same README in the dashboard: owner, front matter properties as badges (URLs become links) and the rendered description."
+      class="mt-10"
+    />
+  </Section>
+
+  <Section
+    id="decisions"
+    eyebrow="Decision records"
+    title="Keep decisions next to the code they shaped"
+    lead="Add Markdown files to a __docs__/decisions/ or .docs/decisions/ folder in the feature. They appear under the feature in the dashboard. The template is inspired by MADR."
+  >
+    <ol class="grid gap-3 sm:grid-cols-5">
+      {
+        [
+          ['Title', 'A clear, concise description of the decision'],
+          ['Status', 'proposed, accepted, rejected, deprecated or superseded'],
+          ['Context', 'Background and the problem being solved'],
+          ['Decision', 'What was decided'],
+          ['Consequences', 'Expected positive and negative outcomes'],
+        ].map(([name, text], index) => (
+          <li class="card relative p-4">
+            <span class="font-mono text-xs text-muted">{String(index + 1).padStart(2, '0')}</span>
+            <p class="mt-1 font-semibold">{name}</p>
+            <p class="mt-1 text-xs text-muted">{text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <Screenshot
+      name="decisions"
+      alt="Decisions tab of a feature in the Features dashboard listing its decision records"
+      caption="Decision records listed in the Decisions tab of the feature."
+      class="mt-10"
+    />
+  </Section>
+
+  <Section
+    id="annotations"
+    eyebrow="Feature metadata annotations"
+    title="Tag flags and dependencies from any file"
+    lead="Special comments attach metadata to a feature from anywhere in the codebase. The metadata key becomes a tab in the web UI, and properties are free-form key-value pairs."
+  >
+    <div class="card mb-6 p-5 font-mono text-sm">
+      <span class="text-muted">--feature-</span><span class="text-magenta">&lt;metadata-key&gt;</span>
+      <span class="text-cyan">feature:</span><span class="text-text">&lt;feature-folder-basename&gt;</span><span class="text-muted">,</span>
+      <span class="text-lime">property:</span> <span class="text-text">value</span><span class="text-muted">, ...</span>
+      <p class="mt-3 font-sans text-xs text-muted">
+        <code>feature:</code> is optional when the comment is already inside the feature folder.
+      </p>
+    </div>
+    <div class="grid gap-4 md:grid-cols-2">
+      {
+        annotations.map((item) => (
+          <figure>
+            <figcaption class="mb-2 text-xs text-muted">{item.label}</figcaption>
+            <Code code={item.code} lang={item.lang} theme="github-dark-default" wrap />
+          </figure>
+        ))
+      }
+    </div>
+    <Screenshot
+      name="flags"
+      alt="Flag tab of a feature in the Features dashboard: a table of feature flags with their name, type and status"
+      caption="A --feature-flag annotation becomes a Flag tab, with one column per property."
+      class="mt-10"
+    />
+    <p class="mt-8 text-sm text-muted">
+      Read the full <a class="link" href={githubUrl('docs/folder-architecture-guidelines.md')} rel="noopener">guidelines</a>
+      and <a class="link" href={githubUrl('docs/readme-format.md')} rel="noopener">README format</a> on GitHub.
+    </p>
+  </Section>
+
+  <CallToAction />
+</Base>

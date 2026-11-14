@@ -1,0 +1,137 @@
+---
+import CallToAction from '../components/CallToAction.astro'
+import PageHero from '../components/PageHero.astro'
+import { site } from '../data/site'
+import Base from '../layouts/Base.astro'
+
+const description =
+  'Answers about Features and feature-based architecture: adding features, descriptions, owners, decisions, coverage reports, technical debt, CODEOWNERS and Linux installation.'
+
+/** `answer` is HTML rendered on the page; `text` is the plain version used in structured data. */
+const faqs = [
+  {
+    id: 'what-is-a-feature-based-architecture',
+    question: 'What is a feature-based architecture?',
+    text: 'Feature-based architecture organizes code and folders around features or business capabilities rather than technical layers like components, services or utils. Each feature lives in its own self-contained folder with everything it needs. It is similar to domain-driven design but more recursive and more structured, and it complements other architectures such as hexagonal architecture.',
+    answer:
+      'It organizes code and folders around <strong>features</strong>, the business capabilities of a product, rather than technical layers like components, services or utils. Each feature lives in its own self-contained folder with everything it needs. It is similar to domain-driven design but more recursive and more structured, and it complements other architectures such as hexagonal architecture. <a href="/feature-based-architecture">Read the full explanation</a>.',
+  },
+  {
+    id: 'how-can-i-add-a-feature',
+    question: 'How can I add a feature?',
+    text: 'Create a folder named features anywhere in your source code, it can be in a subdirectory. Inside it, create a folder named after the business feature, in snake_case, camelCase or kebab-case. The feature is detected automatically and displayed in the web interface.',
+    answer:
+      'Create a <code>features</code> folder anywhere in your source code (it can be in a subdirectory). Inside it, create a folder named after the business feature, in snake_case, camelCase or kebab-case. The feature is detected automatically and displayed in the web interface. You can also flag any folder with <code>feature: true</code> in its README front matter.',
+  },
+  {
+    id: 'how-can-i-add-a-feature-description',
+    question: 'How can I add a feature description?',
+    text: 'Create a README.md file in the feature folder and describe the feature: its purpose, functionality and relevant technical details. The first line of text after the title is used as the short description.',
+    answer:
+      'Create a <code>README.md</code> in the feature folder and describe its purpose, functionality and relevant technical details. The first line of text after the title is used as the short description.',
+  },
+  {
+    id: 'how-can-i-add-an-owner',
+    question: 'How can I add an owner?',
+    text: 'Add an owner property to the front matter of the feature README.md file.',
+    answer:
+      'Add an <code>owner</code> property to the front matter of the feature <code>README.md</code>:<pre><code>---\nowner: backend-team\n---</code></pre>',
+  },
+  {
+    id: 'how-can-i-add-a-decision',
+    question: 'How can I add a decision?',
+    text: 'In the feature directory, create a __docs__/decisions/ or .docs/decisions/ folder and add a Markdown file with a descriptive name. Structure it with a title, status, context, decision and consequences. The template is inspired by MADR.',
+    answer:
+      'In the feature directory, create a <code>__docs__/decisions/</code> or <code>.docs/decisions/</code> folder and add a Markdown file with a descriptive name such as <code>use-typescript.md</code>. Structure it with a <strong>title</strong>, <strong>status</strong> (proposed, accepted, rejected, deprecated, superseded), <strong>context</strong>, <strong>decision</strong> and <strong>consequences</strong>. The template is inspired by <a href="https://adr.github.io/madr/" rel="noopener">MADR</a>.',
+  },
+  {
+    id: 'how-can-i-add-a-test-coverage-report',
+    question: 'How can I add a test coverage report?',
+    text: 'Run your tests with coverage enabled, for example npx jest --coverage, so the report is generated in a coverage or .coverage folder. The CLI looks in the scanned folder, the current directory and the project directory. Use --coverage-dir for any other location. LCOV and Cobertura formats are supported.',
+    answer:
+      'Run your tests with coverage enabled, for example <code>npx jest --coverage</code>, so the report lands in a <code>coverage</code> or <code>.coverage</code> folder. The CLI looks in the scanned folder, the current directory and the <code>--project-dir</code>. Use <code>--coverage-dir</code> for any other location. <a href="https://wiki.documentfoundation.org/Development/Lcov" rel="noopener">LCOV</a> and <a href="https://cobertura.github.io/cobertura/" rel="noopener">Cobertura</a> formats are supported.',
+  },
+  {
+    id: 'what-is-the-technical-debt-of-a-feature',
+    question: 'What is the technical debt of a feature?',
+    text: 'Right now the CLI detects the TODOs in the code of each feature. It does not detect other kinds of technical debt such as code smells or performance issues yet. Suggestions are welcome.',
+    answer:
+      'Right now the CLI counts the <code>TODO</code>s in the code of each feature. It does not detect other kinds of technical debt such as code smells or performance issues yet. <a href="' +
+      site.repository +
+      '/issues" rel="noopener">Suggestions are welcome</a>.',
+  },
+  {
+    id: 'how-can-i-generate-codeowners-file',
+    question: 'How can I generate a CODEOWNERS file?',
+    text: 'Run features codeowners ./src, optionally with --project-dir to get paths relative to the project root. It can also be combined with serve, build and check using --generate-codeowners. The file has a managed section between markers and anything outside them is preserved.',
+    answer:
+      'Run <code>features codeowners ./src</code>, optionally with <code>--project-dir ./</code> for paths relative to the project root, or add <code>--generate-codeowners</code> to <code>serve</code>, <code>build</code> or <code>check</code>. The file gets a managed section between markers; anything outside them is preserved. <a href="/cli#codeowners">See the example</a>.',
+  },
+  {
+    id: 'glibc-not-found',
+    question: 'I get “GLIBC_2.38 not found” on Linux. How do I fix it?',
+    text: 'The Linux binary was built with a newer GLIBC than your system has. Use the statically linked musl build, for example npm install -g @features-cli/feature-cli-linux-x64-musl, build from source with cargo install features-cli, use npx features-cli which selects the right binary, or upgrade to a distribution with GLIBC 2.38 or later such as Ubuntu 24.04, Debian 13 or Fedora 39.',
+    answer:
+      'The Linux binary was built with a newer GLIBC than your system has. Options, from most to least recommended:<ol><li>Use the statically linked <strong>musl</strong> build: <code>npm install -g @features-cli/feature-cli-linux-x64-musl</code> (or <code>-arm64-musl</code>).</li><li>Build from source: <code>cargo install features-cli</code>.</li><li>Use <code>npx features-cli@latest</code>, which selects the right binary.</li><li>Upgrade to Ubuntu 24.04, Debian 13, Fedora 39 or later.</li></ol>',
+  },
+]
+
+const faqPage = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.question,
+    acceptedAnswer: { '@type': 'Answer', text: faq.text },
+  })),
+}
+---
+
+<Base
+  title="FAQ: features-cli and feature-based architecture"
+  description={description}
+  breadcrumbs={[{ name: 'FAQ', path: '/faq' }]}
+  jsonLd={[faqPage]}
+>
+  <PageHero
+    eyebrow="FAQ"
+    title="Frequently asked questions"
+    lead="Everything about getting your features detected, documented and owned."
+  />
+
+  <div class="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[16rem_1fr]">
+    <nav aria-label="Questions" class="hidden lg:block">
+      <ul class="sticky top-24 space-y-1 border-l border-line text-sm">
+        {
+          faqs.map((faq) => (
+            <li>
+              <a href={`#${faq.id}`} class="-ml-px block border-l border-transparent py-1.5 pl-4 text-muted hover:border-cyan hover:text-text">
+                {faq.question}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="space-y-3">
+      {
+        faqs.map((faq, index) => (
+          <details id={faq.id} class="card group scroll-mt-24 open:border-muted/50" open={index === 0}>
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-semibold [&::-webkit-details-marker]:hidden">
+              <h2 class="text-base">{faq.question}</h2>
+              <span class="text-xl text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <div
+              class="prose-site px-5 pb-5 text-sm text-muted [&_li]:mt-1 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_pre]:mt-3 [&_pre]:rounded-lg [&_pre]:bg-ink [&_pre]:p-3 [&_pre_code]:!border-0 [&_pre_code]:!bg-transparent"
+              set:html={faq.answer}
+            />
+          </details>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="mt-24">
+    <CallToAction title="Still curious? Try it on your code" />
+  </div>
+</Base>

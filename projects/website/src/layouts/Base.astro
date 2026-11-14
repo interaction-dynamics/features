@@ -1,0 +1,123 @@
+---
+import Footer from '../components/Footer.astro'
+import Header from '../components/Header.astro'
+import { site } from '../data/site'
+import '../styles/global.css'
+
+interface Breadcrumb {
+  name: string
+  path: string
+}
+
+interface Props {
+  title: string
+  description: string
+  /** Extra JSON-LD objects for this page (FAQPage, HowTo...). */
+  jsonLd?: Record<string, unknown>[]
+  /** Pages below the home page, used for BreadcrumbList structured data. */
+  breadcrumbs?: Breadcrumb[]
+  noindex?: boolean
+}
+
+const {
+  title,
+  description,
+  jsonLd = [],
+  breadcrumbs = [],
+  noindex = false,
+} = Astro.props
+
+const siteUrl = Astro.site ?? new URL('http://localhost:4321')
+// With `build.format: 'file'` the home page path is `/index`; Vercel serves files without `.html`.
+const pathname = Astro.url.pathname
+  .replace(/\.html$/, '')
+  .replace(/(^|\/)index$/, '')
+  .replace(/\/$/, '')
+const canonical = new URL(pathname || '/', siteUrl).href
+const ogImage = new URL('/og.png', siteUrl).href
+const fullTitle =
+  title === site.name
+    ? `${site.name} — ${site.tagline}`
+    : `${title} | ${site.name}`
+
+const structuredData: Record<string, unknown>[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: site.name,
+    url: new URL('/', siteUrl).href,
+    description: site.description,
+    publisher: {
+      '@type': 'Organization',
+      name: site.organization,
+      url: site.organizationUrl,
+    },
+  },
+  ...(breadcrumbs.length > 0
+    ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [{ name: 'Home', path: '/' }, ...breadcrumbs].map(
+            (crumb, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: crumb.name,
+              item: new URL(crumb.path, siteUrl).href,
+            }),
+          ),
+        },
+      ]
+    : []),
+  ...jsonLd,
+]
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <meta name="theme-color" content="#0b0f17" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Features — explore the features of your codebase" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    {
+      structuredData.map((data) => (
+        <script type="application/ld+json" set:html={JSON.stringify(data)} />
+      ))
+    }
+  </head>
+  <body class="min-h-screen font-sans antialiased">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-surface-2 focus:px-3 focus:py-2"
+      >Skip to content</a
+    >
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

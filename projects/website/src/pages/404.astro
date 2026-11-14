@@ -1,0 +1,14 @@
+---
+import PageHero from '../components/PageHero.astro'
+import Base from '../layouts/Base.astro'
+---
+
+<Base title="Page not found" description="This page does not exist." noindex>
+  <PageHero
+    eyebrow="404"
+    title="This feature does not exist (yet)"
+    lead="The page you are looking for was moved or never shipped."
+  >
+    <a href="/" class="bg-gradient-brand mt-8 inline-block rounded-lg px-5 py-2.5 font-semibold text-ink">Back to home</a>
+  </PageHero>
+</Base>

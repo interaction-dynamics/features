@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
+@theme {
+  --color-ink: #0b0f17;
+  --color-surface: #121826;
+  --color-surface-2: #1a202c;
+  --color-line: #263044;
+  --color-text: #e7ecf3;
+  --color-muted: #9aa6b8;
+  --color-magenta: #ff3df2;
+  --color-cyan: #2ef2ff;
+  --color-lime: #e8ff3a;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-ink);
+  color: var(--color-text);
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(
+      60rem 30rem at 85% -10%,
+      color-mix(in oklab, var(--color-magenta) 14%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50rem 30rem at -10% 10%,
+      color-mix(in oklab, var(--color-cyan) 10%, transparent),
+      transparent 70%
+    ), var(--color-ink);
+  background-repeat: no-repeat;
+}
+
+/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
+@utility text-gradient {
+  background-image: linear-gradient(
+    120deg,
+    var(--color-magenta),
+    var(--color-cyan) 55%,
+    var(--color-lime)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
+@utility bg-gradient-brand {
+  background-image: linear-gradient(
+    120deg,
+    var(--color-magenta),
+    var(--color-cyan) 55%,
+    var(--color-lime)
+  );
+}
+
+/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
+@utility card {
+  border: 1px solid var(--color-line);
+  background: color-mix(in oklab, var(--color-surface) 85%, transparent);
+  border-radius: 1rem;
+}
+
+/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
+@utility grid-bg {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 2.5rem 2.5rem;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+.prose-site p {
+  color: var(--color-muted);
+  line-height: 1.75;
+}
+
+.prose-site a,
+a.link {
+  color: var(--color-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(
+    in oklab,
+    var(--color-cyan) 40%,
+    transparent
+  );
+}
+
+.prose-site a:hover,
+a.link:hover {
+  text-decoration-color: var(--color-cyan);
+}
+
+code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  padding: 0.1em 0.4em;
+  border-radius: 0.375rem;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+/* Let wide code blocks scroll inside grid cells instead of stretching them. */
+.grid > * {
+  min-width: 0;
+}
+
+pre.astro-code {
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  border: 1px solid var(--color-line);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
