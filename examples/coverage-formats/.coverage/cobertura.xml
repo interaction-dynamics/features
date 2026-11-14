@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<coverage version="7.4" lines-valid="9" lines-covered="6" branches-valid="2" branches-covered="1">
+  <packages>
+    <package name="src">
+      <classes>
+        <class name="handler.py" filename="src/features/api/handler.py" line-rate="0.75" branch-rate="0.5">
+          <lines>
+            <line number="1" hits="1"/>
+            <line number="2" hits="1" branch="true" condition-coverage="50% (1/2)"/>
+            <line number="3" hits="1"/>
+            <line number="4" hits="0"/>
+          </lines>
+        </class>
+        <class name="routes.py" filename="src/features/api/routes.py" line-rate="0.5">
+          <lines>
+            <line number="1" hits="1"/>
+            <line number="2" hits="0"/>
+          </lines>
+        </class>
+        <class name="worker.py" filename="src/features/jobs/worker.py" line-rate="0.666">
+          <lines>
+            <line number="1" hits="1"/>
+            <line number="2" hits="1"/>
+            <line number="3" hits="0"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
