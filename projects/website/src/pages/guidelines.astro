@@ -190,6 +190,29 @@ ${fence}
 
 Creates and updates user accounts from the profile page.`
 
+const languages = [
+  'Rust',
+  'TypeScript',
+  'JavaScript',
+  'Python',
+  'Go',
+  'Java',
+  'Kotlin',
+  'Swift',
+  'C#',
+  'C/C++',
+  'Scala',
+  'Ruby',
+  'Perl',
+  'Lua',
+  'SQL',
+  'Bash',
+  'CSS/SCSS',
+  'YAML',
+  'TOML',
+  'HTML/XML',
+]
+
 const annotations = [
   {
     lang: 'ts',
@@ -427,6 +450,17 @@ const howTo = {
           </figure>
         ))
       }
+    </div>
+    <div class="mt-8">
+      <h3 class="font-semibold">Recognized in every language you use</h3>
+      <p class="mt-1.5 text-sm text-muted">Annotations are read from the comments of all these languages.</p>
+      <ul class="mt-4 flex flex-wrap gap-2">
+        {
+          languages.map((language) => (
+            <li class="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 font-mono text-sm text-muted">{language}</li>
+          ))
+        }
+      </ul>
     </div>
     <Screenshot
       name="flags"
