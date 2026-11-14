@@ -7,7 +7,6 @@ on:
     branches: [master]
 permissions:
   contents: read
-  id-token: write
 jobs:
   validate-web:
     name: Validate UI
@@ -16,13 +15,13 @@ jobs:
       run:
         working-directory: ./projects/web
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
-      - uses: pnpm/action-setup@v5.0.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         name: Install pnpm
         with:
           version: 10
@@ -31,7 +30,7 @@ jobs:
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - uses: actions/cache@v5
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         name: Setup pnpm cache
         with:
           path: ${{ env.STORE_PATH }}
@@ -56,13 +55,14 @@ jobs:
       run:
         working-directory: ./projects/cli
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0 # Fetches the entire history of the repository
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
-      - uses: actions/cache@v5
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -82,18 +82,32 @@ jobs:
       - name: Test ✔️
         run: cargo test --verbose
 
+  audit-cli:
+    name: Audit CLI dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      # Fails on RustSec advisories (vulnerable, unmaintained or yanked crates).
+      # Accepted advisories are listed in projects/cli/deny.toml.
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          manifest-path: projects/cli/Cargo.toml
+          command: check advisories
+
   e2e-tests:
     name: End-to-end Tests
     runs-on: ubuntu-24.04 # Playwright 1.57 has no chromium build for ubuntu 26.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
       # Setup Rust for building features.json and metadata.json
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         name: Cache Rust dependencies
         with:
           path: |
@@ -142,11 +156,11 @@ jobs:
           echo "Generated metadata.json with version: $VERSION"
 
       # Setup Node.js for web app
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
 
-      - uses: pnpm/action-setup@v5.0.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         name: Install pnpm
         with:
           version: 10
@@ -158,7 +172,7 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         name: Setup pnpm cache
         with:
           path: ${{ env.STORE_PATH }}
@@ -180,7 +194,7 @@ jobs:
 
       - name: Upload test results 📤
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: playwright-report
           path: projects/web/playwright-report/

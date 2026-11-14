@@ -38,50 +38,62 @@ It also provides a UI to explore the feature. Check a live [demo](http://interac
 ## Getting started 
 
 ```bash
-npx features-cli@latest /path/to/project --project-dir ./repository --serve
+npx features-cli@latest serve /path/to/project --project-dir ./repository
 
 # or with installation
 npm install -g features-cli
 # or
 cargo binstall features-cli
 # then 
-features /path/to/project --project-dir ./repository --serve
+features serve /path/to/project --project-dir ./repository
 ```
 
-Commands and their descriptions are listed below:
+Each action is a command. `PATH` is the folder to scan for features and defaults to the current directory:
 
 | Command | Description |
 | ------- | ----------- |
-| `--json` | Output features as JSON |
-| `--flat` | Output features as a flat array instead of nested structure |
-| `--description` | Include feature descriptions in the output (automatically enabled for `--serve`, `--build`, and `--json`) |
-| `--coverage` | Include coverage information in the output (automatically enabled for `--serve`, `--build`, and `--json`) |
-| `--list-owners` | Display only unique list of owners |
-| `--find-owner <path>` | Find the owner of a specific file or folder |
-| `--check` | Run validation checks on features (e.g., duplicate names) |
-| `--skip-changes` | Skip computing git commit history (faster for large repos) |
-| `--ignore-path <path>` | Ignore a folder and all its subfolders when scanning for features. Can be repeated to ignore multiple folders |
-| `--include-skipped-dirs` | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
-| `--serve` | Start an HTTP server to serve features and the web dashboard UI |
-| `--port <port>` | Change the port (default: 3000). Should be used with `--serve` |
-| `--build` | Build a static version of the web dashboard UI |
-| `--build-dir <path>` | Output directory for the static build (default: `build`) |
-| `--coverage-dir <path>` | Specify a custom coverage directory (overrides automatic search) |
-| `--generate-codeowners` | Generate or update a CODEOWNERS file with feature ownership information |
-| `--project-dir <path>` | Project directory for CODEOWNERS generation and additional coverage search locations |
-| `--codeowners-path <path>` | Custom path and filename for CODEOWNERS file (default: `CODEOWNERS` in project directory) |
-| `--codeowners-prefix <prefix>` | Custom prefix for owner names in CODEOWNERS file and in `--since --markdown` / `--owners-only` output (default: `@`) |
-| `--since <ref>` | Diff mode: list the features touched since the merge base of `<ref>` and `HEAD`, including uncommitted changes. See [Features touched by a change](#features-touched-by-a-change) |
-| `--committed-only` | With `--since`: ignore uncommitted and untracked files |
-| `--markdown` | With `--since`: output a markdown table for pull request comments (use `--json` for JSON) |
-| `--owners-only` | With `--since`: print only the unique owners of the touched features, one per line |
+| `features scan [PATH]` | List the features (the default action, so `features PATH` works too) |
+| `features serve [PATH]` | Start an HTTP server with the web dashboard, refreshed when files change |
+| `features build [PATH]` | Build a static version of the web dashboard |
+| `features codeowners [PATH]` | Generate or update a CODEOWNERS file with feature ownership information |
+| `features find-owner <TARGET> [PATH]` | Find the owner of a specific file or folder |
+| `features owners [PATH]` | Display only the unique list of owners |
+| `features check [PATH]` | Run validation checks on features (e.g., duplicate names) |
+| `features diff [PATH] --since <ref>` | List the features touched since `<ref>`, with their owners. See [Features touched by a change](#features-touched-by-a-change) |
+
+Run `features <command> --help` for the options of a command. The options are:
+
+| Option | Commands | Description |
+| ------ | -------- | ----------- |
+| `--json` | `scan`, `find-owner`, `owners`, `diff` | Output as JSON |
+| `--flat` | `scan` | Output features as a flat array instead of nested structure |
+| `--description` | `scan` | Include feature descriptions in the output |
+| `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
+| `--port <port>` | `serve` | Change the port (default: 3000) |
+| `--allow-origin <origin>` | `serve` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]` |
+| `--build-dir <path>` | `build` | Output directory for the static build (default: `build`) |
+| `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required) |
+| `--committed-only` | `diff` | Ignore uncommitted and untracked files |
+| `--markdown` | `diff` | Output a markdown table for pull request comments |
+| `--owners-only` | `diff` | Print only the unique owners of the touched features, one per line |
+| `--generate-codeowners` | `serve`, `build`, `check` | Also generate or update the CODEOWNERS file |
+| `--codeowners-path <path>` | `codeowners`, and with `--generate-codeowners` | Custom path and filename for CODEOWNERS file (default: `CODEOWNERS` in project directory) |
+| `--codeowners-prefix <prefix>` | `codeowners`, `diff`, and with `--generate-codeowners` | Custom prefix for owner names in CODEOWNERS file and in `diff --markdown` / `--owners-only` output (default: `@`) |
+| `--project-dir <path>` | all | Project directory for CODEOWNERS generation and additional coverage search locations |
+| `--skip-changes` | all | Skip computing git commit history (faster for large repos) |
+| `--ignore-path <path>` | all | Ignore a folder and all its subfolders when scanning for features. Can be repeated to ignore multiple folders |
+| `--include-skipped-dirs` | all | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
+| `--coverage-dir <path>` | all | Specify a custom coverage directory (overrides automatic search) |
+| `--strip-emails` | all | Remove commit author emails from the output (JSON, `serve` and `build`). Useful before publishing a static build. Author names are kept |
+
+> **Legacy flags.** Before commands existed, actions were flags: `features PATH --serve`, `--build`, `--check`, `--list-owners`, `--find-owner <TARGET>` and `--generate-codeowners`. They still work but are deprecated. Combining two actions (e.g. `--serve --build`) is now an error instead of silently running one of them; `--generate-codeowners` can still be combined with `--serve`, `--build`, `--check` and `--list-owners`. `features PATH --since <ref>` also still works, as an alias of `features diff PATH --since <ref>`.
 
 ## Features touched by a change
 
-`--since <ref>` lists the features a change touches, with their owners. It compares the merge base of `<ref>` and `HEAD` with your working tree, so uncommitted and untracked files are included (add `--committed-only` to compare with `HEAD` only). The path defaults to the current directory.
+`features diff --since <ref>` lists the features a change touches, with their owners. It compares the merge base of `<ref>` and `HEAD` with your working tree, so uncommitted and untracked files are included (add `--committed-only` to compare with `HEAD` only). The path defaults to the current directory.
 
 ```bash
-features src --since origin/master
+features diff src --since origin/master
 ```
 
 ```text
@@ -99,7 +111,7 @@ Files outside any feature:
     M README.md
 ```
 
-Each changed file is mapped to its closest feature, like `--find-owner`. A renamed file touches the features of both its old and new path, and deleted files are mapped by path. File paths are relative to the repository root; feature paths are relative to the scanned folder, as in the other outputs.
+Each changed file is mapped to its closest feature, like `find-owner`. A renamed file touches the features of both its old and new path, and deleted files are mapped by path. File paths are relative to the repository root; feature paths are relative to the scanned folder, as in the other outputs.
 
 - `--json` gives a report with `features` (name, path, owner, `is_owner_inherited`, changed files) and `files_outside_features`.
 - `--markdown` gives a table ready to post as a pull request comment.
@@ -126,7 +138,7 @@ jobs:
           fetch-depth: 0 # the merge base with the target branch is needed
 
       - name: List touched features
-        run: npx features-cli@latest src --since origin/${{ github.base_ref }} --committed-only --markdown > features.md
+        run: npx features-cli@latest diff src --since origin/${{ github.base_ref }} --committed-only --markdown > features.md
 
       - name: Comment on the pull request
         env:
@@ -139,7 +151,7 @@ jobs:
 To also request reviews from the owning teams, feed `--owners-only` to `gh`. Reviewers must be GitHub users or `org/team` slugs, so set the prefix accordingly, e.g. `--codeowners-prefix my-org/` when owners are team names:
 
 ```bash
-features src --since origin/master --committed-only --owners-only --codeowners-prefix my-org/ \
+features diff src --since origin/master --committed-only --owners-only --codeowners-prefix my-org/ \
   | xargs -r -n1 gh pr edit "$PR_NUMBER" --add-reviewer
 ```
 
@@ -176,7 +188,7 @@ src/
 └── ... # other source code
 ```
 
-> You can read the detailed [guidelines](./docs/folder-architecture-guidelines.md) or just jump into trying the CLI with the `--serve` options. The UI will guide you through the methodology.
+> You can read the detailed [guidelines](./docs/folder-architecture-guidelines.md) or just jump into trying the CLI with `features serve`. The UI will guide you through the methodology.
 
 #### Method 2: Feature flag
 Mark any folder as a feature by adding `feature: true` in its README frontmatter:

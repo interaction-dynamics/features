@@ -63,3 +63,60 @@ pub struct Dependency {
     #[serde(rename = "type")]
     pub dependency_type: DependencyType,
 }
+
+/// Empties the author email of every change in `features` and their nested features.
+pub fn strip_author_emails(features: &mut [Feature]) {
+    for feature in features {
+        for change in &mut feature.changes {
+            change.author_email.clear();
+        }
+        strip_author_emails(&mut feature.features);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn change(email: &str) -> Change {
+        Change {
+            title: String::from("feat: something"),
+            author_name: String::from("Jane"),
+            author_email: String::from(email),
+            description: String::new(),
+            date: String::from("2026-01-01 00:00:00"),
+            hash: String::from("abc123"),
+        }
+    }
+
+    fn feature(name: &str, changes: Vec<Change>, features: Vec<Feature>) -> Feature {
+        Feature {
+            name: String::from(name),
+            description: String::new(),
+            owner: String::new(),
+            is_owner_inherited: false,
+            path: String::from(name),
+            features,
+            meta: BTreeMap::new(),
+            changes,
+            decisions: Vec::new(),
+            stats: None,
+            dependencies: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn test_strip_author_emails_recurses_into_nested_features() {
+        let mut features = vec![feature(
+            "parent",
+            vec![change("jane@example.com")],
+            vec![feature("child", vec![change("john@example.com")], vec![])],
+        )];
+
+        strip_author_emails(&mut features);
+
+        assert_eq!(features[0].changes[0].author_email, "");
+        assert_eq!(features[0].changes[0].author_name, "Jane");
+        assert_eq!(features[0].features[0].changes[0].author_email, "");
+    }
+}
