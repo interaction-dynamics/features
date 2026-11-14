@@ -17,8 +17,12 @@ fn create_test_feature(name: &str, path: &str) -> Feature {
         path: path.to_string(),
         features: Vec::new(),
         meta: BTreeMap::new(),
+        key: String::new(),
+        links: Default::default(),
+        external: Default::default(),
         changes: Vec::new(),
         decisions: Vec::new(),
+        records: Vec::new(),
         stats: None,
         dependencies: Vec::new(),
     }

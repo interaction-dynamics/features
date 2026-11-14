@@ -1,3 +1,4 @@
+import { BarChart3 } from 'lucide-react'
 import { useContext } from 'react'
 import { Header } from '@/components/header'
 import { StatsCard } from '@/components/stats-card'
@@ -5,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DependencyGraph } from '@/features/insights/dependency-graph'
 import { FeatureInsightsTable } from '@/features/insights/feature-insights-table'
 import { OwnerInsightsTable } from '@/features/insights/owner-insights-table'
-
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
@@ -47,8 +47,7 @@ export default function Insights() {
   )
 
   const featureCount = allFeatures.length
-  const ownerCount = [...new Set(allFeatures.map((feature) => feature.owner))]
-    .length
+  const ownerCount = new Set(allFeatures.map((feature) => feature.owner)).size
 
   const largestFeature = allFeatures.reduce((prev, curr) => {
     return actualLines(prev) > actualLines(curr) ? prev : curr
@@ -60,7 +59,12 @@ export default function Insights() {
 
   return (
     <div className="absolute inset-0 flex flex-col">
-      <Header>Insights</Header>
+      <Header>
+        <div className="flex items-center gap-2 font-medium">
+          <BarChart3 className="h-4 w-4" />
+          Insights
+        </div>
+      </Header>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
         <div className="space-y-4">
           {/* Overview Cards */}

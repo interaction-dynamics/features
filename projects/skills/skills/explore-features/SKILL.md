@@ -1,6 +1,6 @@
 ---
 name: explore-features
-description: Generates the features-cli JSON report of a codebase (features, paths, owners, descriptions, decision records, imports between features) into a file and reads it to understand the project before working on it. Use at the start of a task in an unfamiliar codebase, when looking for where a feature lives or who owns it, before changing a feature (to read its description and decisions), or when the other feature skills need the current feature map.
+description: Generates the features-cli JSON report of a codebase (features, paths, owners, descriptions, specs and decision records, imports between features) into a file and reads it to understand the project before working on it. Use at the start of a task in an unfamiliar codebase, when looking for where a feature lives or who owns it, before changing a feature (to read its description, specs and decisions), or when the other feature skills need the current feature map.
 ---
 
 # Explore the features of a codebase
@@ -25,25 +25,27 @@ An empty array (`[]`) means no feature is detected yet: use the **plan-feature-b
 
 ## 2. Read the map
 
-The report contains each feature's full README and decision records, so it can be large. Start with the compact index from `scripts/feature_map.py` (in this skill's folder; use its full path, Python 3 only):
+The report contains each feature's full README, specs and decision records, so it can be large. Start with the compact index from `scripts/feature_map.py` (in this skill's folder; use its full path, Python 3 only):
 
 ```bash
 python3 scripts/feature_map.py "${TMPDIR:-/tmp}/features.json"
 ```
 
-It prints one line per feature: name, path, owner, first sentence of the description and number of decision records, indented by nesting. Then zoom in:
+It prints one line per feature: name, path, owner, first sentence of the description and number of specs and decision records, indented by nesting. Then zoom in:
 
 ```bash
-python3 scripts/feature_map.py "${TMPDIR:-/tmp}/features.json" --feature checkout     # description, decisions, metadata, imports
+python3 scripts/feature_map.py "${TMPDIR:-/tmp}/features.json" --feature checkout     # description, specs and decisions, metadata, imports
 python3 scripts/feature_map.py "${TMPDIR:-/tmp}/features.json" --file src/features/checkout/api.ts  # the feature that contains a file
 python3 scripts/feature_map.py "${TMPDIR:-/tmp}/features.json" --owner team-payments  # the features of an owner
+features records PATH --json > "${TMPDIR:-/tmp}/records.json"
+python3 scripts/feature_map.py "${TMPDIR:-/tmp}/features.json" --records "${TMPDIR:-/tmp}/records.json"  # project-level specs and decisions (root docs/)
 ```
 
 File paths in the report are relative to `PATH`. `features find-owner <file> PATH` also gives the owner of a single file without a report.
 
 ## 3. Use it
 
-- **Before changing a feature**, read its description and decision records (`--feature`). Respect the decisions, or tell the user when your change goes against one.
+- **Before changing a feature**, read its description, specs and decision records (`--feature`). Respect the accepted decisions (skip the `superseded` and `rejected` ones), or tell the user when your change goes against one. A spec with open tasks tells you what is still planned.
 - **To find code**, go to the feature's folder first; open other features only when the feature imports them (the `Imports into other features` list).
 - **To know who to ask or who reviews**, use the owner. Before opening a pull request, `features diff PATH --since origin/main` (with the repository's default branch) lists the features and owners a change touches.
 
@@ -58,7 +60,8 @@ Each feature has:
 | `owner`, `is_owner_inherited` | `owner` from the README frontmatter; inherited from the parent feature when it has none |
 | `description` | README content after the first heading |
 | `meta` | Other frontmatter keys (`status`, `deprecated`, `creation_date`…) and feature metadata annotations (`--feature-<key>` comments) |
-| `decisions` | Content of each file in `__docs__/decisions/` or `.docs/decisions/` |
+| `decisions` | Raw content of each file in `__docs__/decisions/` or `.docs/decisions/` (kept for compatibility) |
+| `records` | Specs and decision records of the feature (from `__docs__/` and `.docs/`, plus root `docs/` records with `feature: <name>` and GitHub Spec Kit `specs/NNN-name/` or Kiro `.kiro/specs/<name>/` folders named after the feature): `kind` (`spec` or `decision`), `id`, `title`, `status`, `date`, `path`, `content`, `files` (other files of a folder spec), `source` (`speckit` or `kiro`, absent for native records), `links` (`decisions`, `specs`, `supersedes`, `superseded_by`, by id) and `tasks` (`done`, `total`) |
 | `features` | Nested features (same fields) |
 | `dependencies` | Imports from this feature into other features: `sourceFilename`, `targetFilename`, `line`, `featurePath` and `type` (`parent`, `child` or `sibling`) |
 | `stats` | `files_count`, `lines_count`, `todos_count`, `coverage` when a coverage report is found, and `commits` |

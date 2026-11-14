@@ -5,17 +5,19 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use features_cli::aggregate;
-use features_cli::build::{BuildConfig, create_build};
+use features_cli::build::{BuildConfig, create_build, write_records_json};
 use features_cli::checker::run_checks;
 use features_cli::cli::{
     Action, AggregateArgs, Cli, CodeownersOptions, DiffArgs, Invocation, ScanArgs,
 };
 use features_cli::codeowners::generate_codeowners;
 use features_cli::diff;
+use features_cli::external_data::import_external_data;
 use features_cli::http_server::{ServerConfig, serve_features_with_watching};
-use features_cli::models::Feature;
+use features_cli::models::{Feature, Record};
 use features_cli::ownership::find_owner_for_path;
 use features_cli::printer::print_features;
+use features_cli::records::{create_record, project_records};
 use features_cli::scan::{ScanConfig, scan_features_with};
 
 /// Resolve `--ignore-path` values to canonical absolute paths.
@@ -53,16 +55,20 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
         // Create a flattened version of this feature (without nested features)
         let flat_feature = Feature {
             name: feature.name.clone(),
+            key: feature.key.clone(),
             description: feature.description.clone(),
             owner: feature.owner.clone(),
             is_owner_inherited: feature.is_owner_inherited,
             path: feature.path.clone(),
             features: Vec::new(), // Empty for flat structure
             meta: feature.meta.clone(),
+            links: feature.links.clone(),
             changes: Vec::new(),
             decisions: Vec::new(),
+            records: Vec::new(),
             stats: feature.stats.clone(),
             dependencies: feature.dependencies.clone(),
+            external: feature.external.clone(),
         };
 
         flat_features.push(flat_feature);
@@ -107,7 +113,8 @@ fn scan_config(scan: &ScanArgs, current_dir: &Path) -> ScanConfig {
         .skip_changes(scan.skip_changes)
         .ignore_paths(resolve_ignore_paths(&scan.ignore_path, current_dir))
         .include_skipped_dirs(scan.include_skipped_dirs)
-        .strip_emails(scan.strip_emails);
+        .strip_emails(scan.strip_emails)
+        .data_files(scan.data.clone());
 
     if let Some(coverage_dir) = &scan.coverage_dir {
         config = config.coverage_dir(coverage_dir);
@@ -204,17 +211,47 @@ async fn run(invocation: Invocation) -> Result<()> {
         Action::Build(args) => {
             let config = scan_config(&scan, &current_dir).with_coverage(true);
             let features = scan_path(&args.path, &config)?;
+            let records = project_records(&features, &args.path);
             create_build(
                 &features,
-                BuildConfig::new(args.build_dir),
+                BuildConfig::new(args.build_dir.clone()),
                 scan.skip_changes,
             )
             .await?;
+            write_records_json(&records, &args.build_dir).await?;
         }
 
         Action::Check { path } => {
             let features = scan_path(&path, &scan_config(&scan, &current_dir))?;
-            run_checks(&features)?;
+            run_checks(&features, &project_records(&features, &path))?;
+        }
+
+        Action::Records { path, json } => {
+            let config = scan_config(&scan, &current_dir).skip_changes(true);
+            let features = scan_path(&path, &config)?;
+            let records = project_records(&features, &path);
+            if json {
+                let json =
+                    serde_json::to_string_pretty(&serde_json::json!({ "records": records }))?;
+                println!("{}", json);
+            } else {
+                print_records(&features, &records);
+            }
+        }
+
+        Action::New(args) => {
+            let config = scan_config(&scan, &current_dir).ownership_only(true);
+            let features = scan_path(&args.path, &config)?;
+            let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+            let created = create_record(
+                &args.path,
+                &features,
+                args.kind.into(),
+                &args.feature,
+                &args.title,
+                &today,
+            )?;
+            println!("{}", created.display());
         }
 
         Action::Codeowners { path } => {
@@ -247,6 +284,57 @@ async fn run(invocation: Invocation) -> Result<()> {
     Ok(())
 }
 
+/// Print the project-level records, then the records of every feature
+fn print_records(features: &[Feature], project: &[Record]) {
+    fn print_list(records: &[Record]) {
+        for record in records {
+            let mut details: Vec<String> = Vec::new();
+            if let Some(status) = &record.status {
+                details.push(status.clone());
+            }
+            if let Some(date) = &record.date {
+                details.push(date.clone());
+            }
+            if let Some(tasks) = record.tasks {
+                details.push(format!("{}/{} tasks", tasks.done, tasks.total));
+            }
+            let details = if details.is_empty() {
+                String::new()
+            } else {
+                format!(" ({})", details.join(", "))
+            };
+            println!(
+                "  [{}] {}: {}{}",
+                record.kind.label(),
+                record.id,
+                record.title,
+                details
+            );
+        }
+    }
+
+    fn visit(features: &[Feature], found: &mut bool) {
+        for feature in features {
+            if !feature.records.is_empty() {
+                *found = true;
+                println!("{} ({}):", feature.name, feature.path);
+                print_list(&feature.records);
+            }
+            visit(&feature.features, found);
+        }
+    }
+
+    let mut found = !project.is_empty();
+    if found {
+        println!("Project:");
+        print_list(project);
+    }
+    visit(features, &mut found);
+    if !found {
+        eprintln!("No specs or decision records found.");
+    }
+}
+
 fn write_codeowners(
     features: &[Feature],
     base_path: &Path,
@@ -267,7 +355,8 @@ fn write_codeowners(
 
 /// Aggregate the features reports of several repositories
 async fn run_aggregate(args: AggregateArgs) -> Result<()> {
-    let report = aggregate::aggregate_folder(&args.folder)?;
+    let mut report = aggregate::aggregate_folder(&args.folder)?;
+    import_external_data(&mut report.features, &args.data)?;
 
     eprintln!(
         "Aggregated {} repositories: {}",

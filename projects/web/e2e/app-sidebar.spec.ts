@@ -14,7 +14,10 @@ test.describe('App Sidebar', () => {
     const featureIcon = page.getByAltText('Feature Icon')
     await expect(featureIcon).toBeVisible()
 
-    const featuresLink = page.getByRole('link').filter({ hasText: 'Features' })
+    const featuresLink = page
+      .locator('[data-sidebar="header"]')
+      .getByRole('link')
+      .filter({ hasText: 'Features' })
     await expect(featuresLink).toBeVisible()
   })
 
@@ -78,6 +81,32 @@ test.describe('App Sidebar', () => {
       await expect(page).toHaveURL(/\/insights/)
     }
   })
+
+  test('should navigate to Outside features page when clicked', async ({
+    page,
+  }) => {
+    await page.locator('[data-sidebar="sidebar"]').waitFor()
+
+    const outsideLink = page.getByRole('link', { name: /outside features/i })
+    const isVisible = await outsideLink.isVisible().catch(() => false)
+
+    if (isVisible) {
+      await outsideLink.click()
+      await expect(page).toHaveURL(/\/outside-features/)
+    }
+  })
+
+  for (const formerPath of ['/records', '/reconciliation']) {
+    test(`should redirect ${formerPath} to Outside features`, async ({
+      page,
+    }) => {
+      await page.goto(`/#${formerPath}`)
+      await expect(page).toHaveURL(/#\/outside-features$/)
+      await expect(
+        page.locator('header').getByText('Outside features'),
+      ).toBeVisible()
+    })
+  }
 
   test('should display mode toggle in footer', async ({ page }) => {
     const sidebar = page.locator('[data-sidebar="sidebar"]')

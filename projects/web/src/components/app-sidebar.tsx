@@ -1,8 +1,7 @@
-import { BarChart3, TriangleAlert } from 'lucide-react'
+import { BarChart3, History, Shapes } from 'lucide-react'
 import type * as React from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { Link, NavLink } from 'react-router'
-
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +14,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { useProjectRecords } from '@/features/records/use-project-records'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import { filterByQuery, parseQuery } from '@/lib/smart-query-parser'
@@ -55,6 +55,9 @@ export function AppSidebar({
   const { features, isAggregated, repositories, reconciliationErrors } =
     useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
+  const { records: projectRecords } = useProjectRecords()
+  // Records not attached to a feature + features not merged across repositories
+  const outsideCount = projectRecords.length + reconciliationErrors.length
 
   // Filter features based on search query using smart query parser
   const filteredFeatures = useMemo(() => {
@@ -184,30 +187,42 @@ export function AppSidebar({
                   )}
                 </NavLink>
               </SidebarMenuItem>
-              {isAggregated && (
-                <SidebarMenuItem>
-                  <NavLink to="/reconciliation">
-                    {({ isActive }) => (
-                      <SidebarMenuButton
-                        className="cursor-pointer"
-                        isActive={isActive}
-                      >
-                        <TriangleAlert
-                          className={
-                            reconciliationErrors.length > 0
-                              ? 'h-4 w-4 text-amber-600 dark:text-amber-400'
-                              : 'h-4 w-4'
-                          }
-                        />
-                        Reconciliation issues
+              <SidebarMenuItem>
+                <NavLink to="/history">
+                  {({ isActive }) => (
+                    <SidebarMenuButton
+                      className="cursor-pointer"
+                      isActive={isActive}
+                    >
+                      <History className="h-4 w-4" /> History
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/outside-features">
+                  {({ isActive }) => (
+                    <SidebarMenuButton
+                      className="cursor-pointer"
+                      isActive={isActive}
+                    >
+                      <Shapes
+                        className={
+                          reconciliationErrors.length > 0
+                            ? 'h-4 w-4 text-amber-600 dark:text-amber-400'
+                            : 'h-4 w-4'
+                        }
+                      />
+                      Outside features
+                      {outsideCount > 0 && (
                         <span className="ml-auto rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
-                          {reconciliationErrors.length}
+                          {outsideCount}
                         </span>
-                      </SidebarMenuButton>
-                    )}
-                  </NavLink>
-                </SidebarMenuItem>
-              )}
+                      )}
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
             </SidebarMenu>
           )}
         </SidebarGroup>

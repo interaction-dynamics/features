@@ -1,4 +1,6 @@
 ---
+import { Book, Box, File, Folder, FolderTree } from '@lucide/astro'
+
 export interface TreeNode {
   name: string
   /** Visual role of the entry. */
@@ -31,37 +33,82 @@ const flatten = (items: TreeNode[], prefix = ''): Row[] =>
 
 const rows = flatten(nodes)
 
-const colors: Record<NonNullable<TreeNode['kind']>, string> = {
-  folder: 'text-text',
-  file: 'text-muted',
-  feature: 'text-cyan font-semibold',
-  features: 'text-magenta font-semibold',
-  readme: 'text-lime',
+// Plain-text version of the tree, used for the Markdown pages read by AI assistants.
+const plainText = rows
+  .map(({ node, prefix }) =>
+    [
+      `${prefix}${node.name}${node.children ? '/' : ''}`,
+      node.owner && `(owner: ${node.owner})`,
+      node.note && `# ${node.note}`,
+    ]
+      .filter(Boolean)
+      .join('  '),
+  )
+  .join('\n')
+
+type Kind = NonNullable<TreeNode['kind']>
+
+const styles: Record<Kind, { text: string; icon: typeof Folder }> = {
+  folder: { text: 'text-text', icon: Folder },
+  file: { text: 'text-muted', icon: File },
+  feature: { text: 'text-accent font-semibold', icon: Box },
+  features: { text: 'text-accent-2 font-semibold', icon: FolderTree },
+  readme: { text: 'text-accent-3', icon: Book },
 }
+
+const initials = (owner: string) =>
+  owner
+    .replace(/^team-/, '')
+    .slice(0, 2)
+    .toUpperCase()
 ---
 
-<figure class:list={['card overflow-hidden', className]}>
+<figure class:list={['card reveal overflow-hidden', className]} data-markdown-code={plainText}>
   {
     title && (
-      <figcaption class="border-b border-line bg-surface-2 px-4 py-2.5 font-mono text-xs text-muted">
+      <figcaption class="flex items-center gap-2 border-b border-line bg-gradient-to-b from-surface-2 to-surface px-4 py-2.5 font-mono text-xs text-muted">
+        <FolderTree size={13} aria-hidden="true" />
         {title}
       </figcaption>
     )
   }
-  <div class="overflow-x-auto p-5 font-mono text-[0.8rem] leading-7 sm:text-sm">
+  <div class="relative overflow-x-auto p-4 font-mono text-[0.8rem] leading-7 sm:text-sm">
     {
-      rows.map(({ node, prefix }) => (
-        <div class="flex items-center whitespace-nowrap">
-          <span class="whitespace-pre text-line" aria-hidden="true">{prefix}</span>
-          <span class={colors[node.kind ?? (node.children ? 'folder' : 'file')]}>{`${node.name}${node.children ? '/' : ''}`}</span>
-          {node.owner && (
-            <span class="ml-3 rounded-full border border-cyan/40 bg-cyan/10 px-2 font-sans text-[0.7rem] leading-5 text-cyan">
-              owner: {node.owner}
+      rows.map(({ node, prefix }, index) => {
+        const kind: Kind = node.kind ?? (node.children ? 'folder' : 'file')
+        const { text, icon: Icon } = styles[kind]
+        // Feature rows light up once the whole tree is in.
+        const glowDelay = rows.length * 45 + 300
+        return (
+          <div class="anim-row flex items-center whitespace-nowrap" style={`--delay:${index * 45}ms`}>
+            <span class="whitespace-pre text-line" aria-hidden="true">{prefix}</span>
+            <span
+              class:list={[
+                'inline-flex items-center gap-1.5 rounded-md px-1.5',
+                text,
+                kind === 'feature' &&
+                  'anim-glow bg-gradient-to-r from-accent/12 to-transparent shadow-[inset_1px_0_0_var(--color-accent)]',
+              ]}
+              style={kind === 'feature' ? `--delay:${glowDelay}ms` : undefined}
+            >
+              <Icon size={14} class="shrink-0 opacity-70" aria-hidden="true" />
+              {`${node.name}${node.children ? '/' : ''}`}
             </span>
-          )}
-          {node.note && <span class="ml-3 font-sans text-xs text-muted/80"># {node.note}</span>}
-        </div>
-      ))
+            {node.owner && (
+              <span class="ml-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 py-0.5 pr-2 pl-0.5 font-sans text-[0.7rem] leading-4 text-muted">
+                <span
+                  class="bg-gradient-brand inline-flex size-4 items-center justify-center rounded-full text-[0.5rem] font-bold text-ink"
+                  aria-hidden="true"
+                >
+                  {initials(node.owner)}
+                </span>
+                {node.owner}
+              </span>
+            )}
+            {node.note && <span class="ml-3 font-sans text-xs text-muted/70"># {node.note}</span>}
+          </div>
+        )
+      })
     }
   </div>
 </figure>

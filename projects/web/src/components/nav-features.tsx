@@ -1,6 +1,5 @@
 import { ChevronRight, Folder, FolderOpen, FoldVertical } from 'lucide-react'
 import { useCallback, useContext, useEffect, useState } from 'react'
-
 import {
   Collapsible,
   CollapsibleContent,

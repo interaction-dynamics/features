@@ -1,0 +1,139 @@
+---
+import { FileText, Link, ListChecks, ShieldCheck } from '@lucide/astro'
+import CallToAction from '../components/CallToAction.astro'
+import IsoFigure from '../components/IsoFigure.astro'
+import PageHero from '../components/PageHero.astro'
+import Screenshot from '../components/Screenshot.astro'
+import Section from '../components/Section.astro'
+import Terminal from '../components/Terminal.astro'
+import Base from '../layouts/Base.astro'
+
+const description =
+  'Keep specs and architecture decision records (ADR) next to each feature. Features links them, tracks their status and task progress, and reads GitHub Spec Kit and Kiro specs where they are.'
+
+const recordPoints = [
+  {
+    icon: FileText,
+    title: 'Specs and ADRs side by side',
+    text: 'Specs in __docs__/specs, decisions in __docs__/decisions, one merged timeline per feature. Project-wide ones go in docs/.',
+  },
+  {
+    icon: Link,
+    title: 'Linked both ways',
+    text: 'Write decisions: [002-use-jwt] on a spec and the decision links back. supersedes: retires the old choice.',
+  },
+  {
+    icon: ListChecks,
+    title: 'Progress at a glance',
+    text: 'Status badges for draft, accepted, implemented and superseded. Task checkboxes become a progress bar.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Kept honest in CI',
+    text: 'features check warns about broken links, missing statuses and implemented specs with open tasks.',
+  },
+]
+
+const specLayouts = [
+  {
+    tool: 'Native',
+    path: 'src/features/auth/__docs__/specs/001-login.md',
+    note: 'next to the feature',
+  },
+  {
+    tool: 'GitHub Spec Kit',
+    path: 'specs/003-auth/spec.md',
+    note: 'plan.md, tasks.md, contracts/ as tabs',
+  },
+  {
+    tool: 'Kiro',
+    path: '.kiro/specs/auth/requirements.md',
+    note: 'design.md, tasks.md as tabs',
+  },
+]
+---
+
+<Base
+  title="Specs and decision records"
+  description={description}
+  breadcrumbs={[{ name: 'Specs & decisions', path: '/specs-decisions' }]}
+>
+  <PageHero
+    eyebrow="Specs & decisions"
+    title="What each feature does, and why it's built that way"
+    lead="Specs say what a feature must do. Decision records say why it's built this way. Features reads both from the repository, links them and shows them on the feature's page, so people and agents read the intent before they change the code."
+  >
+    <div class="mx-auto mt-10 max-w-60">
+      <IsoFigure name="specs" />
+    </div>
+  </PageHero>
+
+  <Section
+    id="records"
+    eyebrow="In the repository"
+    title="Records that live next to the code"
+    lead="Plain Markdown files with a small front matter. They move with the feature, show up in code review and never go stale in a wiki."
+  >
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        recordPoints.map(({ icon: Icon, title, text }) => (
+          <li class="card p-5">
+            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent-3">
+              <Icon size={20} aria-hidden="true" />
+            </span>
+            <h3 class="mt-4 font-semibold">{title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <Screenshot
+      name="specs-decisions"
+      alt="Specs & Decisions tab of a feature in the Features dashboard: a timeline of specs and decision records with status badges, task progress bars and links between them"
+      caption="Specs & Decisions: specs and ADRs in one timeline, with status, task progress and links between them."
+      class="mt-10"
+      featured
+    />
+  </Section>
+
+  <Section
+    id="spec-tools"
+    eyebrow="Bring your own spec tool"
+    title="Already writing specs with an AI workflow?"
+    lead="Features reads them where they are and attaches each one to its feature by folder name, or by a feature: key in the front matter."
+  >
+    <div class="grid items-start gap-6 lg:grid-cols-[1.2fr_1fr]">
+      <ul class="space-y-3">
+        {
+          specLayouts.map((layout) => (
+            <li class="card p-4">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span class="rounded-full border border-accent/40 bg-accent/10 px-2 text-[0.7rem] leading-5 text-accent">
+                  {layout.tool}
+                </span>
+                <span class="text-xs text-muted">{layout.note}</span>
+              </div>
+              <p class="mt-2 overflow-x-auto font-mono text-xs whitespace-nowrap">
+                {layout.path} <span class="text-muted">→</span> <span class="text-accent-3">auth</span>
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+      <Terminal title="create and check records">
+<span class="text-muted"># scaffold a spec or a decision in a feature</span>
+<span class="select-none text-muted">$ </span>features new spec auth "Login flow"
+<span class="select-none text-muted">$ </span>features new decision auth "Use JWT"
+
+<span class="text-muted"># catch broken links and missing statuses in CI</span>
+<span class="select-none text-muted">$ </span>features check ./src</Terminal>
+    </div>
+    <p class="mt-8 text-sm text-muted">
+      Front matter, folder layouts and linking rules are in the
+      <a class="link" href="/guidelines#specs-decisions">guidelines</a>. Questions about Spec Kit and Kiro are answered in
+      the <a class="link" href="/faq#are-github-spec-kit-and-kiro-specs-supported">FAQ</a>.
+    </p>
+  </Section>
+
+  <CallToAction />
+</Base>
