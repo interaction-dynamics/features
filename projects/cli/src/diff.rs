@@ -10,7 +10,7 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow};
-use git2::{Delta, DiffFindOptions, DiffOptions, Repository};
+use git2::{Delta, DiffFile, DiffFindOptions, DiffOptions, ObjectType, Oid, Repository};
 
 use crate::codeowners::format_owner;
 use crate::models::Feature;
@@ -153,33 +153,43 @@ pub fn collect_changes(
     find_options.renames(true).for_untracked(true);
     diff.find_similar(Some(&mut find_options))?;
 
-    let files = diff
-        .deltas()
-        .filter_map(|delta| {
-            let status = match delta.status() {
-                Delta::Added | Delta::Untracked => ChangeStatus::Added,
-                Delta::Modified => ChangeStatus::Modified,
-                Delta::Deleted => ChangeStatus::Deleted,
-                Delta::Renamed => ChangeStatus::Renamed,
-                Delta::Copied => ChangeStatus::Copied,
-                Delta::Typechange => ChangeStatus::Typechange,
-                _ => return None,
-            };
-            let to_string = |path: &Path| path.to_string_lossy().replace('\\', "/");
-            let old_path = delta.old_file().path().map(to_string);
-            let new_path = delta.new_file().path().map(to_string);
-            let (path, old_path) = match status {
-                ChangeStatus::Deleted => (old_path?, None),
-                ChangeStatus::Renamed | ChangeStatus::Copied => (new_path?, old_path),
-                _ => (new_path?, None),
-            };
-            Some(ChangedFile {
-                path,
-                old_path,
-                status,
-            })
-        })
-        .collect();
+    let empty_blob = Oid::hash_object(ObjectType::Blob, b"")?;
+    let is_empty = |file: &DiffFile| file.size() == 0 || file.id() == empty_blob;
+    let to_string = |path: &Path| path.to_string_lossy().replace('\\', "/");
+
+    let mut files = Vec::new();
+    for delta in diff.deltas() {
+        let old_path = delta.old_file().path().map(to_string);
+        let new_path = delta.new_file().path().map(to_string);
+        let mut push = |path: Option<String>, old_path: Option<String>, status| {
+            if let Some(path) = path {
+                files.push(ChangedFile {
+                    path,
+                    old_path,
+                    status,
+                });
+            }
+        };
+
+        match delta.status() {
+            Delta::Added | Delta::Untracked => push(new_path, None, ChangeStatus::Added),
+            Delta::Modified => push(new_path, None, ChangeStatus::Modified),
+            Delta::Typechange => push(new_path, None, ChangeStatus::Typechange),
+            Delta::Deleted => push(old_path, None, ChangeStatus::Deleted),
+            // Empty files are all "similar" to each other. Like git, don't pair
+            // them as renames, so an unrelated feature isn't reported as touched.
+            Delta::Renamed if is_empty(&delta.old_file()) || is_empty(&delta.new_file()) => {
+                push(old_path, None, ChangeStatus::Deleted);
+                push(new_path, None, ChangeStatus::Added);
+            }
+            Delta::Copied if is_empty(&delta.old_file()) || is_empty(&delta.new_file()) => {
+                push(new_path, None, ChangeStatus::Added);
+            }
+            Delta::Renamed => push(new_path, old_path, ChangeStatus::Renamed),
+            Delta::Copied => push(new_path, old_path, ChangeStatus::Copied),
+            _ => {}
+        }
+    }
 
     Ok(ChangeSet {
         merge_base: merge_base.to_string(),

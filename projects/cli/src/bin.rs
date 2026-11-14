@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
 
@@ -122,6 +122,75 @@ struct Cli {
     /// Also scan folders skipped by default (node_modules) for features, stats and imports
     #[arg(long)]
     include_skipped_dirs: bool,
+
+    /// Diff mode: list the features touched since the merge base of this git ref and HEAD,
+    /// including uncommitted changes (e.g. --since origin/master)
+    #[arg(
+        long,
+        value_name = "REF",
+        conflicts_with_all = ["serve", "build", "check", "generate_codeowners", "list_owners", "find_owner"]
+    )]
+    since: Option<String>,
+
+    /// With --since: only compare committed changes, ignoring the working tree
+    #[arg(long, requires = "since")]
+    committed_only: bool,
+
+    /// With --since: output format (text, json or markdown). --json is the same as --format json
+    #[arg(long, value_enum, requires = "since")]
+    format: Option<DiffFormat>,
+
+    /// With --since: print only the unique owners of the touched features, one per line,
+    /// with --codeowners-prefix added
+    #[arg(long, requires = "since", conflicts_with = "format")]
+    owners_only: bool,
+}
+
+/// Output formats for diff mode (`--since`)
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+enum DiffFormat {
+    Text,
+    Json,
+    Markdown,
+}
+
+/// Run diff mode: print the features touched since `since`.
+fn run_diff(args: &Cli, since: &str) -> Result<()> {
+    let current_dir = std::env::current_dir()?;
+    let base_path = args.path.clone().unwrap_or_else(|| current_dir.clone());
+    let ignore_paths = resolve_ignore_paths(&args.ignore_path, &current_dir);
+    let config = ScanConfig::new(&current_dir)
+        .skip_changes(true)
+        .ignore_paths(ignore_paths)
+        .ownership_only(true)
+        .include_skipped_dirs(args.include_skipped_dirs);
+    let features = scan_features(&base_path, config)?;
+
+    let include_uncommitted = !args.committed_only;
+    let changes = diff::collect_changes(&base_path, since, include_uncommitted)?;
+    let report = diff::build_report(since, include_uncommitted, &changes, &features);
+
+    if args.owners_only {
+        for owner in diff::unique_owners(&report, &args.codeowners_prefix) {
+            println!("{}", owner);
+        }
+        return Ok(());
+    }
+
+    let format = match (args.format, args.json) {
+        (Some(format), _) => format,
+        (None, true) => DiffFormat::Json,
+        (None, false) => DiffFormat::Text,
+    };
+    match format {
+        DiffFormat::Json => println!("{}", serde_json::to_string_pretty(&report)?),
+        DiffFormat::Markdown => print!(
+            "{}",
+            diff::render_markdown(&report, &args.codeowners_prefix)
+        ),
+        DiffFormat::Text => print!("{}", diff::render_text(&report)),
+    }
+    Ok(())
 }
 
 /// Resolve `--ignore-path` values to canonical absolute paths.
@@ -235,6 +304,11 @@ async fn main() -> Result<()> {
     if args.version {
         println!("{}", env!("CARGO_PKG_VERSION"));
         return Ok(());
+    }
+
+    // Handle diff mode - the path defaults to the current directory
+    if let Some(since) = &args.since {
+        return run_diff(&args, since);
     }
 
     // Handle find-owner flag - this requires a target path but not the base path
