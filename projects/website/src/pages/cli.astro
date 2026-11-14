@@ -74,7 +74,7 @@ const commands = [
     icon: ShieldCheck,
     name: 'check',
     usage: 'features check [PATH]',
-    text: 'Run validation checks on features, such as duplicate names.',
+    text: 'Run validation checks on features, such as duplicate names, and warn about broken links and missing statuses in specs and decisions.',
   },
   {
     icon: GitCompare,
@@ -95,6 +95,11 @@ const optionGroups = [
         'Output features as a flat array instead of a nested structure',
       ],
       ['--description', 'scan', 'Include feature descriptions'],
+      [
+        '--project-records',
+        'scan --json',
+        'Print { features, records } to also get the project-level specs and decisions',
+      ],
       [
         '--coverage',
         'scan',

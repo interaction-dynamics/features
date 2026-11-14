@@ -87,6 +87,12 @@ Warnings are printed but do not fail the check:
 
 FAQ (adding specs, Spec Kit / Kiro support and the mapping rule), `docs/folder-architecture-guidelines.md` (MAY row for specs), the `document-feature` skill and `explore-features/scripts/feature_map.py` (prints records).
 
+### Website and demo
+
+- The home page advertises the feature: a "New" link in the hero, a Specs & decisions section (linked specs and ADRs, progress, `features check`, Spec Kit and Kiro layouts) and a dashboard screenshot.
+- Guidelines, FAQ, CLI and concept pages describe specs, links, Spec Kit / Kiro and project-level records; the `decisions` screenshot is replaced by `specs-decisions`.
+- The live demo example (`examples/demo`, feature 0) gets linked specs and decisions, a folder spec with tasks and a superseded decision.
+
 ## Out of scope
 
 - Writing or editing records from the dashboard.

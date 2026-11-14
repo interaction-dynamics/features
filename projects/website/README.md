@@ -10,7 +10,7 @@ Built with [Astro](https://astro.build) and Tailwind CSS. Hosted on [Vercel](htt
 | ---- | ------- | ------ |
 | `/` | What Features does, how it works, dashboard, pull request integration | `README.md` |
 | `/feature-based-architecture` | The concept, layered vs feature-based, anatomy of a feature | `FAQ.md`, `README.md` |
-| `/guidelines` | Folder structure, README front matter, decisions, annotations | `docs/folder-architecture-guidelines.md`, `docs/readme-format.md` |
+| `/guidelines` | Folder structure, README front matter, specs and decisions, annotations | `docs/folder-architecture-guidelines.md`, `docs/readme-format.md` |
 | `/cli` | Install, commands, options, `diff` + GitHub Actions, CODEOWNERS, coverage | `README.md`, `FAQ.md` |
 | `/faq` | Frequently asked questions (with `FAQPage` structured data) | `FAQ.md` |
 
