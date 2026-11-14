@@ -15,7 +15,7 @@ pub fn get_repository_url(repo_path: &Path) -> Option<String> {
 
     // Try to get the remote origin URL
     if let Ok(remote) = repo.find_remote("origin")
-        && let Some(url) = remote.url()
+        && let Ok(url) = remote.url()
     {
         return Some(strip_url_credentials(url));
     }
@@ -187,7 +187,7 @@ fn collect_tree_paths(
     paths: &mut Vec<String>,
 ) -> Result<()> {
     for entry in tree.iter() {
-        if let Some(name) = entry.name() {
+        if let Ok(name) = entry.name() {
             let path = if prefix.is_empty() {
                 name.to_string()
             } else {
