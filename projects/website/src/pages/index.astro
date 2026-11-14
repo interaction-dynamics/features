@@ -2,6 +2,7 @@
 import {
   ArrowRight,
   BookOpen,
+  Brain,
   Braces,
   ChartPie,
   Construction,
@@ -11,7 +12,10 @@ import {
   FolderTree,
   GitCommitHorizontal,
   GitPullRequest,
+  Layers,
   LayoutDashboard,
+  ScanEye,
+  Sparkles,
   Users,
 } from '@lucide/astro'
 import CallToAction from '../components/CallToAction.astro'
@@ -20,6 +24,29 @@ import Section from '../components/Section.astro'
 import Terminal from '../components/Terminal.astro'
 import { site } from '../data/site'
 import Base from '../layouts/Base.astro'
+
+const aiEraReasons = [
+  {
+    icon: Sparkles,
+    title: "Lines of code don't mean much",
+    text: 'An agent writes a thousand lines as easily as ten. What matters is what the code does for your users: the features.',
+  },
+  {
+    icon: Layers,
+    title: 'Features pile up fast',
+    text: 'When people and agents ship every day, nobody holds the whole product in their head. Features get duplicated, forgotten or left half-finished.',
+  },
+  {
+    icon: ScanEye,
+    title: 'Reviews get shallower',
+    text: 'The more code is generated, the less of it is read closely. A higher-level view shows where each change lands and whose feature it touches.',
+  },
+  {
+    icon: Brain,
+    title: 'The reasoning gets lost',
+    text: "An agent's reasoning vanishes with its session. Docs and decision records kept next to each feature keep it for the next person, or the next agent.",
+  },
+]
 
 const capabilities = [
   {
@@ -232,6 +259,41 @@ const softwareApplication = {
       </figure>
     </div>
   </section>
+
+  <!-- AI era -->
+  <Section
+    id="ai-era"
+    eyebrow="Built for the age of AI"
+    title="Features ship in minutes. Keep track of all of them."
+    lead="With Claude Code, Cursor or Copilot, a new feature takes minutes, not weeks. Writing code is no longer the bottleneck. Knowing what you built is."
+  >
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        aiEraReasons.map(({ icon: Icon, title, text }) => (
+          <li class="card p-5">
+            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-magenta">
+              <Icon size={20} aria-hidden="true" />
+            </span>
+            <h3 class="mt-4 font-semibold">{title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="card relative mt-6 overflow-hidden p-6 sm:p-8">
+      <div class="bg-gradient-brand pointer-events-none absolute inset-0 opacity-10" aria-hidden="true"></div>
+      <div class="relative grid items-center gap-6 md:grid-cols-[1fr_auto]">
+        <p class="text-lg text-pretty">
+          You need <strong class="text-gradient font-semibold">one place to overview all your features</strong>: what
+          exists, who owns it, how healthy it is and what changed recently. Features builds that place from your code,
+          so it stays current however fast you ship.
+        </p>
+        <a href="#how-it-works" class="inline-flex items-center gap-2 rounded-lg border border-line px-5 py-2.5 font-semibold whitespace-nowrap transition hover:border-muted">
+          See how it works <ArrowRight size={18} aria-hidden="true" />
+        </a>
+      </div>
+    </div>
+  </Section>
 
   <!-- How it works -->
   <Section

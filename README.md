@@ -60,6 +60,17 @@ Most codebases are organized by technical layer (`components/`, `services/`, `ut
 
 `features-cli` scans your repository, finds every feature and turns it into an interactive dashboard and a JSON report, using the folders, READMEs and git history you already have.
 
+## Built for the age of AI
+
+With Claude Code, Cursor or Copilot, a new feature takes minutes, not weeks. Writing code is no longer the bottleneck. Keeping track of what you built is.
+
+- **Lines of code don't mean much anymore.** An agent writes a thousand lines as easily as ten. What matters is what the code does for your users: the features.
+- **Features pile up faster than anyone can follow.** When several people and agents ship every day, nobody holds the whole product in their head. Features get duplicated, forgotten or left half-finished.
+- **Reviews get shallower.** The more code is generated, the less of it gets read closely. You need a higher-level view to check that each change lands in the right place and doesn't break another team's feature.
+- **The knowledge behind the code gets lost.** An agent's reasoning vanishes with its session. Docs and decision records kept next to each feature keep it for the next person, or the next agent.
+
+You need one place to overview all your features: what exists, who owns it, how healthy it is and what changed recently. `features-cli` builds that place from your code, so it stays current however fast you ship.
+
 ## What you get
 
 **For engineering managers**
