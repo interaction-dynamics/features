@@ -1,0 +1,1 @@
+This plain text mentions --feature-flag without properties, so it is ignored.
