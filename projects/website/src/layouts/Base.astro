@@ -1,4 +1,5 @@
 ---
+import Analytics from '../components/Analytics.astro'
 import Footer from '../components/Footer.astro'
 import Header from '../components/Header.astro'
 import { site } from '../data/site'
@@ -107,6 +108,7 @@ const structuredData: Record<string, unknown>[] = [
         <script type="application/ld+json" set:html={JSON.stringify(data)} />
       ))
     }
+    <Analytics />
   </head>
   <body class="min-h-screen font-sans antialiased">
     <a
