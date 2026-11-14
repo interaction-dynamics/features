@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [What is a feature-based architecture?](#what-is-a-feature-based-architecture)
+- [Is feature-based architecture the same as Feature-Sliced Design?](#is-feature-based-architecture-the-same-as-feature-sliced-design)
 - [How can I add a feature?](#how-can-i-add-a-feature)
 - [How can I add a feature description?](#how-can-i-add-a-feature-description)
 - [How can I add an owner?](#how-can-i-add-an-owner)
@@ -18,6 +19,14 @@
 Feature-based architecture is a software development approach that organizes code and folders around features or business capabilities rather than technical layers (like components, services, or utils). It is similar to domain-driven development (DDD) but more recursive and more structured. Each feature lives in its own self-contained folder with everything it needs. It promotes modularity, maintainability, and scalability by breaking down complex systems into smaller, more manageable components.
 
 This approach is not meant to replace other architecture design like hexagonal architecture but rather complement it. It is an approach easier to understand for beginners. It can also be shared with product managers, designers and stakeholders.
+
+## Is feature-based architecture the same as Feature-Sliced Design?
+
+No. [Feature-Sliced Design](https://feature-sliced.design/) (FSD) is a stricter methodology built on the same idea. It sorts code into fixed layers (`app`, `pages`, `widgets`, `features`, `entities`, `shared`), splits each layer into slices made of fixed segments (`ui`, `model`, `api`, `lib`), and only lets a layer import from the layers below it.
+
+Feature-based architecture keeps only the core idea: each business feature gets its own folder. Features can be nested inside each other, and the layout inside a feature and the import rules are up to you.
+
+Features works with an FSD codebase too: slices in a `features` folder are detected automatically, and you can add `feature: true` to the README front matter of slices in other layers (`entities`, `widgets`, `pages`) to show them as features.
 
 ## How can I add a feature?
 
