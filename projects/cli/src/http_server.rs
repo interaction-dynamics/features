@@ -13,19 +13,17 @@
 
 use anyhow::Result;
 use include_dir::{Dir, include_dir};
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::RwLock;
-use tokio::time::sleep;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
 use crate::build::current_build_timestamp;
-use crate::file_scanner::list_files_recursive_with_changes;
+use crate::file_watcher::{self, MAX_WAIT, QUIET_PERIOD, WatchFilter};
 use crate::git_helper::get_repository_url;
-use crate::models::{Feature, strip_author_emails};
+use crate::models::Feature;
+use crate::scan::{ScanConfig, scan_features_with};
 
 // Embed the public directory at compile time
 static STATIC_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/public");
@@ -73,17 +71,6 @@ impl ServerConfig {
         self.allowed_origins = origins;
         self
     }
-}
-
-/// Options used when the file watcher recomputes the features
-#[derive(Debug, Clone, Default)]
-pub struct RescanOptions {
-    /// Folders to ignore when features are recomputed
-    pub ignore_paths: Vec<PathBuf>,
-    /// Whether to scan folders skipped by default when features are recomputed
-    pub include_skipped_dirs: bool,
-    /// Whether to remove commit author emails from recomputed features
-    pub strip_emails: bool,
 }
 
 /// Validates and normalizes a value passed to `--allow-origin`.
@@ -172,8 +159,8 @@ fn host_guard() -> impl Filter<Extract = (), Error = warp::Rejection> + Clone {
 /// * `config` - Server configuration (port, allowed CORS origins)
 /// * `watch_path` - Path to watch for file changes
 /// * `on_ready` - Optional callback to be called when server is ready
-/// * `skip_changes` - Whether changes were skipped during feature computation
-/// * `rescan` - Options used when the file watcher recomputes the features
+/// * `scan_config` - Options the features were scanned with, reused when the
+///   file watcher recomputes them
 ///
 /// # Returns
 ///
@@ -183,16 +170,14 @@ pub async fn serve_features_with_watching(
     config: ServerConfig,
     watch_path: PathBuf,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
-    skip_changes: bool,
-    rescan: RescanOptions,
+    scan_config: ScanConfig,
 ) -> Result<()> {
     serve_features_with_config_and_watching(
         features,
         config,
         Some(watch_path),
         on_ready,
-        skip_changes,
-        rescan,
+        scan_config,
     )
     .await
 }
@@ -205,8 +190,8 @@ pub async fn serve_features_with_watching(
 /// * `config` - Server configuration
 /// * `watch_path` - Optional path to watch for file changes
 /// * `on_ready` - Optional callback to be called when server is ready
-/// * `skip_changes` - Whether changes were skipped during feature computation
-/// * `rescan` - Options used when the file watcher recomputes the features
+/// * `scan_config` - Options the features were scanned with, reused when the
+///   file watcher recomputes them
 ///
 /// # Returns
 ///
@@ -216,9 +201,10 @@ pub async fn serve_features_with_config_and_watching(
     config: ServerConfig,
     watch_path: Option<PathBuf>,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
-    skip_changes: bool,
-    rescan: RescanOptions,
+    scan_config: ScanConfig,
 ) -> Result<()> {
+    let skip_changes = scan_config.skip_changes;
+
     // Create shared state for features
     let features_data = Arc::new(RwLock::new(features.to_vec()));
 
@@ -241,7 +227,7 @@ pub async fn serve_features_with_config_and_watching(
                 features_data_clone,
                 built_at_clone,
                 watch_path_clone,
-                rescan,
+                scan_config,
             )
             .await
             {
@@ -396,75 +382,49 @@ fn build_app(
         .boxed()
 }
 
-/// Sets up file system watching for the specified path.
+/// Watches `watch_path` and recomputes the features when a relevant change
+/// happens, once per burst of changes.
 async fn setup_file_watcher(
     features_data: Arc<RwLock<Vec<Feature>>>,
     built_at: Arc<RwLock<String>>,
     watch_path: PathBuf,
-    rescan: RescanOptions,
+    scan_config: ScanConfig,
 ) -> Result<()> {
-    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    let filter = WatchFilter::new(
+        &watch_path,
+        scan_config.ignore_paths.clone(),
+        scan_config.include_skipped_dirs,
+    );
+    // Dropping the watcher would stop it, so keep it for the whole loop
+    let (_watcher, mut changes) = file_watcher::watch(&watch_path, filter)?;
 
-    // Set up the file watcher in a blocking task
-    let watch_path_clone = watch_path.clone();
-    let _watcher = tokio::task::spawn_blocking(move || -> Result<RecommendedWatcher> {
-        let mut watcher = RecommendedWatcher::new(
-            move |res: notify::Result<Event>| {
-                match res {
-                    Ok(event) => {
-                        // Send event through channel
-                        if let Err(e) = tx.blocking_send(event) {
-                            eprintln!("Failed to send file system event: {}", e);
-                        }
-                    }
-                    Err(e) => eprintln!("File watcher error: {:?}", e),
-                }
-            },
-            Config::default(),
-        )?;
+    while file_watcher::next_change(&mut changes, QUIET_PERIOD, MAX_WAIT).await {
+        // Scanning reads the whole project, so keep it off the async workers.
+        // Changes made meanwhile leave one pending signal: one more rescan.
+        let path = watch_path.clone();
+        let config = scan_config.clone();
+        let result = tokio::task::spawn_blocking(move || rescan_features(&path, &config)).await?;
 
-        watcher.watch(&watch_path_clone, RecursiveMode::Recursive)?;
-        Ok(watcher)
-    })
-    .await??;
-
-    // Process file system events
-    while let Some(event) = rx.recv().await {
-        // Check if this is a file we care about (README.md files or directory changes)
-        let should_recompute = event.paths.iter().any(|path| {
-            path.file_name()
-                .map(|name| name == "README.md")
-                .unwrap_or(false)
-                || event.kind.is_create()
-                || event.kind.is_remove()
-        });
-
-        if should_recompute {
-            // Add a small delay to avoid excessive recomputation during rapid changes
-            sleep(Duration::from_millis(500)).await;
-
-            match list_files_recursive_with_changes(
-                &watch_path,
-                &rescan.ignore_paths,
-                rescan.include_skipped_dirs,
-            ) {
-                Ok(mut new_features) => {
-                    if rescan.strip_emails {
-                        strip_author_emails(&mut new_features);
-                    }
-                    let mut features = features_data.write().await;
-                    *features = new_features;
-                    *built_at.write().await = current_build_timestamp();
-                    println!("✅ Features updated successfully");
-                }
-                Err(e) => {
-                    eprintln!("❌ Failed to recompute features: {}", e);
-                }
+        match result {
+            Ok(new_features) => {
+                let mut features = features_data.write().await;
+                *features = new_features;
+                *built_at.write().await = current_build_timestamp();
+                println!("✅ Features updated successfully");
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to recompute features: {}", e);
             }
         }
     }
 
     Ok(())
+}
+
+/// Recomputes the features after a file change, with the same options as the
+/// initial scan (git history or not, coverage, ignored folders, emails...)
+fn rescan_features(watch_path: &Path, scan_config: &ScanConfig) -> Result<Vec<Feature>> {
+    scan_features_with(watch_path, scan_config)
 }
 
 /// Custom error type for serialization failures
@@ -803,5 +763,58 @@ mod tests {
             .await;
         assert_eq!(res.status(), 200);
         assert!(res.headers().get("access-control-allow-origin").is_some());
+    }
+
+    fn all_features(features: &[Feature]) -> Vec<&Feature> {
+        features
+            .iter()
+            .flat_map(|f| std::iter::once(f).chain(all_features(&f.features)))
+            .collect()
+    }
+
+    /// A rescan must keep the options of the initial scan: it used to always
+    /// compute git history and never add coverage.
+    #[test]
+    fn test_rescan_keeps_scan_options() {
+        let base = PathBuf::from("../../examples/rust-basic");
+        let config = ScanConfig::new(&base)
+            .skip_changes(true)
+            .with_coverage(true);
+
+        let initial = scan_features_with(&base, &config).unwrap();
+        let rescanned = rescan_features(&base, &config).unwrap();
+
+        for features in [&initial, &rescanned] {
+            let features = all_features(features);
+            assert!(!features.is_empty());
+            assert!(
+                features.iter().all(|f| f.changes.is_empty()),
+                "--skip-changes must survive a rescan"
+            );
+            assert!(
+                features
+                    .iter()
+                    .any(|f| f.stats.as_ref().is_some_and(|s| s.coverage.is_some())),
+                "coverage must survive a rescan"
+            );
+        }
+        assert_eq!(
+            serde_json::to_value(&initial).unwrap(),
+            serde_json::to_value(&rescanned).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_rescan_keeps_strip_emails() {
+        let base = PathBuf::from("../../examples/rust-basic");
+        let config = ScanConfig::new(&base).strip_emails(true);
+
+        let rescanned = rescan_features(&base, &config).unwrap();
+        let changes: Vec<_> = all_features(&rescanned)
+            .into_iter()
+            .flat_map(|f| &f.changes)
+            .collect();
+        assert!(!changes.is_empty(), "Should find git history");
+        assert!(changes.iter().all(|c| c.author_email.is_empty()));
     }
 }

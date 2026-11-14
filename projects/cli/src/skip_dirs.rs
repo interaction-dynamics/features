@@ -25,3 +25,10 @@ const NON_SOURCE_DIRS: &[&str] = &[
 pub fn is_non_source_dir(dir_name: &str) -> bool {
     SKIPPED_DIRS.contains(&dir_name) || NON_SOURCE_DIRS.contains(&dir_name)
 }
+
+/// Check if the `--serve` file watcher should ignore changes inside a folder:
+/// version control and build output folders. Changes in `coverage` still count,
+/// since coverage reports feed the dashboard.
+pub fn is_watch_ignored_dir(dir_name: &str) -> bool {
+    dir_name != "coverage" && NON_SOURCE_DIRS.contains(&dir_name)
+}
