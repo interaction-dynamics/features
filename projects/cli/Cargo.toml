@@ -1,6 +1,6 @@
 [package]
 name = "features-cli"
-version = "0.14.0"
+version = "0.15.0"
 edition = "2024"
 description = "Map every feature in your codebase: ownership, test coverage, tech debt and git history, as a CLI and web dashboard. Works with any language."
 license = "MIT"
