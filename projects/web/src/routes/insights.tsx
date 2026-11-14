@@ -62,7 +62,7 @@ export default function Insights() {
       <Header>
         <div className="flex items-center gap-2 font-medium">
           <BarChart3 className="h-4 w-4" />
-          Insights
+          Overview
         </div>
       </Header>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">

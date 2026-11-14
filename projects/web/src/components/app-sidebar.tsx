@@ -172,7 +172,9 @@ export function AppSidebar({
         <div className="h-4 absolute top-[-1rem] z-50 inset-x-0 bg-gradient-to-t from-sidebar  to-transparent" />
 
         <SidebarGroup>
-          {/*<SidebarGroupLabel>Insights</SidebarGroupLabel>*/}
+          {features.length > 0 && (
+            <SidebarGroupLabel>Insights</SidebarGroupLabel>
+          )}
           {features.length > 0 && (
             <SidebarMenu>
               <SidebarMenuItem>
@@ -182,7 +184,7 @@ export function AppSidebar({
                       className="cursor-pointer"
                       isActive={isActive}
                     >
-                      <BarChart3 className="h-4 w-4" /> Insights
+                      <BarChart3 className="h-4 w-4" /> Overview
                     </SidebarMenuButton>
                   )}
                 </NavLink>

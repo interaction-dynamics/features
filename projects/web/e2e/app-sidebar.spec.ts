@@ -54,30 +54,30 @@ test.describe('App Sidebar', () => {
     expect(expandedState).toBe('expanded')
   })
 
-  test('should display Insights link when features are present', async ({
+  test('should display Overview link when features are present', async ({
     page,
   }) => {
     // Wait for the sidebar to load
     await page.locator('[data-sidebar="sidebar"]').waitFor()
 
-    // Check if Insights link exists
-    const insightsLink = page.getByRole('link', { name: /insights/i })
-    const isVisible = await insightsLink.isVisible().catch(() => false)
+    // Check if Overview link exists
+    const overviewLink = page.getByRole('link', { name: /overview/i })
+    const isVisible = await overviewLink.isVisible().catch(() => false)
 
-    // Insights link should be visible if features are loaded
+    // Overview link should be visible if features are loaded
     if (isVisible) {
-      await expect(insightsLink).toBeVisible()
+      await expect(overviewLink).toBeVisible()
     }
   })
 
-  test('should navigate to Insights page when clicked', async ({ page }) => {
+  test('should navigate to Overview page when clicked', async ({ page }) => {
     await page.locator('[data-sidebar="sidebar"]').waitFor()
 
-    const insightsLink = page.getByRole('link', { name: /insights/i })
-    const isVisible = await insightsLink.isVisible().catch(() => false)
+    const overviewLink = page.getByRole('link', { name: /overview/i })
+    const isVisible = await overviewLink.isVisible().catch(() => false)
 
     if (isVisible) {
-      await insightsLink.click()
+      await overviewLink.click()
       await expect(page).toHaveURL(/\/insights/)
     }
   })
