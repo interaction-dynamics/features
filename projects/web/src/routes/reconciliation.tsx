@@ -1,4 +1,4 @@
-import { CircleCheck, Repeat, Split } from 'lucide-react'
+import { CircleCheck, Repeat, Split, TriangleAlert } from 'lucide-react'
 import { useContext } from 'react'
 import { useNavigate } from 'react-router'
 import { Header } from '@/components/header'
@@ -90,7 +90,12 @@ export default function Reconciliation() {
 
   return (
     <div className="absolute inset-0 overflow-auto">
-      <Header>Reconciliation issues</Header>
+      <Header>
+        <div className="flex items-center gap-2 font-medium">
+          <TriangleAlert className="h-4 w-4" />
+          Reconciliation issues
+        </div>
+      </Header>
       <div className="flex flex-col gap-4 p-4">
         <p className="text-sm text-muted-foreground">
           Features with the same name are merged across repositories. These
