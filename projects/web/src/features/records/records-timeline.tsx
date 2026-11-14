@@ -81,28 +81,23 @@ function StatusBadge({ status }: { status?: string }) {
 }
 
 function TaskProgressBar({ done, total }: { done: number; total: number }) {
-  const percent = total === 0 ? 0 : Math.round((done / total) * 100)
   return (
     <div
       className="flex items-center gap-2 text-xs text-muted-foreground"
       title={`${done} of ${total} tasks done`}
     >
-      <div
-        className="h-1.5 w-24 overflow-hidden rounded-full bg-muted"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-valuenow={done}
+      <progress
+        className={cn(
+          'h-1.5 w-24 appearance-none overflow-hidden rounded-full bg-muted',
+          '[&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:rounded-full',
+          done === total
+            ? '[&::-moz-progress-bar]:bg-emerald-500 [&::-webkit-progress-value]:bg-emerald-500'
+            : '[&::-moz-progress-bar]:bg-primary [&::-webkit-progress-value]:bg-primary',
+        )}
+        value={done}
+        max={total}
         aria-label="Tasks done"
-      >
-        <div
-          className={cn(
-            'h-full rounded-full',
-            done === total ? 'bg-emerald-500' : 'bg-primary',
-          )}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
+      />
       <span className="tabular-nums">
         {done}/{total}
       </span>
