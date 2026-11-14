@@ -1,0 +1,21 @@
+# Project configuration of `features`.
+# Used by projects/cli/tests/check_rules_test.rs: every rule is on, with tight options.
+check:
+  rules:
+    duplicate-names: error
+    missing-owner:
+      severity: warn
+      allow_inherited: false
+    missing-readme:
+      severity: warn
+      max_files_without_readme: 1
+    min-coverage:
+      severity: error
+      threshold: 50
+    stale-flag:
+      severity: warn
+      max_age_days: 90
+    cross-feature-import:
+      severity: error
+      allow:
+        - features/shared

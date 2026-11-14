@@ -8,6 +8,7 @@ use clap::error::ErrorKind;
 use clap::{ArgGroup, Args, CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;
 
+use crate::checker::CheckArgs;
 use crate::http_server::parse_allowed_origin;
 
 const DEFAULT_PORT: u16 = 3000;
@@ -116,12 +117,19 @@ pub enum Command {
         scan: ScanArgs,
     },
 
-    /// Run checks on the features (e.g. duplicate names)
+    /// Run checks on the features (duplicate names, missing owners, stale flags...).
+    /// Rules are configured in the `check` section of .features.yml or with the options below
     Check {
         /// The folder to scan for features
         #[arg(default_value = ".")]
         path: PathBuf,
 
+        /// Output the findings as JSON (same as --format json)
+        #[arg(long)]
+        json: bool,
+
+        #[command(flatten)]
+        check: CheckArgs,
         #[command(flatten)]
         codeowners: OptionalCodeownersArgs,
         #[command(flatten)]
@@ -155,6 +163,11 @@ pub struct ScanArgs {
     /// Remove commit author emails from the output (JSON, web dashboard and static build)
     #[arg(long)]
     pub strip_emails: bool,
+
+    /// Path to the configuration file [default: .features.yml or .features.yaml in the
+    /// scanned folder, the --project-dir folder or the current folder]
+    #[arg(long, value_name = "PATH")]
+    pub config: Option<PathBuf>,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -317,6 +330,9 @@ pub struct LegacyArgs {
     #[arg(long, group = "legacy_action", help_heading = DEPRECATED_HEADING)]
     pub check: bool,
 
+    #[command(flatten)]
+    pub check_args: CheckArgs,
+
     /// Deprecated: use `features serve`
     #[arg(long, group = "legacy_action", help_heading = DEPRECATED_HEADING)]
     pub serve: bool,
@@ -401,7 +417,7 @@ pub enum Action {
     /// List the features touched since a git ref
     Diff(DiffArgs),
     /// Run checks on the features
-    Check { path: PathBuf },
+    Check { path: PathBuf, check: CheckArgs },
 }
 
 /// A parsed command line
@@ -463,9 +479,18 @@ impl Command {
             Command::Diff { diff, scan } => (Action::Diff(diff), scan, None),
             Command::Check {
                 path,
+                json,
+                check,
                 codeowners,
                 scan,
-            } => (Action::Check { path }, scan, codeowners.requested()),
+            } => (
+                Action::Check {
+                    path,
+                    check: check.with_json(json),
+                },
+                scan,
+                codeowners.requested(),
+            ),
         };
 
         Invocation {
@@ -495,6 +520,14 @@ impl LegacyArgs {
         }
 
         let codeowners = self.generate_codeowners.then_some(self.codeowners);
+
+        if self.check_args.is_used() && !self.check {
+            return Err(Cli::command().error(
+                ErrorKind::ArgumentConflict,
+                "--rule, --enable-rule, --disable-rule, --format and --list-rules \
+                 can only be used with `features check` (or the deprecated --check)",
+            ));
+        }
 
         if let Some(target) = self.find_owner {
             return Ok(Invocation {
@@ -527,7 +560,10 @@ impl LegacyArgs {
                 build_dir: self.build_dir,
             })
         } else if self.check {
-            Action::Check { path }
+            Action::Check {
+                path,
+                check: self.check_args.with_json(self.json),
+            }
         } else if self.list_owners {
             Action::Owners {
                 path,
@@ -745,9 +781,68 @@ mod tests {
 
         let check = Action::Check {
             path: path("./src"),
+            check: CheckArgs::default(),
         };
         assert_eq!(action(&["./src", "--check"]), check);
         assert_eq!(action(&["check", "./src"]), check);
+    }
+
+    #[test]
+    fn test_check_options() {
+        use crate::checker::{OutputFormat, Severity};
+
+        let expected = Action::Check {
+            path: path("./src"),
+            check: CheckArgs {
+                rules: vec![("min-coverage".to_string(), Severity::Error)],
+                enable_rule: vec!["missing-readme".to_string()],
+                disable_rule: vec!["stale-flag".to_string()],
+                format: Some(OutputFormat::Github),
+                list_rules: false,
+            },
+        };
+        let flags = [
+            "--rule",
+            "min-coverage=error",
+            "--enable-rule",
+            "missing-readme",
+            "--disable-rule",
+            "stale-flag",
+            "--format",
+            "github",
+        ];
+        for prefix in [vec!["./src", "--check"], vec!["check", "./src"]] {
+            let args: Vec<&str> = prefix.into_iter().chain(flags).collect();
+            assert_eq!(action(&args), expected, "{args:?}");
+        }
+    }
+
+    #[test]
+    fn test_check_json_selects_json_format() {
+        for args in [
+            vec!["./src", "--check", "--json"],
+            vec!["check", "./src", "--json"],
+        ] {
+            let Action::Check { check, .. } = action(&args) else {
+                panic!("expected a check action for {args:?}");
+            };
+            assert_eq!(check.output_format(), crate::checker::OutputFormat::Json);
+        }
+
+        // --format wins over --json
+        let Action::Check { check, .. } =
+            action(&["check", "./src", "--json", "--format", "github"])
+        else {
+            panic!("expected a check action");
+        };
+        assert_eq!(check.output_format(), crate::checker::OutputFormat::Github);
+    }
+
+    #[test]
+    fn test_check_options_require_check() {
+        let err = parse(&["./src", "--disable-rule", "stale-flag"]).unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::ArgumentConflict);
+        assert!(parse(&["serve", "./src", "--rule", "stale-flag=off"]).is_err());
     }
 
     #[test]
@@ -759,6 +854,7 @@ mod tests {
             coverage_dir: Some(path("cov")),
             project_dir: None,
             strip_emails: true,
+            config: Some(path("features.yml")),
         };
         let flags = [
             "--skip-changes",
@@ -770,6 +866,8 @@ mod tests {
             "--coverage-dir",
             "cov",
             "--strip-emails",
+            "--config",
+            "features.yml",
         ];
         for prefix in [vec!["./src", "--serve"], vec!["serve", "./src"]] {
             let args: Vec<&str> = prefix.into_iter().chain(flags).collect();

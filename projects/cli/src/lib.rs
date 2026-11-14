@@ -2,6 +2,7 @@ pub mod build;
 pub mod checker;
 pub mod cli;
 pub mod codeowners;
+pub mod config;
 pub mod coverage_parser;
 pub mod dependency_resolver;
 pub mod diff;

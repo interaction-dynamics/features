@@ -5,9 +5,10 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use features_cli::build::{BuildConfig, create_build};
-use features_cli::checker::run_checks;
+use features_cli::checker::{CheckContext, print_rules, run_checks};
 use features_cli::cli::{Action, Cli, CodeownersOptions, DiffArgs, Invocation, ScanArgs};
 use features_cli::codeowners::generate_codeowners;
+use features_cli::config::ProjectConfig;
 use features_cli::diff;
 use features_cli::http_server::{ServerConfig, serve_features_with_watching};
 use features_cli::models::Feature;
@@ -209,9 +210,28 @@ async fn run(invocation: Invocation) -> Result<()> {
             .await?;
         }
 
-        Action::Check { path } => {
-            let features = scan_path(&path, &scan_config(&scan, &current_dir))?;
-            run_checks(&features)?;
+        Action::Check { path, check } => {
+            // Load the check configuration first: it decides whether coverage is needed
+            let project_config = ProjectConfig::load_for_scan(
+                scan.config.as_deref(),
+                &path,
+                scan.project_dir.as_deref(),
+                &current_dir,
+            )?;
+            let check_config = check.resolve_config(&project_config)?;
+            if check.list_rules {
+                return print_rules(&check_config, check.output_format());
+            }
+
+            let config = scan_config(&scan, &current_dir)
+                .with_coverage(check_config.is_enabled("min-coverage"));
+            let features = scan_path(&path, &config)?;
+            run_checks(
+                &features,
+                &check_config,
+                &CheckContext::new(&path),
+                check.output_format(),
+            )?;
         }
 
         Action::Codeowners { path } => {
