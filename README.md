@@ -72,7 +72,7 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--port <port>` | `serve` | Change the port (default: 3000) |
 | `--allow-origin <origin>` | `serve` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]` |
 | `--build-dir <path>` | `build` | Output directory for the static build (default: `build`) |
-| `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required) |
+| `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required, here or as `diff.since` in the [configuration file](#configuration-file)) |
 | `--committed-only` | `diff` | Ignore uncommitted and untracked files |
 | `--markdown` | `diff` | Output a markdown table for pull request comments |
 | `--owners-only` | `diff` | Print only the unique owners of the touched features, one per line |
@@ -250,10 +250,17 @@ This works in any programming language:
 
 ## Configuration file
 
-`features` reads an optional YAML configuration file: `.features.yml` (or `.features.yaml`). It looks for it in the scanned folder, then in the `--project-dir` folder, then in the current folder; `--config <path>` points to another file. Each part of the tool has its own section; today only `check` is used.
+`features` reads an optional YAML configuration file: `.features.yml` (or `.features.yaml`). It looks for it in the scanned folder, then in the `--project-dir` folder, then in the current folder; `--config <path>` points to another file. Every command-line option can be set there: shared options at the top level, the options of a command in a section named after it. Options given on the command line win.
 
 ```yaml
+path: src
+skip_changes: true
+serve:
+  port: 4000
+diff:
+  since: origin/main
 check:
+  format: github
   rules:
     missing-owner: error
 ```

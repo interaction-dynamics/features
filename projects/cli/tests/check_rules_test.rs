@@ -278,6 +278,56 @@ fn test_check_subcommand_matches_the_legacy_flag() {
 }
 
 #[test]
+fn test_config_file_provides_the_other_options() {
+    // `path: src` and `skip_changes: true` come from .features.yml
+    let from_config = Command::new(env!("CARGO_BIN_EXE_features"))
+        .current_dir(example_dir())
+        .args(["check", "--json"])
+        .output()
+        .unwrap();
+    assert_eq!(from_config.status.code(), Some(1));
+    assert_eq!(
+        json_report(&from_config),
+        json_report(&run_check(&["--json"]))
+    );
+
+    // The output format can come from the file too
+    let dir = tempfile::tempdir().unwrap();
+    let config = dir.path().join("ci.yml");
+    std::fs::write(
+        &config,
+        format!(
+            "path: {}\nskip_changes: true\ncheck:\n  format: github\n",
+            example_dir().join("src").display()
+        ),
+    )
+    .unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_features"))
+        .current_dir(example_dir())
+        .args(["check", "--config", config.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("::error file=src/features/billing/features/invoices"),
+        "{stdout}"
+    );
+}
+
+#[test]
+fn test_unknown_config_key_is_an_error() {
+    let dir = tempfile::tempdir().unwrap();
+    let config = dir.path().join("typo.yml");
+    std::fs::write(&config, "skip_change: true\n").unwrap();
+
+    let output = run_check(&["--config", config.to_str().unwrap()]);
+    assert_eq!(output.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("typo.yml"), "{stderr}");
+    assert!(stderr.contains("skip_change"), "{stderr}");
+}
+
+#[test]
 fn test_default_rules_on_a_project_without_config() {
     // no-features has no .features.yml; only the rules on by default run
     let output = Command::new(env!("CARGO_BIN_EXE_features"))

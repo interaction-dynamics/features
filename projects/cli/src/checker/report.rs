@@ -7,7 +7,8 @@ use std::path::{Path, PathBuf};
 use super::{CheckContext, CheckReport, Finding, Severity};
 
 /// How the check report is printed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
     /// Human-readable findings, grouped by rule
     #[default]

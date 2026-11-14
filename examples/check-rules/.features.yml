@@ -1,5 +1,8 @@
 # Project configuration of `features`.
 # Used by projects/cli/tests/check_rules_test.rs: every rule is on, with tight options.
+# Options given on the command line win over this file.
+path: src
+skip_changes: true
 check:
   rules:
     duplicate-names: error

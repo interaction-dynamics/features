@@ -57,8 +57,8 @@ impl CheckArgs {
     /// The rule settings: the `check` section of the configuration file,
     /// then the CLI overrides.
     pub fn resolve_config(&self, project: &ProjectConfig) -> Result<CheckConfig> {
-        CheckConfig::resolve(project.check.as_ref(), &self.overrides()).with_context(|| {
-            match &project.path {
+        CheckConfig::resolve(project.check.rules.as_ref(), &self.overrides()).with_context(|| {
+            match &project.source {
                 Some(path) => format!(
                     "invalid check configuration (config file `{}`)",
                     path.display()
@@ -205,7 +205,7 @@ mod tests {
     #[test]
     fn test_resolve_config_errors_name_the_file() {
         let mut project = ProjectConfig::parse("check:\n  rules:\n    nope: error\n").unwrap();
-        project.path = Some(std::path::PathBuf::from("custom.yml"));
+        project.source = Some(std::path::PathBuf::from("custom.yml"));
         let err = CheckArgs::default().resolve_config(&project).unwrap_err();
         let message = format!("{:#}", err);
         assert!(message.contains("custom.yml"), "{message}");

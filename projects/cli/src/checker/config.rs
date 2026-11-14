@@ -2,7 +2,7 @@
 //!
 //! The configuration comes from, in increasing order of precedence:
 //! 1. each rule's default severity and options,
-//! 2. the `check` section of the project configuration file (`.features.yml`),
+//! 2. the `check.rules` section of the project configuration file (`.features.yml`),
 //! 3. the CLI overrides (`--rule`, `--enable-rule`, `--disable-rule`).
 //!
 //! ```yaml
@@ -72,14 +72,6 @@ impl CliOverrides {
     }
 }
 
-/// The `check` section of the configuration file
-#[derive(Debug, Default, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct CheckSection {
-    #[serde(default)]
-    rules: BTreeMap<String, RuleEntry>,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 enum RuleEntry {
@@ -103,15 +95,15 @@ fn validate_rule_id(id: &str, source: &str) -> Result<&'static str> {
 }
 
 impl CheckConfig {
-    /// Builds the configuration from the defaults, the `check` section of the
+    /// Builds the configuration from the defaults, the `check.rules` section of the
     /// configuration file (if any) and the CLI overrides.
-    pub fn resolve(section: Option<&serde_yaml::Value>, overrides: &CliOverrides) -> Result<Self> {
+    pub fn resolve(rules: Option<&serde_yaml::Value>, overrides: &CliOverrides) -> Result<Self> {
         let mut config = Self::default();
 
-        if let Some(section) = section {
+        if let Some(rules) = rules {
             config
-                .apply_section(section)
-                .context("invalid `check` section in the config file")?;
+                .apply_rules(rules)
+                .context("invalid `check.rules` section in the config file")?;
         }
 
         config.apply_overrides(overrides)?;
@@ -120,13 +112,13 @@ impl CheckConfig {
         Ok(config)
     }
 
-    fn apply_section(&mut self, section: &serde_yaml::Value) -> Result<()> {
-        if section.is_null() {
+    fn apply_rules(&mut self, rules: &serde_yaml::Value) -> Result<()> {
+        if rules.is_null() {
             return Ok(());
         }
-        let section: CheckSection = serde_yaml::from_value(section.clone())?;
+        let rules: BTreeMap<String, RuleEntry> = serde_yaml::from_value(rules.clone())?;
 
-        for (id, entry) in section.rules {
+        for (id, entry) in rules {
             let id = validate_rule_id(&id, "check.rules")?;
             let rule = self.rules.get_mut(id).expect("known rule");
 
@@ -197,7 +189,7 @@ mod tests {
 
     fn from_yaml(content: &str) -> Result<CheckConfig> {
         let section: serde_yaml::Value = serde_yaml::from_str(content)?;
-        CheckConfig::resolve(Some(&section), &CliOverrides::default())
+        CheckConfig::resolve(section.get("rules"), &CliOverrides::default())
     }
 
     #[test]
@@ -277,8 +269,8 @@ rules:
     }
 
     #[test]
-    fn test_unknown_check_key_is_an_error() {
-        assert!(from_yaml("rule: {}\n").is_err());
+    fn test_rules_must_be_a_mapping() {
+        assert!(from_yaml("rules: [missing-owner]\n").is_err());
     }
 
     #[test]
@@ -286,7 +278,7 @@ rules:
         let section: serde_yaml::Value =
             serde_yaml::from_str("rules:\n  missing-owner: error\n  min-coverage: warn\n").unwrap();
         let config = CheckConfig::resolve(
-            Some(&section),
+            section.get("rules"),
             &CliOverrides {
                 rules: vec![("missing-owner".to_string(), Severity::Warn)],
                 enable: vec!["missing-readme".to_string(), "min-coverage".to_string()],
