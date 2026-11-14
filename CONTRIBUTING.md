@@ -7,8 +7,8 @@ Thank you for your interest in contributing to the Features CLI project! This do
 ### Prerequisites
 
 - [Rust](https://rustup.rs/) (latest stable version)
-- [Node.js](https://nodejs.org/) (version 14 or higher)
-- [pnpm](https://pnpm.io/) for package management
+- [Node.js](https://nodejs.org/) (version 22 or higher)
+- [Bun](https://bun.sh/) for package management of the web dashboard and website
 - Git
 
 ### Local Development

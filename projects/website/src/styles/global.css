@@ -1,6 +1,5 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @theme {
   /* Monochrome palette, in the spirit of Linear: near-black, off-white and grays. */
   --color-ink: #08090a;
@@ -17,10 +16,10 @@
   --color-gradient-from: #f9f9f9;
   --color-gradient-to: #b3b3b3;
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
   --font-mono:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono',
     monospace;
 }
 
@@ -40,11 +39,11 @@ body {
       60rem 30rem at 50% -10%,
       color-mix(in oklab, var(--color-text) 6%, transparent),
       transparent 70%
-    ), var(--color-ink);
+    ),
+    var(--color-ink);
   background-repeat: no-repeat;
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @utility text-gradient {
   background-image: linear-gradient(
     180deg,
@@ -56,7 +55,6 @@ body {
   color: transparent;
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @utility bg-gradient-brand {
   background-image: linear-gradient(
     180deg,
@@ -65,14 +63,12 @@ body {
   );
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @utility card {
   border: 1px solid var(--color-line);
   background: color-mix(in oklab, var(--color-surface) 85%, transparent);
   border-radius: 1rem;
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @utility grid-bg {
   background-image:
     linear-gradient(var(--color-line) 1px, transparent 1px),
