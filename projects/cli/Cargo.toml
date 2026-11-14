@@ -29,7 +29,7 @@ anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 serde_json = { version = "1.0", features = ["preserve_order"] }
-toml = "0.8"
+toml = "1.2"
 colored = "3.1"
 # Only local repositories are read, so the network transports (https/ssh) and
 # their OpenSSL/libssh2 dependencies are not needed
