@@ -84,7 +84,7 @@ jobs:
 
   e2e-tests:
     name: End-to-end Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.57 has no chromium build for ubuntu 26.04
     steps:
       - uses: actions/checkout@v5
         with:
