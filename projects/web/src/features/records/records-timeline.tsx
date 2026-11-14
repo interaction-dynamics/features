@@ -19,15 +19,17 @@ import {
   contentWithoutTitle,
   filterRecords,
   findLinkTarget,
+  fileMarkdown,
+  isToolRecord,
   KIND_LABELS,
   type KindFilter,
   type RecordLink,
   recordAnchorId,
   recordLinks,
+  SOURCE_LABELS,
   type StatusTone,
   sortRecords,
   statusTone,
-  stripTitleHeading,
 } from './utils'
 
 const TONE_CLASSES: Record<StatusTone, string> = {
@@ -56,6 +58,19 @@ function KindBadge({ record }: { record: FeatureRecord }) {
     >
       <Icon className="h-3 w-3" />
       {KIND_LABELS[record.kind]}
+    </span>
+  )
+}
+
+function SourceBadge({ record }: { record: FeatureRecord }) {
+  const label = SOURCE_LABELS[record.source ?? 'native']
+  if (!label) return null
+  return (
+    <span
+      className={cn(pillClass, 'border text-muted-foreground')}
+      data-testid="record-source"
+    >
+      {label}
     </span>
   )
 }
@@ -170,7 +185,10 @@ function RecordCard({
               <div className="flex-1 min-w-0 flex flex-col gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <KindBadge record={record} />
-                  <StatusBadge status={record.status} />
+                  {(record.status || !isToolRecord(record)) && (
+                    <StatusBadge status={record.status} />
+                  )}
+                  <SourceBadge record={record} />
                   {record.date && (
                     <span className="text-xs text-muted-foreground tabular-nums">
                       {record.date}
@@ -211,10 +229,7 @@ function RecordCard({
                   {file.name}
                 </p>
                 <MarkdownRenderer
-                  markdown={stripTitleHeading(
-                    file.content,
-                    file.name.replace(/\.mdx?$/i, ''),
-                  )}
+                  markdown={fileMarkdown(file.name, file.content)}
                 />
               </div>
             ))}

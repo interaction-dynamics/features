@@ -1,4 +1,9 @@
-import type { FeatureRecord, RecordKind, RecordLinks } from '@/models/feature'
+import type {
+  FeatureRecord,
+  RecordKind,
+  RecordLinks,
+  RecordSource,
+} from '@/models/feature'
 
 export type KindFilter = 'all' | RecordKind
 
@@ -8,6 +13,25 @@ export const INACTIVE_STATUSES = ['superseded', 'rejected', 'deprecated']
 export const KIND_LABELS: Record<RecordKind, string> = {
   spec: 'Spec',
   decision: 'ADR',
+}
+
+/** Badge of the tool a record comes from, none for native records */
+export const SOURCE_LABELS: Record<RecordSource, string | null> = {
+  native: null,
+  speckit: 'Spec Kit',
+  kiro: 'Kiro',
+}
+
+export const isToolRecord = (record: FeatureRecord): boolean =>
+  (record.source ?? 'native') !== 'native'
+
+/** Markdown of a sub-file: non-markdown files (contracts...) as a code block */
+export const fileMarkdown = (name: string, content: string): string => {
+  const extension = name.split('.').pop()?.toLowerCase() ?? ''
+  if (extension === 'md' || extension === 'mdx') {
+    return stripTitleHeading(content, name.replace(/\.mdx?$/i, ''))
+  }
+  return `\`\`\`${extension}\n${content.trimEnd()}\n\`\`\``
 }
 
 export const isInactive = (record: FeatureRecord): boolean =>

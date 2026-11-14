@@ -92,7 +92,7 @@ Each feature of the JSON report has a `records` array (the `decisions` array of 
 }
 ```
 
-`status`, `date`, `tasks`, `files` (the other files of a folder spec) and `feature` are only present when known. The top level of `features scan --json` stays an array of features: project-level records (root `docs/specs`, `docs/decisions` and `docs/adr` files without a `feature:` frontmatter) are printed by `features records --json`, served at `/records.json` by `features serve` and written to `records.json` by `features build`, as `{ "records": [...] }`. See the [FAQ](../FAQ.md#how-can-i-add-a-spec-or-a-decision) for the file format.
+`status`, `date`, `tasks`, `files` (the other files of a folder spec) and `feature` are only present when known. `source` is `speckit` or `kiro` for specs read from a [GitHub Spec Kit or Kiro folder](../FAQ.md#are-github-spec-kit-and-kiro-specs-supported), and absent otherwise. The top level of `features scan --json` stays an array of features: project-level records (root `docs/specs`, `docs/decisions` and `docs/adr` files without a `feature:` frontmatter) are printed by `features records --json`, served at `/records.json` by `features serve` and written to `records.json` by `features build`, as `{ "records": [...] }`. See the [FAQ](../FAQ.md#how-can-i-add-a-spec-or-a-decision) for the file format.
 
 ### List the features and owners touched by a change
 

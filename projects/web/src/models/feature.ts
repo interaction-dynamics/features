@@ -62,6 +62,9 @@ export type FeatureRepository = {
 
 export type RecordKind = 'spec' | 'decision'
 
+/** Layout a record was read from: native folders, GitHub Spec Kit or Kiro */
+export type RecordSource = 'native' | 'speckit' | 'kiro'
+
 export type RecordLinks = {
   /** Related decisions (`decisions:` frontmatter, mostly on specs) */
   decisions: string[]
@@ -95,8 +98,10 @@ export type FeatureRecord = {
   path: string
   /** Markdown of the main file, without its frontmatter */
   content: string
-  /** Other markdown files of a folder record (plan.md, tasks.md...) */
+  /** Other files of a folder record (plan.md, tasks.md, contracts/api.yaml...) */
   files?: RecordFile[]
+  /** Missing for native records */
+  source?: RecordSource
   links: RecordLinks
   tasks?: { done: number; total: number }
   /** Feature a project-level record is attached to (`feature:` frontmatter) */
@@ -227,6 +232,7 @@ export const FeatureRecordSchema: z.ZodType<FeatureRecord> = z.object({
   path: z.string(),
   content: z.string(),
   files: z.array(RecordFileSchema).optional(),
+  source: z.enum(['native', 'speckit', 'kiro']).optional(),
   links: RecordLinksSchema,
   tasks: z.object({ done: z.number(), total: z.number() }).optional(),
   feature: z.string().optional(),

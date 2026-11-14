@@ -7,6 +7,7 @@ import {
   ChartPie,
   Construction,
   FileLock,
+  FileText,
   Flag,
   FlaskConical,
   FolderTree,
@@ -14,7 +15,10 @@ import {
   GitPullRequest,
   Layers,
   LayoutDashboard,
+  Link,
+  ListChecks,
   ScanEye,
+  ShieldCheck,
   Sparkles,
   Users,
 } from '@lucide/astro'
@@ -44,7 +48,7 @@ const aiEraReasons = [
   {
     icon: Brain,
     title: 'The reasoning gets lost',
-    text: "An agent's reasoning vanishes with its session. Docs and decision records kept next to each feature keep it for the next person, or the next agent.",
+    text: "An agent's reasoning vanishes with its session. Specs and decision records kept next to each feature keep it for the next person, or the next agent.",
   },
 ]
 
@@ -67,7 +71,7 @@ const capabilities = [
   {
     icon: BookOpen,
     title: 'Surface the docs',
-    text: 'README descriptions and decision records (ADR) are attached to their feature.',
+    text: 'README descriptions, specs and decision records (ADR) are attached to their feature, Spec Kit and Kiro specs included.',
   },
   {
     icon: FlaskConical,
@@ -98,6 +102,47 @@ const capabilities = [
     icon: Flag,
     title: 'Map feature flags',
     text: 'Annotate code with comments to track flags, experiments and dependencies.',
+  },
+]
+
+const recordPoints = [
+  {
+    icon: FileText,
+    title: 'Specs and ADRs side by side',
+    text: 'Specs in __docs__/specs, decisions in __docs__/decisions, one merged timeline per feature. Project-wide ones go in docs/.',
+  },
+  {
+    icon: Link,
+    title: 'Linked both ways',
+    text: 'Write decisions: [002-use-jwt] on a spec and the decision links back. supersedes: retires the old choice.',
+  },
+  {
+    icon: ListChecks,
+    title: 'Progress at a glance',
+    text: 'Status badges for draft, accepted, implemented and superseded. Task checkboxes become a progress bar.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Kept honest in CI',
+    text: 'features check warns about broken links, missing statuses and implemented specs with open tasks.',
+  },
+]
+
+const specLayouts = [
+  {
+    tool: 'Native',
+    path: 'src/features/auth/__docs__/specs/001-login.md',
+    note: 'next to the feature',
+  },
+  {
+    tool: 'GitHub Spec Kit',
+    path: 'specs/003-auth/spec.md',
+    note: 'plan.md, tasks.md, contracts/ as tabs',
+  },
+  {
+    tool: 'Kiro',
+    path: '.kiro/specs/auth/requirements.md',
+    note: 'design.md, tasks.md as tabs',
   },
 ]
 
@@ -208,10 +253,15 @@ const softwareApplication = {
     <div class="grid-bg pointer-events-none absolute inset-0 opacity-40" aria-hidden="true"></div>
     <div class="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pt-16 pb-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
       <div>
-        <p class="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs text-muted">
-          <span class="size-1.5 rounded-full bg-accent-3" aria-hidden="true"></span>
-          Open source · Any language
-        </p>
+        <div class="flex flex-wrap gap-2">
+          <p class="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs text-muted">
+            <span class="size-1.5 rounded-full bg-accent-3" aria-hidden="true"></span>
+            Open source · Any language
+          </p>
+          <a href="#specs-decisions" class="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs text-accent transition hover:border-accent">
+            New: specs &amp; decisions, Spec Kit and Kiro <ArrowRight size={12} aria-hidden="true" />
+          </a>
+        </div>
         <h1 class="mt-6 text-4xl font-bold tracking-tight text-balance sm:text-6xl">
           Every feature of your codebase, <span class="text-gradient">mapped.</span>
         </h1>
@@ -455,6 +505,64 @@ const softwareApplication = {
         Explore the live demo <ArrowRight size={16} aria-hidden="true" />
       </a>
     </p>
+  </Section>
+
+  <!-- Specs & decisions -->
+  <Section
+    id="specs-decisions"
+    eyebrow="Specs & decisions"
+    title="What each feature does, and why it's built that way"
+    lead="Specs say what a feature must do. Decision records say why it's built this way. Features reads both from the repository, links them and shows them on the feature's page, so people and agents read the intent before they change the code."
+  >
+    <div class="grid items-start gap-6 lg:grid-cols-[1.1fr_1fr]">
+      <ul class="grid gap-4 sm:grid-cols-2">
+        {
+          recordPoints.map(({ icon: Icon, title, text }) => (
+            <li class="card p-5">
+              <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-accent-3">
+                <Icon size={20} aria-hidden="true" />
+              </span>
+              <h3 class="mt-4 font-semibold">{title}</h3>
+              <p class="mt-1.5 text-sm text-muted">{text}</p>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="card relative overflow-hidden p-6">
+        <div class="bg-gradient-brand pointer-events-none absolute inset-0 opacity-10" aria-hidden="true"></div>
+        <div class="relative">
+          <p class="font-semibold">Bring your own spec tool</p>
+          <p class="mt-1.5 text-sm text-muted">
+            Already writing specs with an AI workflow? Features reads them where they are and attaches each one to
+            its feature by folder name, or by a <code>feature:</code> key.
+          </p>
+          <ul class="mt-5 space-y-3">
+            {
+              specLayouts.map((layout) => (
+                <li class="rounded-xl border border-line bg-ink/50 p-3.5">
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span class="rounded-full border border-accent/40 bg-accent/10 px-2 text-[0.7rem] leading-5 text-accent">
+                      {layout.tool}
+                    </span>
+                    <span class="text-xs text-muted">{layout.note}</span>
+                  </div>
+                  <p class="mt-2 overflow-x-auto font-mono text-xs whitespace-nowrap">
+                    {layout.path} <span class="text-muted">→</span> <span class="text-accent-3">auth</span>
+                  </p>
+                </li>
+              ))
+            }
+          </ul>
+          <a href="/guidelines#specs-decisions" class="link mt-5 inline-block text-sm">Write your first spec</a>
+        </div>
+      </div>
+    </div>
+    <Screenshot
+      name="specs-decisions"
+      alt="Specs & Decisions tab of a feature in the Features dashboard: a timeline of specs and decision records with status badges, task progress bars and links between them"
+      caption="Specs & Decisions: specs and ADRs in one timeline, with status, task progress and links between them."
+      class="mt-10 shadow-2xl shadow-black/50"
+    />
   </Section>
 
   <!-- Pull request -->

@@ -76,6 +76,27 @@ impl RecordKind {
     }
 }
 
+/// Layout a record was read from
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename_all = "lowercase")]
+pub enum RecordSource {
+    /// `__docs__/{specs,decisions}`, `.docs/...` or root `docs/...` and `specs/*.md`
+    #[default]
+    Native,
+    /// GitHub Spec Kit: root `specs/NNN-name/spec.md`
+    Speckit,
+    /// Kiro: `.kiro/specs/<name>/requirements.md`
+    Kiro,
+}
+
+impl RecordSource {
+    pub fn is_native(&self) -> bool {
+        *self == RecordSource::Native
+    }
+}
+
 /// Links between records, by record id. Filled in both directions when scanning.
 #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -99,7 +120,7 @@ impl RecordLinks {
     }
 }
 
-/// A secondary file of a folder record (`plan.md`, `tasks.md`...)
+/// A secondary file of a folder record (`plan.md`, `tasks.md`, `contracts/api.yaml`...)
 #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct RecordFile {
@@ -135,6 +156,9 @@ pub struct Record {
     /// Other markdown files of a folder record
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<RecordFile>,
+    /// Layout the record was read from, omitted for native records
+    #[serde(skip_serializing_if = "RecordSource::is_native")]
+    pub source: RecordSource,
     pub links: RecordLinks,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tasks: Option<TaskProgress>,

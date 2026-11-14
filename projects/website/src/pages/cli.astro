@@ -3,11 +3,13 @@ import { Code } from 'astro:components'
 import {
   ChevronDown,
   FileLock,
+  FilePlus,
   FileSearch,
   GitCompare,
   Hammer,
   LayoutDashboard,
   ListTree,
+  NotebookText,
   ShieldCheck,
   Users,
 } from '@lucide/astro'
@@ -89,7 +91,19 @@ const commands = [
     icon: ShieldCheck,
     name: 'check',
     usage: 'features check [PATH]',
-    text: 'Run validation checks on features, such as duplicate names.',
+    text: 'Run validation checks on features, such as duplicate names, and warn about broken links and missing statuses in specs and decisions.',
+  },
+  {
+    icon: NotebookText,
+    name: 'records',
+    usage: 'features records [PATH]',
+    text: 'List the specs and decision records of the project and of every feature, Spec Kit and Kiro specs included. --json prints the project-level ones.',
+  },
+  {
+    icon: FilePlus,
+    name: 'new',
+    usage: 'features new <spec|decision> <FEATURE> <TITLE>',
+    text: 'Create the next numbered spec or decision record in the feature (. for the project-level docs/ folder).',
   },
   {
     icon: GitCompare,
@@ -107,7 +121,7 @@ const optionGroups: { title: string; options: Option[] }[] = [
   {
     title: 'Output',
     options: [
-      ['--json', 'scan, find-owner, owners, diff', 'Output as JSON'],
+      ['--json', 'scan, find-owner, owners, diff, records', 'Output as JSON'],
       [
         '--flat',
         'scan',
