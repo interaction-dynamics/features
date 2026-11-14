@@ -1,4 +1,4 @@
-import { ArrowUpRight, FolderTree, User } from 'lucide-react'
+import { ArrowUpRight, FolderTree, Loader2, User } from 'lucide-react'
 import {
   useCallback,
   useContext,
@@ -238,7 +238,8 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [nodes, setNodes] = useState<GraphNode[]>([])
   const [edges, setEdges] = useState<GraphEdge[]>([])
-  const [simulating, setSimulating] = useState(false)
+  // Starts true so the first render shows the loader, not the empty state
+  const [simulating, setSimulating] = useState(true)
   const [selected, setSelected] = useState<string | null>(null)
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, s: 1 })
   const panRef = useRef(false)
@@ -285,15 +286,17 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
     setSimulating(true)
     setEdges(initialEdges)
 
+    // Run the layout off-screen in chunks (one per frame, to keep the page
+    // responsive) and only render the graph once it has settled and is fitted.
     const tick = () => {
       for (let i = 0; i < 6; i++) simulateStep(ns, nm, initialEdges)
       frames++
-      setNodes([...ns])
       if (frames < 70) {
         raf = requestAnimationFrame(tick)
       } else {
-        setSimulating(false)
+        setNodes([...ns])
         fitToView(ns)
+        setSimulating(false)
       }
     }
     raf = requestAnimationFrame(tick)
@@ -363,8 +366,8 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
   }, [selected, edges])
 
   const owners = useMemo(
-    () => [...new Set(nodes.map((n) => n.owner))].sort(),
-    [nodes],
+    () => [...new Set(initialNodes.map((n) => n.owner))].sort(),
+    [initialNodes],
   )
 
   const arrCycleId = useId()
@@ -383,16 +386,11 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
       {/* Stats + legend bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border px-4 py-2 text-sm">
         <div className="flex items-center gap-4 text-muted-foreground">
-          <span>{nodes.length} features</span>
-          <span>{edges.length} dependencies</span>
+          <span>{initialNodes.length} features</span>
+          <span>{initialEdges.length} dependencies</span>
           {cycleEdgeKeys.size > 0 && (
             <span style={{ color: CYCLE_COLOR }}>
               {cycleEdgeKeys.size} circular
-            </span>
-          )}
-          {simulating && (
-            <span className="animate-pulse text-primary">
-              Laying out graph…
             </span>
           )}
         </div>
@@ -513,6 +511,8 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
 
           <g
             transform={`translate(${transform.x},${transform.y}) scale(${transform.s})`}
+            className="transition-opacity duration-300"
+            style={{ opacity: simulating ? 0 : 1 }}
           >
             {/* Edges */}
             {edges.map((e) => {
@@ -656,6 +656,14 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
             })}
           </g>
         </svg>
+
+        {/* Loader while the layout is computed */}
+        {simulating && (
+          <output className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Laying out graph…</span>
+          </output>
+        )}
 
         {/* Zoom buttons */}
         <div className="absolute bottom-3 right-3 flex flex-col gap-1">

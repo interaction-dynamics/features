@@ -1,6 +1,8 @@
 ---
 import {
+  Box,
   Boxes,
+  Folder,
   Layers,
   MessagesSquare,
   Network,
@@ -127,8 +129,18 @@ const anatomy: TreeNode[] = [
   },
 ]
 
-const layers = ['UI components', 'State & hooks', 'Services & API', 'Utils']
-const columns = ['auth', 'billing', 'search']
+const layers = [
+  { name: 'UI components', folder: 'components/' },
+  { name: 'State & hooks', folder: 'hooks/' },
+  { name: 'Services & API', folder: 'services/' },
+  { name: 'Utils', folder: 'utils/' },
+]
+// One file per feature and layer, shown in both views of the slices diagram.
+const columns = [
+  { name: 'auth', owner: 'team-auth', color: 'var(--color-green)', files: ['LoginForm.tsx', 'useSession.ts', 'authApi.ts', 'token.ts'] },
+  { name: 'billing', owner: 'team-billing', color: 'var(--color-yellow)', files: ['Invoice.tsx', 'usePlan.ts', 'stripe.ts', 'money.ts'] },
+  { name: 'search', owner: 'team-discovery', color: 'var(--color-orange)', files: ['SearchBar.tsx', 'useQuery.ts', 'searchApi.ts', 'rank.ts'] },
+]
 
 const benefits = [
   {
@@ -214,33 +226,41 @@ const article = {
     title="Slice your code like your product"
     lead="A layered codebase cuts the product horizontally: one feature is spread across every technical folder. A feature-based codebase cuts it vertically: each feature is one column you can see, own and measure."
   >
-    <div class="grid gap-6 md:grid-cols-2">
+    <div class="reveal grid gap-6 md:grid-cols-2">
       <figure class="card overflow-hidden p-6">
         <div class="dot-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true"></div>
         <figcaption class="relative flex items-center justify-between">
           <span class="font-semibold">Layered</span>
           <span class="text-xs text-muted">organized by technical role</span>
         </figcaption>
-        <div class="relative mt-6 space-y-2" role="img" aria-label="Diagram: each technical layer is a horizontal band containing a piece of every feature, so auth is split across four bands">
+        <div class="relative mt-6 space-y-2" role="img" aria-label="Diagram: each technical layer is a horizontal folder containing a file of every feature, so the files of auth are split across four folders">
           {
-            layers.map((layer) => (
-              <div class="flex items-center gap-3 rounded-lg border border-line bg-ink/70 px-3 py-2.5">
-                <span class="w-28 shrink-0 text-xs text-muted">{layer}</span>
-                <span class="flex flex-1 gap-1.5">
-                  <span class="h-3 flex-1 rounded bg-gradient-to-r from-accent to-accent-2 shadow-[0_0_12px_-2px_var(--color-accent)]" />
-                  <span class="h-3 flex-1 rounded bg-gradient-to-r from-accent-3/30 to-accent-3/10" />
-                  <span class="h-3 flex-1 rounded bg-gradient-to-r from-accent-3/30 to-accent-3/10" />
-                </span>
+            layers.map((layer, layerIndex) => (
+              <div class="anim-row rounded-lg border border-line bg-ink/70 px-3 py-2" style={`--delay:${layerIndex * 120}ms`}>
+                <div class="flex items-center justify-between text-[0.65rem] text-muted">
+                  <span class="inline-flex items-center gap-1.5 font-mono"><Folder size={11} aria-hidden="true" />{layer.folder}</span>
+                  <span>{layer.name}</span>
+                </div>
+                <div class="mt-1.5 grid grid-cols-3 gap-1.5">
+                  {columns.map((column, index) => (
+                    <span
+                      class:list={[
+                        'truncate rounded px-1.5 py-1 font-mono text-[0.6rem]',
+                        index === 0
+                          ? 'anim-hop bg-gradient-to-r from-accent to-accent-2 font-semibold text-ink shadow-[0_0_12px_-2px_var(--color-accent)]'
+                          : 'bg-gradient-to-r from-accent-3/25 to-accent-3/10 text-muted',
+                      ]}
+                      style={index === 0 ? `--delay:${800 + layerIndex * 600}ms` : undefined}
+                    >
+                      {column.files[layerIndex]}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))
           }
-          <div class="flex gap-3 px-3 pt-1 font-mono text-[0.65rem] text-muted" aria-hidden="true">
-            <span class="w-28 shrink-0" />
-            <span class="flex flex-1 gap-1.5 text-center">
-              <span class="flex-1 text-accent">auth</span>
-              <span class="flex-1">billing</span>
-              <span class="flex-1">search</span>
-            </span>
+          <div class="grid grid-cols-3 gap-1.5 px-3 pt-1 text-center font-mono text-[0.65rem] text-muted" aria-hidden="true">
+            {columns.map((column, index) => <span class:list={[index === 0 && 'text-accent']}>{column.name}</span>)}
           </div>
         </div>
         <p class="relative mt-4 text-sm text-muted">To understand <em>auth</em>, you read four folders.</p>
@@ -251,40 +271,49 @@ const article = {
           <span class="font-semibold">Feature-based</span>
           <span class="text-xs text-muted">organized by business capability</span>
         </figcaption>
-        <div class="relative mt-6 grid grid-cols-3 gap-3" role="img" aria-label="Diagram: each feature is a vertical column containing all its layers, so auth is one column">
+        <div class="relative mt-6 grid grid-cols-3 gap-3" role="img" aria-label="Diagram: each feature is a vertical folder containing all its layers and an owner, so auth is one folder owned by team-auth">
           {
             columns.map((column, index) => {
               const active = index === 0
               return (
                 <div
                   class:list={[
-                    'relative overflow-hidden rounded-lg border p-2',
+                    'anim-rise relative flex flex-col overflow-hidden rounded-lg border p-2',
                     active
                       ? 'border-accent/40 bg-gradient-to-b from-accent/10 to-ink/70 shadow-[0_0_30px_-8px_var(--color-accent)]'
                       : 'border-line bg-ink/70',
                   ]}
+                  style={`--delay:${index * 150}ms`}
                 >
                   {active && <span class="beam absolute inset-x-0 top-0 h-px" aria-hidden="true" />}
-                  <p class:list={['mb-2 text-center font-mono text-xs font-semibold', active ? 'text-accent' : 'text-muted']}>
-                    {column}/
+                  <p class:list={['mb-2 flex items-center justify-center gap-1 font-mono text-xs font-semibold', active ? 'text-accent' : 'text-muted']}>
+                    <Box size={12} class="opacity-70" aria-hidden="true" />
+                    {column.name}/
                   </p>
                   <div class="space-y-1.5">
-                    {layers.map((_, layerIndex) => (
+                    {column.files.map((file, layerIndex) => (
                       <span
                         class:list={[
-                          'block h-[1.6rem] rounded',
-                          active ? 'bg-gradient-to-r from-accent to-accent-2' : 'bg-gradient-to-r from-accent-3/30 to-accent-3/10',
+                          'anim-wipe block truncate rounded px-1.5 py-1 font-mono text-[0.6rem]',
+                          active ? 'bg-gradient-to-r from-accent to-accent-2 font-semibold text-ink' : 'bg-gradient-to-r from-accent-3/25 to-accent-3/10 text-muted',
                         ]}
-                        style={active ? `opacity:${1 - layerIndex * 0.12}` : undefined}
-                      />
+                        style={`--delay:${400 + index * 150 + layerIndex * 110}ms${active ? `;opacity:${1 - layerIndex * 0.1}` : ''}`}
+                        title={layers[layerIndex].name}
+                      >
+                        {file}
+                      </span>
                     ))}
                   </div>
+                  <span class="mt-2 inline-flex items-center gap-1 self-center truncate rounded-full border border-line bg-surface-2 px-1.5 text-[0.55rem] leading-4 text-muted">
+                    <span class="size-1.5 shrink-0 rounded-full" style={`background:${column.color}`} aria-hidden="true" />
+                    {column.owner}
+                  </span>
                 </div>
               )
             })
           }
         </div>
-        <p class="relative mt-4 text-sm text-muted">To understand <em>auth</em>, you open one folder.</p>
+        <p class="relative mt-4 text-sm text-muted">To understand <em>auth</em>, you open one folder, owned by one team.</p>
       </figure>
     </div>
   </Section>
