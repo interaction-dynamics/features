@@ -13,6 +13,20 @@
         "4321"
       ],
       "port": 4321
+    },
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "--cwd=projects/web",
+        "dev",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
     }
   ]
 }

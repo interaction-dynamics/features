@@ -5,7 +5,7 @@ const heights = {
   ownership: 560,
   dependencies: 800,
   feature: 560,
-  decisions: 480,
+  decisions: 560,
   flags: 480,
   'nested-features': 560,
 } as const
@@ -16,8 +16,10 @@ interface Props {
   caption?: string
   /** Load immediately instead of lazily (for images above the fold). */
   eager?: boolean
-  /** Hero treatment: tilted back until it scrolls into view, with a light behind it. */
+  /** Hero treatment: tilted back until it scrolls into view, with a colored light behind it. */
   featured?: boolean
+  /** Fade the bottom of the screenshot into the page instead of cutting it. */
+  fade?: boolean
   class?: string
 }
 
@@ -27,6 +29,7 @@ const {
   caption,
   eager = false,
   featured = false,
+  fade = false,
   class: className = '',
 } = Astro.props
 const src = `/screenshots/${name}.webp`
@@ -35,10 +38,10 @@ const src = `/screenshots/${name}.webp`
 <figure class:list={['relative', className]}>
   {
     featured && (
-      <div class="spotlight pointer-events-none absolute inset-x-[10%] -top-16 h-56" aria-hidden="true" />
+      <div class="spotlight-color pointer-events-none absolute inset-x-[8%] -top-28 h-72" aria-hidden="true" />
     )
   }
-  <div class:list={['card overflow-hidden p-1.5 shadow-2xl shadow-black/60', { tilt: featured }]}>
+  <div class:list={['card overflow-hidden p-1.5 shadow-2xl shadow-black/60', { tilt: featured, 'fade-shot': fade }]}>
     <a
       href={`/screenshots/${name}@2x.webp`}
       class="block overflow-hidden rounded-[0.6rem] border border-line/70"
@@ -57,5 +60,5 @@ const src = `/screenshots/${name}.webp`
       />
     </a>
   </div>
-  {caption && <figcaption class="mt-3 px-1 text-sm text-muted">{caption}</figcaption>}
+  {caption && <figcaption class:list={['relative mt-3 px-1 text-sm text-muted', { 'sm:-mt-6': fade }]}>{caption}</figcaption>}
 </figure>

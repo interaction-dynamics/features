@@ -43,8 +43,8 @@ const views = [
   {
     name: 'decisions',
     hash: '#/?feature=libs/features/feature-0',
-    tab: 'Decisions',
-    height: 480,
+    tab: /^Specs & Decisions/,
+    height: 560,
   },
   {
     name: 'flags',
@@ -71,7 +71,9 @@ for (const view of views) {
   await page.setViewportSize({ width, height: view.height })
   await page.goto(new URL(view.hash, demo).href, { waitUntil: 'networkidle' })
   if (view.tab) {
-    await page.getByRole('tab', { name: view.tab, exact: true }).click()
+    await page
+      .getByRole('tab', { name: view.tab, exact: typeof view.tab === 'string' })
+      .click()
   }
   await page.waitForTimeout(1000)
   const png = join(tmpDir, `${view.name}.png`)

@@ -46,10 +46,27 @@ Canonical URLs, the sitemap and Open Graph tags need the absolute site URL. On V
 
 ```bash
 bun install --cwd ../web
-node scripts/capture-screenshots.mjs # optional: a demo URL, e.g. http://localhost:3000/
+node scripts/capture-screenshots.mjs # optional: a demo URL, e.g. http://localhost:5173/
+```
+
+The live demo is only redeployed from `master`. To capture a dashboard change before it ships (a new logo, a renamed tab), serve the demo locally from this branch:
+
+```bash
+cd ../cli && cargo build --release
+./target/release/features ../../examples/demo/src --project-dir ../../examples/demo --json > ../web/public/features.json
+echo '{"version": "0.14.0"}' > ../web/public/metadata.json
+bun run --cwd ../web dev -- --port 5173
 ```
 
 It needs ImageMagick (`magick`) for the WebP conversion. Views that show commit authors (Changes tab, feature Insights tab) are left out on purpose.
+
+## Favicons
+
+`public/favicon.svg` is the logo. `public/favicon.ico` (16, 32, 48 px, for browsers without SVG favicons such as Safari) and `public/apple-touch-icon.png` (180 px) are rendered from it. After changing the logo, re-render them (needs the dashboard Playwright and ImageMagick) and bump the `?v=` query of the SVG link in `src/layouts/Base.astro` so browsers drop the cached icon:
+
+```bash
+node scripts/render-icons.mjs
+```
 
 ## Open Graph image
 

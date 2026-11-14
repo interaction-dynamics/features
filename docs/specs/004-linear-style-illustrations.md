@@ -23,7 +23,7 @@ After the switch to a monochrome palette ([003](003-monochrome-brand-palette.md)
 - File trees: an icon per entry kind, gradient highlight on feature rows, owner shown as an avatar chip.
 - Concept page slices diagram: `auth` is highlighted in both views (spread across four layers vs one glowing column with a beam).
 - Sections get a fading hairline on top; the call to action gets a spotlight and dot grid.
-- Palette stays monochrome: only the tokens from spec 003 are used.
+- Palette stays monochrome: only the tokens from spec 003 are used (a few accent colors were added later by [005](005-website-screenshots-and-accent-colors.md)).
 
 ## Out of scope
 
