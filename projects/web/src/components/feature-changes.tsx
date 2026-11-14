@@ -95,9 +95,11 @@ export default function FeatureChanges({ changes }: FeatureChangesProps) {
               <div className="flex items-center gap-1">
                 <User className="h-3 w-3" />
                 <span>{change.author_name}</span>
-                <span className="text-xs select-all">
-                  ({change.author_email})
-                </span>
+                {change.author_email && (
+                  <span className="text-xs select-all">
+                    ({change.author_email})
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />

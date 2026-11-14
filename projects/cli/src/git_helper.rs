@@ -7,17 +7,49 @@ use crate::models::Change;
 
 /// Get the repository URL from git config.
 /// Tries to get the remote origin URL, returns None if not found.
+///
+/// Credentials embedded in http(s) URLs (`https://user:token@host/...`) are
+/// removed, since the URL is exposed to the web dashboard.
 pub fn get_repository_url(repo_path: &Path) -> Option<String> {
     let repo = Repository::discover(repo_path).ok()?;
 
     // Try to get the remote origin URL
     if let Ok(remote) = repo.find_remote("origin")
-        && let Some(url) = remote.url()
+        && let Ok(url) = remote.url()
     {
-        return Some(url.to_string());
+        return Some(strip_url_credentials(url));
     }
 
     None
+}
+
+/// Removes the userinfo (`user:password@`) from an http(s) URL.
+///
+/// Other URLs, such as scp-style `git@github.com:org/repo.git` or `ssh://`
+/// remotes, are returned unchanged.
+pub fn strip_url_credentials(url: &str) -> String {
+    let Some(scheme_end) = url.find("://") else {
+        return url.to_string();
+    };
+
+    let scheme = &url[..scheme_end];
+    if !scheme.eq_ignore_ascii_case("http") && !scheme.eq_ignore_ascii_case("https") {
+        return url.to_string();
+    }
+
+    let rest = &url[scheme_end + 3..];
+    let authority_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
+    let authority = &rest[..authority_end];
+
+    match authority.rfind('@') {
+        Some(at) => format!(
+            "{}://{}{}",
+            scheme,
+            &authority[at + 1..],
+            &rest[authority_end..]
+        ),
+        None => url.to_string(),
+    }
 }
 
 fn format_timestamp(time: git2::Time) -> String {
@@ -155,7 +187,7 @@ fn collect_tree_paths(
     paths: &mut Vec<String>,
 ) -> Result<()> {
     for entry in tree.iter() {
-        if let Some(name) = entry.name() {
+        if let Ok(name) = entry.name() {
             let path = if prefix.is_empty() {
                 name.to_string()
             } else {
@@ -172,4 +204,42 @@ fn collect_tree_paths(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::strip_url_credentials;
+
+    #[test]
+    fn test_strip_url_credentials_removes_userinfo() {
+        assert_eq!(
+            strip_url_credentials("https://user:ghp_secret@github.com/org/repo.git"),
+            "https://github.com/org/repo.git"
+        );
+        assert_eq!(
+            strip_url_credentials("https://oauth2:token@gitlab.com/org/repo"),
+            "https://gitlab.com/org/repo"
+        );
+        assert_eq!(
+            strip_url_credentials("http://token@example.com:8080/repo.git"),
+            "http://example.com:8080/repo.git"
+        );
+        assert_eq!(
+            strip_url_credentials("HTTPS://user:p%40ss@github.com/org/repo"),
+            "HTTPS://github.com/org/repo"
+        );
+    }
+
+    #[test]
+    fn test_strip_url_credentials_keeps_urls_without_credentials() {
+        for url in [
+            "https://github.com/org/repo.git",
+            "https://github.com/org/repo@v1",
+            "git@github.com:org/repo.git",
+            "ssh://git@github.com/org/repo.git",
+            "/local/path/to/repo",
+        ] {
+            assert_eq!(strip_url_credentials(url), url);
+        }
+    }
 }

@@ -31,14 +31,15 @@ serde_yaml = "0.9"
 serde_json = { version = "1.0", features = ["preserve_order"] }
 toml = "0.8"
 colored = "2.0"
-git2 = "0.18"
+# Only local repositories are read, so the network transports (https/ssh) and
+# their OpenSSL/libssh2 dependencies are not needed
+git2 = { version = "0.21", default-features = false }
 chrono = "0.4"
 tokio = { version = "1.0", features = ["full"] }
 warp = "0.3"
 include_dir = "0.7"
 notify = "6.0"
-openssl = { version = "0.10.73", features = ["vendored"] }
-indicatif = "0.17"
+indicatif = "0.18"
 walkdir = "2.0"
 indexmap = { version = "2.0", features = ["serde"] }
 

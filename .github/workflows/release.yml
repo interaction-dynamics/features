@@ -8,9 +8,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
   SKIP_PUBLISH: "false"
+# Least privilege by default: jobs that publish ask for more below
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 jobs:
   check:
     name: Check version
@@ -20,7 +20,7 @@ jobs:
       version: ${{ env.version }}
       should_release: ${{ env.should_release }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Get version from Cargo.toml
         id: version
@@ -37,13 +37,14 @@ jobs:
       run:
         working-directory: ./projects/cli
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
-      - uses: actions/cache@v5
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -70,18 +71,18 @@ jobs:
         working-directory: ./projects/web
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
       # Setup Node.js and pnpm for web build
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5.0.0
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
           version: 10
           run_install: false
@@ -92,7 +93,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -108,7 +109,7 @@ jobs:
           rm -rf dist/features.json
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: public
           path: projects/web/dist/
@@ -161,20 +162,22 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
       - name: Install cross-compilation tool
         if: matrix.target != 'x86_64-unknown-linux-gnu' && runner.os == 'Linux'
         run: |
-          cargo install cross --git https://github.com/cross-rs/cross
+          # Pinned to a reviewed commit of cross-rs/cross main (2026-10-31)
+          cargo install cross --git https://github.com/cross-rs/cross --rev a9301e91f72bba3850460512685f6b16062015ff --locked
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: public
           merge-multiple: true
@@ -185,7 +188,7 @@ jobs:
           mv ./public/ projects/cli/public
 
       - name: Setup cache
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -215,7 +218,7 @@ jobs:
           cp projects/cli/target/${{ matrix.target }}/release/features${{ matrix.ext }} ./dist/features-${{ matrix.code-target }}${{ matrix.ext }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: cli-${{ matrix.target }}
           path: ./dist/features-*
@@ -231,12 +234,14 @@ jobs:
     environment: crates-publish
     permissions:
       contents: read
+      # Trusted publishing: exchange a GitHub OIDC token for a short-lived crates.io token
+      id-token: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: public
           merge-multiple: true
@@ -247,10 +252,12 @@ jobs:
           mv ./public/ projects/cli/public
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
 
       - name: Setup cache
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -278,15 +285,21 @@ jobs:
       - name: Dry run publish
         working-directory: projects/cli
         if: env.SKIP_PUBLISH == 'false'
-        run: cargo publish --dry-run --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
+        run: cargo publish --dry-run --allow-dirty
         env:
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
+
+      - name: Authenticate with crates.io
+        id: crates-io-auth
+        if: env.SKIP_PUBLISH == 'false'
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
 
       - name: Publish to crates.io
         working-directory: projects/cli
         if: env.SKIP_PUBLISH == 'false'
-        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
+        run: cargo publish --allow-dirty
         env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
 
       - name: Skip publish notification
@@ -302,13 +315,14 @@ jobs:
       - check
     environment: npm-publish
     permissions:
-      contents: write
+      contents: read
+      # npm trusted publishing and provenance
       id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Download all rust artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: cli-*
           merge-multiple: true
@@ -321,7 +335,7 @@ jobs:
           pnpm --version
 
       - name: Install Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
@@ -580,13 +594,16 @@ jobs:
   github-release:
     name: Github Release
     runs-on: ubuntu-latest
+    permissions:
+      # Create the release and tag
+      contents: write
     needs:
       - publish-crate
       - publish-npm
       - check
     steps:
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           name: CLI v${{ needs.check.outputs.version }}
           draft: false

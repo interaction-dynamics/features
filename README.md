@@ -36,7 +36,7 @@
 ## Quick start
 
 ```bash
-npx features-cli@latest ./src --serve
+npx features-cli@latest serve ./src
 ```
 
 Then open [http://localhost:3000](http://localhost:3000). That's it.
@@ -45,7 +45,7 @@ Prefer a global install?
 
 ```bash
 npm install -g features-cli   # or: cargo binstall features-cli
-features ./src --serve
+features serve ./src
 ```
 
 ## Why Features?
@@ -85,29 +85,31 @@ Most codebases are organized by technical layer (`components/`, `services/`, `ut
 Build a static version of the dashboard and host it anywhere:
 
 ```bash
-features ./src --build --build-dir ./dashboard
+features build ./src --build-dir ./dashboard
 ```
+
+Add `--strip-emails` to remove commit author emails before publishing it.
 
 To publish it to GitHub Pages on every push, see the [GitHub Actions setup](#publish-the-dashboard-to-github-pages).
 
 ## Use it in CI and scripts
 
 ```bash
-features ./src --check                                   # fail the build on invalid features (e.g. duplicate names)
-features ./src --generate-codeowners --project-dir .     # regenerate CODEOWNERS
-features ./src --json > features.json                    # export a report for scripts, dashboards or AI coding agents
-features --find-owner src/features/checkout/api.ts       # who owns this file?
-features ./src --since origin/main                       # which features (and owners) does my change touch?
+features check ./src                                     # fail the build on invalid features (e.g. duplicate names)
+features codeowners ./src --project-dir .                # regenerate CODEOWNERS
+features scan ./src --json > features.json               # export a report for scripts, dashboards or AI coding agents
+features find-owner src/features/checkout/api.ts         # who owns this file?
+features diff ./src --since origin/main                  # which features (and owners) does my change touch?
 ```
 
 All options are listed in the [CLI reference](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md).
 
 ## Ping the right teams on every pull request
 
-`--since <ref>` lists the features a change touches, with their owners. It compares the merge base of `<ref>` and `HEAD` with your working tree, so uncommitted and untracked files are included (add `--committed-only` to compare with `HEAD` only). The path defaults to the current directory.
+`features diff --since <ref>` lists the features a change touches, with their owners. It compares the merge base of `<ref>` and `HEAD` with your working tree, so uncommitted and untracked files are included (add `--committed-only` to compare with `HEAD` only). The path defaults to the current directory.
 
 ```bash
-features src --since origin/master
+features diff src --since origin/master
 ```
 
 ```text
@@ -125,7 +127,7 @@ Files outside any feature:
     M README.md
 ```
 
-Each changed file is mapped to its closest feature, like `--find-owner`. A renamed file touches the features of both its old and new path, and deleted files are mapped by path. File paths are relative to the repository root; feature paths are relative to the scanned folder, as in the other outputs.
+Each changed file is mapped to its closest feature, like `find-owner`. A renamed file touches the features of both its old and new path, and deleted files are mapped by path. File paths are relative to the repository root; feature paths are relative to the scanned folder, as in the other outputs.
 
 - `--json` gives a report with `features` (name, path, owner, `is_owner_inherited`, changed files) and `files_outside_features`.
 - `--markdown` gives a table ready to post as a pull request comment.
@@ -162,7 +164,7 @@ src/
 └── ... # other source code
 ```
 
-> Read the detailed [guidelines](https://github.com/interaction-dynamics/features/blob/master/docs/folder-architecture-guidelines.md), or just run the CLI with `--serve`: the dashboard guides you through the methodology.
+> Read the detailed [guidelines](https://github.com/interaction-dynamics/features/blob/master/docs/folder-architecture-guidelines.md), or just run `features serve`: the dashboard guides you through the methodology.
 
 ### Option 2: README frontmatter
 
@@ -236,7 +238,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # full git history for feature metrics
-      - run: npx features-cli@latest ./src --build --build-dir ./dashboard
+      - run: npx features-cli@latest build ./src --build-dir ./dashboard --strip-emails
       - uses: actions/upload-pages-artifact@v5
         with:
           path: ./dashboard
@@ -263,7 +265,7 @@ jobs:
           fetch-depth: 0 # the merge base with the target branch is needed
 
       - name: List touched features
-        run: npx features-cli@latest src --since origin/${{ github.base_ref }} --committed-only --markdown > features.md
+        run: npx features-cli@latest diff src --since origin/${{ github.base_ref }} --committed-only --markdown > features.md
 
       - name: Comment on the pull request
         env:
@@ -276,7 +278,7 @@ jobs:
 To also request reviews from the owning teams, feed `--owners-only` to `gh`. Reviewers must be GitHub users or `org/team` slugs, so set the prefix accordingly, e.g. `--codeowners-prefix my-org/` when owners are team names:
 
 ```bash
-features src --since origin/master --committed-only --owners-only --codeowners-prefix my-org/ \
+features diff src --since origin/master --committed-only --owners-only --codeowners-prefix my-org/ \
   | xargs -r -n1 gh pr edit "$PR_NUMBER" --add-reviewer
 ```
 
