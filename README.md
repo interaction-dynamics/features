@@ -70,10 +70,10 @@ Commands and their descriptions are listed below:
 | `--generate-codeowners` | Generate or update a CODEOWNERS file with feature ownership information |
 | `--project-dir <path>` | Project directory for CODEOWNERS generation and additional coverage search locations |
 | `--codeowners-path <path>` | Custom path and filename for CODEOWNERS file (default: `CODEOWNERS` in project directory) |
-| `--codeowners-prefix <prefix>` | Custom prefix for owner names in CODEOWNERS file and in `--since` markdown / `--owners-only` output (default: `@`) |
+| `--codeowners-prefix <prefix>` | Custom prefix for owner names in CODEOWNERS file and in `--since --markdown` / `--owners-only` output (default: `@`) |
 | `--since <ref>` | Diff mode: list the features touched since the merge base of `<ref>` and `HEAD`, including uncommitted changes. See [Features touched by a change](#features-touched-by-a-change) |
 | `--committed-only` | With `--since`: ignore uncommitted and untracked files |
-| `--format <format>` | With `--since`: `text` (default), `json` or `markdown` (a table for pull request comments). `--json` is the same as `--format json` |
+| `--markdown` | With `--since`: output a markdown table for pull request comments (use `--json` for JSON) |
 | `--owners-only` | With `--since`: print only the unique owners of the touched features, one per line |
 
 ## Features touched by a change
@@ -101,8 +101,8 @@ Files outside any feature:
 
 Each changed file is mapped to its closest feature, like `--find-owner`. A renamed file touches the features of both its old and new path, and deleted files are mapped by path. File paths are relative to the repository root; feature paths are relative to the scanned folder, as in the other outputs.
 
-- `--json` (or `--format json`) gives a report with `features` (name, path, owner, `is_owner_inherited`, changed files) and `files_outside_features`.
-- `--format markdown` gives a table ready to post as a pull request comment.
+- `--json` gives a report with `features` (name, path, owner, `is_owner_inherited`, changed files) and `files_outside_features`.
+- `--markdown` gives a table ready to post as a pull request comment.
 - `--owners-only` prints the unique owners, one per line, with `--codeowners-prefix` added. Features without an owner are left out.
 
 The command exits with `0` even when no feature is touched.
@@ -126,7 +126,7 @@ jobs:
           fetch-depth: 0 # the merge base with the target branch is needed
 
       - name: List touched features
-        run: npx features-cli@latest src --since origin/${{ github.base_ref }} --committed-only --format markdown > features.md
+        run: npx features-cli@latest src --since origin/${{ github.base_ref }} --committed-only --markdown > features.md
 
       - name: Comment on the pull request
         env:

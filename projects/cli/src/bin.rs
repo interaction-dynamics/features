@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
 
@@ -136,22 +136,14 @@ struct Cli {
     #[arg(long, requires = "since")]
     committed_only: bool,
 
-    /// With --since: output format (text, json or markdown). --json is the same as --format json
-    #[arg(long, value_enum, requires = "since")]
-    format: Option<DiffFormat>,
+    /// With --since: output a markdown table suited to a pull request comment
+    #[arg(long, requires = "since", conflicts_with = "json")]
+    markdown: bool,
 
     /// With --since: print only the unique owners of the touched features, one per line,
     /// with --codeowners-prefix added
-    #[arg(long, requires = "since", conflicts_with = "format")]
+    #[arg(long, requires = "since", conflicts_with_all = ["json", "markdown"])]
     owners_only: bool,
-}
-
-/// Output formats for diff mode (`--since`)
-#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
-enum DiffFormat {
-    Text,
-    Json,
-    Markdown,
 }
 
 /// Run diff mode: print the features touched since `since`.
@@ -177,18 +169,15 @@ fn run_diff(args: &Cli, since: &str) -> Result<()> {
         return Ok(());
     }
 
-    let format = match (args.format, args.json) {
-        (Some(format), _) => format,
-        (None, true) => DiffFormat::Json,
-        (None, false) => DiffFormat::Text,
-    };
-    match format {
-        DiffFormat::Json => println!("{}", serde_json::to_string_pretty(&report)?),
-        DiffFormat::Markdown => print!(
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else if args.markdown {
+        print!(
             "{}",
             diff::render_markdown(&report, &args.codeowners_prefix)
-        ),
-        DiffFormat::Text => print!("{}", diff::render_text(&report)),
+        );
+    } else {
+        print!("{}", diff::render_text(&report));
     }
     Ok(())
 }

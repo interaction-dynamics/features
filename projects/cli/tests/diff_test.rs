@@ -279,10 +279,7 @@ fn owners_only_prints_unique_prefixed_owners() {
 #[test]
 fn markdown_and_text_formats() {
     let repo = setup_repo();
-    let markdown = run_cli(
-        repo.path(),
-        &[SCAN_ROOT, "--since", "base", "--format", "markdown"],
-    );
+    let markdown = run_cli(repo.path(), &[SCAN_ROOT, "--since", "base", "--markdown"]);
     assert!(markdown.contains("| Feature | Path | Owner | Files |"));
     assert!(markdown.contains("| `features/auth` | @team-auth |"));
     assert!(markdown.contains("@team-billing (inherited)"));
