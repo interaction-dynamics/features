@@ -8,9 +8,10 @@ Built with [Astro](https://astro.build) and Tailwind CSS. Hosted on [Vercel](htt
 
 | Path                          | Content                                                                   | Source                                                            |
 | ----------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `/`                           | What Features does, how it works, dashboard, pull request integration     | `README.md`                                                       |
+| `/`                           | What Features does, how it works, capabilities, dashboard, specs teaser   | `README.md`                                                       |
 | `/feature-based-architecture` | The concept, layered vs feature-based, anatomy of a feature               | `FAQ.md`, `README.md`                                             |
 | `/guidelines`                 | Folder structure, README front matter, specs and decisions, annotations   | `docs/folder-architecture-guidelines.md`, `docs/readme-format.md` |
+| `/specs-decisions`            | Specs and decision records, Spec Kit and Kiro, `new` and `check` commands | `docs/folder-architecture-guidelines.md`, `FAQ.md`                |
 | `/cli`                        | Install, commands, options, `diff` + GitHub Actions, CODEOWNERS, coverage | `README.md`, `FAQ.md`                                             |
 | `/faq`                        | Frequently asked questions (with `FAQPage` structured data)               | `FAQ.md`                                                          |
 

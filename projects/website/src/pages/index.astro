@@ -2,55 +2,42 @@
 import {
   ArrowRight,
   BookOpen,
-  Brain,
   Braces,
   ChartPie,
   Construction,
   FileLock,
-  FileText,
   Flag,
   FlaskConical,
   FolderTree,
   GitCommitHorizontal,
   GitPullRequest,
-  Layers,
   LayoutDashboard,
-  Link,
-  ListChecks,
-  ScanEye,
-  ShieldCheck,
-  Sparkles,
   Users,
 } from '@lucide/astro'
 import CallToAction from '../components/CallToAction.astro'
+import IsoFigure from '../components/IsoFigure.astro'
 import Screenshot from '../components/Screenshot.astro'
 import Section from '../components/Section.astro'
-import Terminal from '../components/Terminal.astro'
 import { site } from '../data/site'
 import Base from '../layouts/Base.astro'
 
-const aiEraReasons = [
+const pillars = [
   {
-    icon: Sparkles,
-    title: "Lines of code don't mean much",
-    text: 'An agent writes a thousand lines as easily as ten. What matters is what the code does for your users: the features.',
+    figure: 'map',
+    title: 'Every feature, mapped',
+    text: 'One view of what the product does, built from your folders. Not lines of code: features.',
   },
   {
-    icon: Layers,
-    title: 'Features pile up fast',
-    text: 'When people and agents ship every day, nobody holds the whole product in their head. Features get duplicated, forgotten or left half-finished.',
+    figure: 'owners',
+    title: 'Owned and connected',
+    text: 'Who owns each feature, what it imports and which teams a change touches.',
   },
   {
-    icon: ScanEye,
-    title: 'Reviews get shallower',
-    text: 'The more code is generated, the less of it is read closely. A higher-level view shows where each change lands and whose feature it touches.',
+    figure: 'specs',
+    title: 'Intent kept in the repository',
+    text: "Specs and decision records next to the code, so an agent's reasoning outlives its session.",
   },
-  {
-    icon: Brain,
-    title: 'The reasoning gets lost',
-    text: "An agent's reasoning vanishes with its session. Specs and decision records kept next to each feature keep it for the next person, or the next agent.",
-  },
-]
+] as const
 
 const capabilities = [
   {
@@ -105,29 +92,6 @@ const capabilities = [
   },
 ]
 
-const recordPoints = [
-  {
-    icon: FileText,
-    title: 'Specs and ADRs side by side',
-    text: 'Specs in __docs__/specs, decisions in __docs__/decisions, one merged timeline per feature. Project-wide ones go in docs/.',
-  },
-  {
-    icon: Link,
-    title: 'Linked both ways',
-    text: 'Write decisions: [002-use-jwt] on a spec and the decision links back. supersedes: retires the old choice.',
-  },
-  {
-    icon: ListChecks,
-    title: 'Progress at a glance',
-    text: 'Status badges for draft, accepted, implemented and superseded. Task checkboxes become a progress bar.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Kept honest in CI',
-    text: 'features check warns about broken links, missing statuses and implemented specs with open tasks.',
-  },
-]
-
 const specLayouts = [
   {
     tool: 'Native',
@@ -144,29 +108,6 @@ const specLayouts = [
     path: '.kiro/specs/auth/requirements.md',
     note: 'design.md, tasks.md as tabs',
   },
-]
-
-const languages = [
-  'Rust',
-  'TypeScript',
-  'JavaScript',
-  'Python',
-  'Go',
-  'Java',
-  'Kotlin',
-  'Swift',
-  'C#',
-  'C/C++',
-  'Scala',
-  'Ruby',
-  'Perl',
-  'Lua',
-  'SQL',
-  'Bash',
-  'CSS/SCSS',
-  'YAML',
-  'TOML',
-  'HTML/XML',
 ]
 
 const dashboardFeatures = [
@@ -266,7 +207,7 @@ const softwareApplication = {
             <span class="size-1.5 rounded-full bg-accent-3" aria-hidden="true"></span>
             Open source · Any language
           </p>
-          <a href="#specs-decisions" class="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs text-accent transition hover:border-accent">
+          <a href="/specs-decisions" class="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs text-accent transition hover:border-accent">
             New: specs &amp; decisions, Spec Kit and Kiro <ArrowRight size={12} aria-hidden="true" />
           </a>
         </div>
@@ -384,35 +325,27 @@ const softwareApplication = {
     id="ai-era"
     eyebrow="Built for the age of AI"
     title="Features ship in minutes. Keep track of all of them."
-    lead="With Claude Code, Cursor or Copilot, a new feature takes minutes, not weeks. Writing code is no longer the bottleneck. Tracking, documenting and maintaining what you built is."
+    lead="With Claude Code, Cursor or Copilot, writing code is no longer the bottleneck. Tracking, documenting and maintaining what you built is. Features builds one place to overview it all, from your code, so it stays current however fast you ship."
   >
-    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <ul class="grid border-line/70 md:grid-cols-3 md:divide-x md:divide-line/70">
       {
-        aiEraReasons.map(({ icon: Icon, title, text }) => (
-          <li class="card p-5">
-            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent-2">
-              <Icon size={20} aria-hidden="true" />
-            </span>
-            <h3 class="mt-4 font-semibold">{title}</h3>
-            <p class="mt-1.5 text-sm text-muted">{text}</p>
+        pillars.map((pillar, index) => (
+          <li class="flex flex-col py-6 md:px-8 md:first:pl-0 md:last:pr-0">
+            <p class="font-mono text-[0.7rem] tracking-wider text-muted/70">FIG 0.{index + 1}</p>
+            <div class="mx-auto my-8 flex h-44 w-full max-w-56 items-center justify-center">
+              <IsoFigure name={pillar.figure} class="max-h-full" />
+            </div>
+            <h3 class="font-medium">{pillar.title}</h3>
+            <p class="mt-2 text-sm text-pretty text-muted">{pillar.text}</p>
           </li>
         ))
       }
     </ul>
-    <div class="card relative mt-6 overflow-hidden p-6 sm:p-8">
-      <div class="spotlight pointer-events-none absolute -top-24 -left-24 h-72 w-[36rem]" aria-hidden="true"></div>
-      <div class="dot-grid pointer-events-none absolute inset-0 opacity-40" aria-hidden="true"></div>
-      <div class="relative grid items-center gap-6 md:grid-cols-[1fr_auto]">
-        <p class="text-lg text-pretty">
-          You need <strong class="text-gradient font-semibold">one place to overview all your features</strong>: what
-          exists, who owns it, how healthy it is and what changed recently. Features builds that place from your code,
-          so it stays current however fast you ship.
-        </p>
-        <a href="#how-it-works" class="inline-flex items-center gap-2 rounded-lg border border-line px-5 py-2.5 font-semibold whitespace-nowrap transition hover:border-muted">
-          See how it works <ArrowRight size={18} aria-hidden="true" />
-        </a>
-      </div>
-    </div>
+    <p class="mt-6">
+      <a href="/ai" class="inline-flex items-center gap-1 text-sm text-accent hover:underline">
+        Why it matters for AI coding agents <ArrowRight size={14} aria-hidden="true" />
+      </a>
+    </p>
   </Section>
 
   <!-- How it works -->
@@ -520,124 +453,32 @@ const softwareApplication = {
     id="specs-decisions"
     eyebrow="Specs & decisions"
     title="What each feature does, and why it's built that way"
-    lead="Specs say what a feature must do. Decision records say why it's built this way. Features reads both from the repository, links them and shows them on the feature's page, so people and agents read the intent before they change the code."
+    lead="Specs and decision records live next to each feature. Features links them, tracks their status and task progress, and shows them on the feature's page, so people and agents read the intent before they change the code."
   >
-    <div class="grid items-start gap-6 lg:grid-cols-[1.1fr_1fr]">
-      <ul class="grid gap-4 sm:grid-cols-2">
-        {
-          recordPoints.map(({ icon: Icon, title, text }) => (
-            <li class="card p-5">
-              <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-accent-3">
-                <Icon size={20} aria-hidden="true" />
-              </span>
-              <h3 class="mt-4 font-semibold">{title}</h3>
-              <p class="mt-1.5 text-sm text-muted">{text}</p>
-            </li>
-          ))
-        }
-      </ul>
-      <div class="card relative overflow-hidden p-6">
-        <div class="bg-gradient-brand pointer-events-none absolute inset-0 opacity-10" aria-hidden="true"></div>
-        <div class="relative">
-          <p class="font-semibold">Bring your own spec tool</p>
-          <p class="mt-1.5 text-sm text-muted">
-            Already writing specs with an AI workflow? Features reads them where they are and attaches each one to
-            its feature by folder name, or by a <code>feature:</code> key.
-          </p>
-          <ul class="mt-5 space-y-3">
-            {
-              specLayouts.map((layout) => (
-                <li class="rounded-xl border border-line bg-ink/50 p-3.5">
-                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span class="rounded-full border border-accent/40 bg-accent/10 px-2 text-[0.7rem] leading-5 text-accent">
-                      {layout.tool}
-                    </span>
-                    <span class="text-xs text-muted">{layout.note}</span>
-                  </div>
-                  <p class="mt-2 overflow-x-auto font-mono text-xs whitespace-nowrap">
-                    {layout.path} <span class="text-muted">→</span> <span class="text-accent-3">auth</span>
-                  </p>
-                </li>
-              ))
-            }
-          </ul>
-          <a href="/guidelines#specs-decisions" class="link mt-5 inline-block text-sm">Write your first spec</a>
-        </div>
+    <div class="grid items-center gap-8 lg:grid-cols-[1fr_1.6fr]">
+      <div>
+        <p class="text-sm text-muted">Already writing specs with an AI workflow? They are read where they are:</p>
+        <ul class="mt-4 space-y-2">
+          {
+            specLayouts.map((layout) => (
+              <li class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-surface/60 px-3.5 py-2.5">
+                <span class="rounded-full border border-accent/40 bg-accent/10 px-2 text-[0.7rem] leading-5 text-accent">
+                  {layout.tool}
+                </span>
+                <span class="text-xs text-muted">{layout.note}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <a href="/specs-decisions" class="mt-6 inline-flex items-center gap-2 rounded-lg border border-line px-5 py-2.5 font-semibold transition hover:border-muted">
+          Explore specs &amp; decisions <ArrowRight size={18} aria-hidden="true" />
+        </a>
       </div>
+      <Screenshot
+        name="specs-decisions"
+        alt="Specs & Decisions tab of a feature in the Features dashboard: a timeline of specs and decision records with status badges, task progress bars and links between them"
+      />
     </div>
-    <Screenshot
-      name="specs-decisions"
-      alt="Specs & Decisions tab of a feature in the Features dashboard: a timeline of specs and decision records with status badges, task progress bars and links between them"
-      caption="Specs & Decisions: specs and ADRs in one timeline, with status, task progress and links between them."
-      class="mt-10 shadow-2xl shadow-black/50"
-    />
-  </Section>
-
-  <!-- Pull request -->
-  <Section
-    id="pull-requests"
-    eyebrow="Code review"
-    title="Know which teams a change touches"
-    lead="features diff maps every changed file to its closest feature and owner. Post it as a pull request comment, or request reviews from the owning teams automatically."
-  >
-    <div class="grid items-start gap-6 lg:grid-cols-2">
-      <Terminal title="features diff src --since origin/master">
-<span class="text-muted">Features touched since origin/master (merge base 1a2b3c4):</span>
-
-  <span class="font-semibold text-accent">Auth</span> <span class="text-muted">(features/auth) - owner:</span> <span class="text-accent-3">team-auth</span>
-    <span class="text-accent-3">M</span> src/features/auth/login.ts
-    <span class="text-accent-2">R</span> src/features/auth/old.ts -> src/features/billing/moved.ts
-
-  <span class="font-semibold text-accent">Billing</span> <span class="text-muted">(features/billing) - owner:</span> <span class="text-accent-3">team-billing</span>
-    <span class="text-accent-2">R</span> src/features/auth/old.ts -> src/features/billing/moved.ts
-    <span class="text-[#ff5f57]">D</span> src/features/billing/legacy.ts
-
-<span class="text-muted">Files outside any feature:</span>
-    <span class="text-accent-3">M</span> README.md</Terminal>
-      <div class="card p-6">
-        <div class="flex items-center gap-3">
-          <span class="bg-gradient-brand inline-flex size-9 items-center justify-center rounded-full text-ink"><GitPullRequest size={18} aria-hidden="true" /></span>
-          <div>
-            <p class="text-sm font-semibold">github-actions <span class="font-normal text-muted">commented</span></p>
-            <p class="text-xs text-muted">on pull request</p>
-          </div>
-        </div>
-        <p class="mt-5 text-sm font-semibold">Features touched by this pull request</p>
-        <div class="mt-3 overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="text-xs text-muted">
-              <tr class="border-b border-line"><th class="py-2 pr-4 font-medium">Feature</th><th class="py-2 pr-4 font-medium">Owner</th><th class="py-2 font-medium">Files</th></tr>
-            </thead>
-            <tbody>
-              <tr class="border-b border-line/60"><td class="py-2 pr-4 font-mono text-accent">auth</td><td class="py-2 pr-4">@team-auth</td><td class="py-2">2</td></tr>
-              <tr><td class="py-2 pr-4 font-mono text-accent">billing</td><td class="py-2 pr-4">@team-billing</td><td class="py-2">2</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="mt-5 flex flex-wrap items-center gap-2 text-xs text-muted">
-          Reviewers requested:
-          <span class="rounded-full border border-line px-2 py-0.5 text-text">my-org/team-auth</span>
-          <span class="rounded-full border border-line px-2 py-0.5 text-text">my-org/team-billing</span>
-        </p>
-        <a href="/cli#pull-requests" class="link mt-6 inline-block text-sm">Set it up with GitHub Actions</a>
-      </div>
-    </div>
-  </Section>
-
-  <!-- Languages -->
-  <Section
-    id="languages"
-    eyebrow="Technology agnostic"
-    title="Works with the stack you already have"
-    lead="Features only reads folders, READMEs, git history and comments. Feature annotations are recognized in all these languages."
-  >
-    <ul class="flex flex-wrap gap-2">
-      {
-        languages.map((language) => (
-          <li class="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 font-mono text-sm text-muted">{language}</li>
-        ))
-      }
-    </ul>
   </Section>
 
   <CallToAction />
