@@ -6,7 +6,7 @@
 - [How can I add a feature?](#how-can-i-add-a-feature)
 - [How can I add a feature description?](#how-can-i-add-a-feature-description)
 - [How can I add an owner?](#how-can-i-add-an-owner)
-- [How can I add a decision?](#how-can-i-add-a-decision)
+- [How can I add a spec or a decision?](#how-can-i-add-a-spec-or-a-decision)
 - [How can I add a test coverage report?](#how-can-i-add-a-test-coverage-report)
 - [What is the technical debt of a feature?](#what-is-the-technical-debt-of-a-feature)
 - [How can I generate codeowners file?](#how-can-i-generate-codeowners-file)
@@ -42,23 +42,46 @@ To add a new feature description to the system, follow these steps:
 1. In the feature folder, create a new README.md file
 2. In this README.md file, provide a detailed description of the feature, including its purpose, functionality, and any relevant technical details.
 
-## How can I add a decision?
+<a id="how-can-i-add-a-decision"></a>
 
-Do you see the message "No decisions available"? You can add one by following these steps:
+## How can I add a spec or a decision?
 
-1. Navigate to the feature you want to add a decision to
-2. In the feature's directory, locate or create a `__docs__/decisions/` folder or `.docs/decisions/` folder
-3. Create a new Markdown file with a descriptive name (e.g., `use-typescript.md`)
-4. Structure your decision document with the following sections:
-   - **Title**: Clear, concise description of the decision
-   - **Status**: Current status (proposed, accepted, rejected, deprecated, superseded)
-   - **Context**: Background information and the problem being solved
-   - **Decision**: The actual decision made
-   - **Consequences**: Expected positive and negative outcomes
+Specs say **what** to build (requirements, plan, tasks). Decisions say **why** it is built that way. Both appear side by side, sorted by date, in the feature's **Specs & Decisions** tab of the web interface and in the `records` field of the JSON report.
 
-The decision will automatically appear in the web interface under the feature's decisions section.
+The quickest way is to let the CLI pick the next number:
 
-This decision template is inspired by the [MADR](https://adr.github.io/madr/) initiative.
+```bash
+features new spec auth "Login flow"         # features/auth/__docs__/specs/001-login-flow.md
+features new decision auth "Use JWT tokens" # features/auth/__docs__/decisions/002-use-jwt-tokens.md
+features new decision . "Use a monorepo"    # docs/decisions/001-use-a-monorepo.md (project level)
+```
+
+Or create the files yourself:
+
+1. In the feature's directory, create a `__docs__/specs/` or `__docs__/decisions/` folder (`.docs/specs/` and `.docs/decisions/` also work, and every folder is read)
+2. Add a Markdown file numbered from `001`, e.g. `__docs__/decisions/002-use-jwt.md`
+3. Start it with a frontmatter:
+
+   ```markdown
+   ---
+   status: accepted # draft, proposed, accepted, implemented, rejected, deprecated, superseded
+   date: 2026-01-15
+   spec: 001-login-flow # on a decision: the spec it belongs to
+   supersedes: 001-use-sessions # the record it replaces, if any
+   ---
+
+   # Use JWT
+   ```
+
+   On a spec, list its decisions with `decisions: [002-use-jwt]`. Links work in both directions and can use the number alone (`decisions: ["002"]`).
+4. Structure a decision with the [MADR](https://adr.github.io/madr/) sections: **Context**, **Considered options**, **Decision**, **Consequences**. Classic MADR files without frontmatter work too: the status is read from a `**Status**: Accepted` line or a `## Status` section.
+5. Structure a spec with **Context**, **Requirements**, **Out of scope** and **Plan**. `- [ ]` / `- [x]` checklists show as a progress bar.
+
+A large spec can be a folder: `__docs__/specs/003-sso/` with `spec.md` as its main file and other files such as `plan.md` or `tasks.md` next to it.
+
+Records that concern the whole project go in `docs/specs/`, `docs/decisions/` or `docs/adr/` at the root of the scanned folder. They show on the **Project records** page of the web interface, and `features records --json` prints them (`{ "records": [...] }`, also served as `records.json`). A root record with `feature: <name or path>` in its frontmatter is shown in that feature instead.
+
+`features check` warns about links to records that don't exist, records without a status, superseded records that nothing replaces, and implemented specs with open tasks.
 
 ## How can I add a test coverage report?
 

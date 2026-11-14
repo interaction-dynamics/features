@@ -324,6 +324,7 @@ impl Walker<'_> {
             // Filled in by the enrichment passes
             changes: Vec::new(),
             decisions: Vec::new(),
+            records: Vec::new(),
             stats: None,
             dependencies: Vec::new(),
         })

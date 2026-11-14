@@ -406,6 +406,7 @@ mod tests {
             meta: Default::default(),
             changes: Vec::new(),
             decisions: Vec::new(),
+            records: Vec::new(),
             stats: None,
             dependencies: Vec::new(),
         }

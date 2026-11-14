@@ -14,7 +14,9 @@ Each action is a command. `PATH` is the folder to scan for features and defaults
 | `features codeowners [PATH]` | Generate or update a CODEOWNERS file with feature ownership information |
 | `features find-owner <TARGET> [PATH]` | Find the owner of a specific file or folder |
 | `features owners [PATH]` | Display only the unique list of owners |
-| `features check [PATH]` | Run validation checks on features (e.g., duplicate names) |
+| `features check [PATH]` | Run validation checks on features (e.g., duplicate names). Also warns about broken links between specs and decisions, records without a status, superseded records without a replacement and implemented specs with open tasks |
+| `features records [PATH]` | List the specs and decision records of the project and of every feature. With `--json`, print the project-level records as `{ "records": [...] }` |
+| `features new <spec\|decision> <FEATURE> <TITLE>` | Create the next numbered spec or decision record (`NNN-title.md`) in `<FEATURE>/__docs__/specs` or `/decisions`. `FEATURE` is a feature name or path, `.` for the project-level `docs/` folder. Use `--path` to choose the folder to scan |
 | `features diff [PATH] --since <ref>` | List the features touched since `<ref>`, with their owners. See [Ping the right teams on every pull request](../README.md#ping-the-right-teams-on-every-pull-request) |
 | `features aggregate <FOLDER>` | Aggregate the features JSON reports of several repositories into one dashboard. See [Aggregate several repositories](#aggregate-several-repositories) |
 
@@ -22,7 +24,7 @@ Run `features <command> --help` for the options of a command. The options are:
 
 | Option | Commands | Description |
 | ------ | -------- | ----------- |
-| `--json` | `scan`, `find-owner`, `owners`, `diff`, `aggregate` | Output as JSON |
+| `--json` | `scan`, `find-owner`, `owners`, `diff`, `aggregate`, `records` | Output as JSON |
 | `--flat` | `scan` | Output features as a flat array instead of nested structure |
 | `--description` | `scan` | Include feature descriptions in the output |
 | `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
@@ -66,6 +68,31 @@ See the [FAQ](../FAQ.md#how-can-i-generate-codeowners-file) for more options.
 ```bash
 features check ./src
 ```
+
+### Read specs and decisions
+
+```bash
+features records ./               # every spec and decision, per feature
+features new spec auth "Login flow"
+```
+
+Each feature of the JSON report has a `records` array (the `decisions` array of raw markdown is kept for compatibility):
+
+```json
+{
+  "kind": "spec",
+  "id": "001-login-flow",
+  "title": "Login flow",
+  "status": "implemented",
+  "date": "2026-01-15",
+  "path": "features/auth/__docs__/specs/001-login-flow.md",
+  "content": "# Login flow ...",
+  "links": { "decisions": ["002-use-jwt"], "specs": [], "supersedes": [], "superseded_by": [] },
+  "tasks": { "done": 2, "total": 2 }
+}
+```
+
+`status`, `date`, `tasks`, `files` (the other files of a folder spec) and `feature` are only present when known. The top level of `features scan --json` stays an array of features: project-level records (root `docs/specs`, `docs/decisions` and `docs/adr` files without a `feature:` frontmatter) are printed by `features records --json`, served at `/records.json` by `features serve` and written to `records.json` by `features build`, as `{ "records": [...] }`. See the [FAQ](../FAQ.md#how-can-i-add-a-spec-or-a-decision) for the file format.
 
 ### List the features and owners touched by a change
 
