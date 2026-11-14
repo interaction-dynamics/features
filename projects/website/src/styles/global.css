@@ -12,6 +12,15 @@
   --color-accent: #edeef0;
   --color-accent-2: #b4b8c0;
   --color-accent-3: #80858e;
+  /*
+   * A few colors, used sparingly like Linear does: one highlighted bar,
+   * a status dot, a glow behind a screenshot. Never for large surfaces.
+   */
+  --color-indigo: #7c84f2;
+  --color-violet: #a78bfa;
+  --color-green: #4cb782;
+  --color-orange: #f2994a;
+  --color-yellow: #f2c94c;
   /* Same light falloff as the logo. */
   --color-gradient-from: #f9f9f9;
   --color-gradient-to: #b3b3b3;
@@ -123,6 +132,22 @@ body {
   filter: blur(24px);
 }
 
+/* Colored glow (indigo into violet), for the hero screenshots. */
+@utility spotlight-color {
+  background:
+    radial-gradient(
+      closest-side at 35% 55%,
+      color-mix(in oklab, var(--color-indigo) 50%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      closest-side at 70% 45%,
+      color-mix(in oklab, var(--color-violet) 30%, transparent),
+      transparent
+    );
+  filter: blur(40px);
+}
+
 /* Horizontal rule that fades out at both ends. */
 @utility hairline {
   height: 1px;
@@ -137,6 +162,11 @@ body {
 /* Fade an illustration into the page instead of cutting it. */
 @utility fade-b {
   mask-image: linear-gradient(180deg, #000 55%, transparent);
+}
+
+/* Screenshot that dissolves into the page: opaque on top, transparent at the bottom. */
+@utility fade-shot {
+  mask-image: linear-gradient(180deg, #000 45%, transparent 98%);
 }
 
 @utility fade-x {

@@ -263,7 +263,7 @@ const softwareApplication = {
       <div>
         <div class="flex flex-wrap gap-2">
           <p class="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs text-muted">
-            <span class="size-1.5 rounded-full bg-accent-3" aria-hidden="true"></span>
+            <span class="size-1.5 rounded-full bg-green shadow-[0_0_8px_var(--color-green)]" aria-hidden="true"></span>
             Open source · Any language
           </p>
           <a href="#specs-decisions" class="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs text-accent transition hover:border-accent">
@@ -303,7 +303,7 @@ const softwareApplication = {
           </div>
           <svg viewBox="0 0 300 150" class="mt-2 w-full" fill="none">
             {[40, 75, 110].map((y) => <line x1="20" x2="300" y1={y} y2={y} stroke="var(--color-line)" stroke-dasharray="2 4" />)}
-            <path d="M20 66 C 70 66, 80 58, 124 58 S 180 50, 202 50 S 260 40, 300 38" stroke="var(--color-accent-3)" stroke-opacity="0.6" />
+            <path d="M20 66 C 70 66, 80 58, 124 58 S 180 50, 202 50 S 260 40, 300 38" stroke="var(--color-indigo)" stroke-opacity="0.7" />
             <path d="M20 96 C 70 96, 80 88, 124 86 S 180 84, 202 80 S 260 70, 300 72" stroke="var(--color-accent-3)" stroke-opacity="0.35" />
             {
               commitDots.map((dot) => (
@@ -334,11 +334,11 @@ const softwareApplication = {
           <ul class="mt-4 divide-y divide-line/70 overflow-hidden rounded-xl border border-line bg-ink/60">
             {
               dashboardFeatures.map((feature, index) => (
-                <li class:list={['p-3', index === 0 && 'bg-gradient-to-r from-accent/[0.07] to-transparent']}>
+                <li class:list={['p-3', index === 0 && 'bg-gradient-to-r from-indigo/[0.08] to-transparent']}>
                   <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                     <svg viewBox="0 0 16 16" class="size-3.5 -rotate-90" aria-hidden="true">
                       <circle cx="8" cy="8" r="6" fill="none" stroke="var(--color-line)" stroke-width="2" />
-                      <circle cx="8" cy="8" r="6" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray={ring(feature.coverage)} />
+                      <circle cx="8" cy="8" r="6" fill="none" stroke={index === 0 ? 'var(--color-indigo)' : 'var(--color-accent)'} stroke-width="2" stroke-linecap="round" stroke-dasharray={ring(feature.coverage)} />
                     </svg>
                     <span class="font-mono text-sm font-semibold text-accent">{feature.name}</span>
                     <span class="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 py-px pr-2 pl-px text-[0.65rem] leading-4 text-muted">
@@ -354,7 +354,15 @@ const softwareApplication = {
                   <div class="mt-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1.5 text-[0.65rem] text-muted">
                     <span>coverage</span>
                     <span class="h-1 overflow-hidden rounded-full bg-surface-2">
-                      <span class="block h-full rounded-full bg-gradient-to-r from-accent-3/40 to-accent" style={`width:${feature.coverage}%`} />
+                      <span
+                        class:list={[
+                          'block h-full rounded-full bg-gradient-to-r',
+                          index === 0
+                            ? 'from-indigo/50 to-violet shadow-[0_0_10px_var(--color-indigo)]'
+                            : 'from-accent-3/40 to-accent',
+                        ]}
+                        style={`width:${feature.coverage}%`}
+                      />
                     </span>
                     <span class="font-mono text-text">{feature.coverage}%</span>
                     <span>commits</span>
@@ -452,10 +460,10 @@ const softwareApplication = {
           Browse the dashboard, publish a static build, export JSON or comment on pull requests.
         </p>
         <ul class="mt-5 grid grid-cols-2 gap-2 text-xs md:grid-cols-1 lg:grid-cols-2">
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><LayoutDashboard size={14} class="shrink-0 text-accent" aria-hidden="true" />Dashboard</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><Braces size={14} class="shrink-0 text-accent-3" aria-hidden="true" />JSON report</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><FileLock size={14} class="shrink-0 text-accent-2" aria-hidden="true" />CODEOWNERS</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><GitPullRequest size={14} class="shrink-0 text-accent" aria-hidden="true" />PR comment</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><LayoutDashboard size={14} class="shrink-0 text-indigo" aria-hidden="true" />Dashboard</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><Braces size={14} class="shrink-0 text-orange" aria-hidden="true" />JSON report</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><FileLock size={14} class="shrink-0 text-green" aria-hidden="true" />CODEOWNERS</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><GitPullRequest size={14} class="shrink-0 text-violet" aria-hidden="true" />PR comment</li>
         </ul>
       </li>
     </ol>
@@ -495,6 +503,7 @@ const softwareApplication = {
       alt="Insights page of the Features dashboard: totals of features and owners, and a table of every feature with its owner, dates, files, lines, TODOs and changes"
       caption="Insights: every feature with its owner, size, TODOs and commit history, filterable with queries like owner:john AND lines:>1000."
       featured
+      fade
     />
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
       <Screenshot
