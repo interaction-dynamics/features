@@ -63,7 +63,7 @@ features ./src --check
 features ./src --since origin/master
 ```
 
-Add `--markdown` for a pull request comment or `--owners-only` to request reviews. See the [GitHub Actions example](../README.md#comment-on-pull-requests-with-github-actions).
+Add `--markdown` for a pull request comment or `--owners-only` to request reviews. See the [GitHub Actions example](../README.md#comment-on-pull-requests).
 
 ### Export a JSON report
 
@@ -77,4 +77,4 @@ features ./src --json > features.json
 features ./src --build --build-dir ./dashboard
 ```
 
-The `dashboard` folder can be deployed to any static host. See the [GitHub Pages example](../README.md#share-a-dashboard-with-your-team).
+The `dashboard` folder can be deployed to any static host. See the [GitHub Pages example](../README.md#publish-the-dashboard-to-github-pages).

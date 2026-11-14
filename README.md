@@ -82,33 +82,13 @@ Most codebases are organized by technical layer (`components/`, `services/`, `ut
 
 ## Share a dashboard with your team
 
-Build a static version of the dashboard and host it anywhere. For example, deploy it to GitHub Pages on every push:
+Build a static version of the dashboard and host it anywhere:
 
-```yaml
-# .github/workflows/features.yml
-name: Features dashboard
-on:
-  push:
-    branches: [main]
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0 # full git history for feature metrics
-      - run: npx features-cli@latest ./src --build --build-dir ./dashboard
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: ./dashboard
-      - uses: actions/deploy-pages@v5
+```bash
+features ./src --build --build-dir ./dashboard
 ```
+
+To publish it to GitHub Pages on every push, see the [GitHub Actions setup](#publish-the-dashboard-to-github-pages).
 
 ## Use it in CI and scripts
 
@@ -153,43 +133,7 @@ Each changed file is mapped to its closest feature, like `--find-owner`. A renam
 
 The command exits with `0` even when no feature is touched.
 
-### Comment on pull requests with GitHub Actions
-
-```yaml
-name: Features touched
-on: pull_request
-
-permissions:
-  contents: read
-  pull-requests: write
-
-jobs:
-  features:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0 # the merge base with the target branch is needed
-
-      - name: List touched features
-        run: npx features-cli@latest src --since origin/${{ github.base_ref }} --committed-only --markdown > features.md
-
-      - name: Comment on the pull request
-        env:
-          GH_TOKEN: ${{ github.token }}
-        # Updates the bot's last comment on each push. If other workflows comment as the same bot,
-        # use a sticky-comment action instead so they don't overwrite each other.
-        run: gh pr comment ${{ github.event.pull_request.number }} --body-file features.md --edit-last --create-if-none
-```
-
-To also request reviews from the owning teams, feed `--owners-only` to `gh`. Reviewers must be GitHub users or `org/team` slugs, so set the prefix accordingly, e.g. `--codeowners-prefix my-org/` when owners are team names:
-
-```bash
-features src --since origin/master --committed-only --owners-only --codeowners-prefix my-org/ \
-  | xargs -r -n1 gh pr edit "$PR_NUMBER" --add-reviewer
-```
-
-Pull requests from forks get a read-only token, so commenting from those needs a `pull_request_target` workflow; read GitHub's security guidance before using it.
+To post this list on every pull request and request reviews from the owning teams, see the [GitHub Actions setup](#comment-on-pull-requests).
 
 ## How it finds your features
 
@@ -268,6 +212,75 @@ It works the same in every language:
 ```
 
 Annotations are supported in Rust, C/C++, Java, JavaScript/TypeScript, C#, Go, Swift, Kotlin, Scala, CSS/SCSS/Less, Python, Bash/Shell, Ruby, Perl, YAML, TOML, SQL, Lua and HTML/XML/SVG.
+
+## GitHub Actions setup
+
+### Publish the dashboard to GitHub Pages
+
+```yaml
+# .github/workflows/features.yml
+name: Features dashboard
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full git history for feature metrics
+      - run: npx features-cli@latest ./src --build --build-dir ./dashboard
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./dashboard
+      - uses: actions/deploy-pages@v5
+```
+
+### Comment on pull requests
+
+```yaml
+# .github/workflows/features-touched.yml
+name: Features touched
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the merge base with the target branch is needed
+
+      - name: List touched features
+        run: npx features-cli@latest src --since origin/${{ github.base_ref }} --committed-only --markdown > features.md
+
+      - name: Comment on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Updates the bot's last comment on each push. If other workflows comment as the same bot,
+        # use a sticky-comment action instead so they don't overwrite each other.
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file features.md --edit-last --create-if-none
+```
+
+To also request reviews from the owning teams, feed `--owners-only` to `gh`. Reviewers must be GitHub users or `org/team` slugs, so set the prefix accordingly, e.g. `--codeowners-prefix my-org/` when owners are team names:
+
+```bash
+features src --since origin/master --committed-only --owners-only --codeowners-prefix my-org/ \
+  | xargs -r -n1 gh pr edit "$PR_NUMBER" --add-reviewer
+```
+
+Pull requests from forks get a read-only token, so commenting from those needs a `pull_request_target` workflow; read GitHub's security guidance before using it.
 
 ## How it compares
 
