@@ -1,0 +1,43 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FF3DF2"/>
+      <stop offset="55%" stop-color="#2EF2FF"/>
+      <stop offset="100%" stop-color="#E8FF3A"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0.9" cy="0" r="0.7">
+      <stop offset="0%" stop-color="#FF3DF2" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#FF3DF2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0" cy="0.2" r="0.6">
+      <stop offset="0%" stop-color="#2EF2FF" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#2EF2FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0B0F17"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- logo -->
+  <g transform="translate(80 80)">
+    <rect width="96" height="96" rx="15" fill="#1A202C"/>
+    <rect x="24" y="19" width="14" height="58" rx="4" fill="url(#brand)"/>
+    <rect x="24" y="19" width="48" height="14" rx="4" fill="url(#brand)"/>
+    <rect x="24" y="43" width="34" height="14" rx="4" fill="url(#brand)"/>
+  </g>
+  <text x="200" y="142" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="#E7ECF3">Features</text>
+
+  <text x="80" y="290" font-family="Helvetica, Arial, sans-serif" font-size="68" font-weight="700" fill="#E7ECF3">Every feature of your codebase,</text>
+  <text x="80" y="372" font-family="Helvetica, Arial, sans-serif" font-size="68" font-weight="700" fill="url(#brand)">mapped.</text>
+  <text x="80" y="440" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="#9AA6B8">Owners, history, coverage and technical debt, for any language.</text>
+
+  <rect x="80" y="500" width="560" height="64" rx="12" fill="#121826" stroke="#263044" stroke-width="2"/>
+  <text x="106" y="541" font-family="Menlo, Courier New, monospace" font-size="24" fill="#9AA6B8">$ <tspan fill="#E7ECF3">npx features-cli serve ./src</tspan></text>
+
+  <!-- feature columns -->
+  <g transform="translate(860 470)">
+    <rect x="0" y="0" width="60" height="94" rx="8" fill="#2EF2FF" fill-opacity="0.75"/>
+    <rect x="80" y="-40" width="60" height="134" rx="8" fill="#FF3DF2" fill-opacity="0.75"/>
+    <rect x="160" y="-90" width="60" height="184" rx="8" fill="#E8FF3A" fill-opacity="0.75"/>
+  </g>
+</svg>

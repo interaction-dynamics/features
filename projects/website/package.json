@@ -1,0 +1,24 @@
+{
+  "name": "features-website",
+  "private": true,
+  "version": "^0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "biome lint .",
+    "format": "biome format .",
+    "format:fix": "biome format . --write"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.5",
+    "@lucide/astro": "^1.62.0",
+    "@tailwindcss/vite": "^4.3.5",
+    "astro": "^7.4.12",
+    "tailwindcss": "^4.3.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.5"
+  }
+}

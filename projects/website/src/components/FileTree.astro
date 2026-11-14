@@ -1,0 +1,67 @@
+---
+export interface TreeNode {
+  name: string
+  /** Visual role of the entry. */
+  kind?: 'folder' | 'file' | 'feature' | 'features' | 'readme'
+  note?: string
+  owner?: string
+  children?: TreeNode[]
+}
+
+interface Props {
+  nodes: TreeNode[]
+  title?: string
+  class?: string
+}
+
+const { nodes, title, class: className = '' } = Astro.props
+
+interface Row {
+  node: TreeNode
+  prefix: string
+}
+
+const flatten = (items: TreeNode[], prefix = ''): Row[] =>
+  items.flatMap((node, index) => {
+    const last = index === items.length - 1
+    const row = { node, prefix: `${prefix}${last ? '└── ' : '├── '}` }
+    const childPrefix = `${prefix}${last ? '    ' : '│   '}`
+    return [row, ...flatten(node.children ?? [], childPrefix)]
+  })
+
+const rows = flatten(nodes)
+
+const colors: Record<NonNullable<TreeNode['kind']>, string> = {
+  folder: 'text-text',
+  file: 'text-muted',
+  feature: 'text-cyan font-semibold',
+  features: 'text-magenta font-semibold',
+  readme: 'text-lime',
+}
+---
+
+<figure class:list={['card overflow-hidden', className]}>
+  {
+    title && (
+      <figcaption class="border-b border-line bg-surface-2 px-4 py-2.5 font-mono text-xs text-muted">
+        {title}
+      </figcaption>
+    )
+  }
+  <div class="overflow-x-auto p-5 font-mono text-[0.8rem] leading-7 sm:text-sm">
+    {
+      rows.map(({ node, prefix }) => (
+        <div class="flex items-center whitespace-nowrap">
+          <span class="whitespace-pre text-line" aria-hidden="true">{prefix}</span>
+          <span class={colors[node.kind ?? (node.children ? 'folder' : 'file')]}>{`${node.name}${node.children ? '/' : ''}`}</span>
+          {node.owner && (
+            <span class="ml-3 rounded-full border border-cyan/40 bg-cyan/10 px-2 font-sans text-[0.7rem] leading-5 text-cyan">
+              owner: {node.owner}
+            </span>
+          )}
+          {node.note && <span class="ml-3 font-sans text-xs text-muted/80"># {node.note}</span>}
+        </div>
+      ))
+    }
+  </div>
+</figure>
