@@ -235,6 +235,12 @@ pub struct ServerArgs {
     /// Enable the experimental parts of the web dashboard (History, project records)
     #[arg(long)]
     pub experimental: bool,
+
+    /// Project name shown in the web dashboard. Defaults to `name` in
+    /// features.config.toml, then to the name in the project manifest
+    /// (package.json, Cargo.toml, pyproject.toml, go.mod...)
+    #[arg(long, value_name = "NAME")]
+    pub project_name: Option<String>,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -250,6 +256,12 @@ pub struct BuildArgs {
     /// Enable the experimental parts of the web dashboard (History, project records)
     #[arg(long)]
     pub experimental: bool,
+
+    /// Project name shown in the web dashboard. Defaults to `name` in
+    /// features.config.toml, then to the name in the project manifest
+    /// (package.json, Cargo.toml, pyproject.toml, go.mod...)
+    #[arg(long, value_name = "NAME")]
+    pub project_name: Option<String>,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -630,12 +642,14 @@ impl LegacyArgs {
                 port: self.port,
                 allow_origin: self.allow_origin,
                 experimental: false,
+                project_name: None,
             })
         } else if self.build {
             Action::Build(BuildArgs {
                 path,
                 build_dir: self.build_dir,
                 experimental: false,
+                project_name: None,
             })
         } else if self.check {
             Action::Check { path }
@@ -697,6 +711,7 @@ mod tests {
             port: DEFAULT_PORT,
             allow_origin: Vec::new(),
             experimental: false,
+            project_name: None,
         }
     }
 
@@ -764,11 +779,24 @@ mod tests {
     }
 
     #[test]
+    fn test_serve_project_name() {
+        let expected = Action::Serve(ServerArgs {
+            project_name: Some("Acme".to_string()),
+            ..serve("./src")
+        });
+        assert_eq!(
+            action(&["serve", "./src", "--project-name", "Acme"]),
+            expected
+        );
+    }
+
+    #[test]
     fn test_build() {
         let expected = Action::Build(BuildArgs {
             path: path("./src"),
             build_dir: path("out"),
             experimental: false,
+            project_name: None,
         });
         assert_eq!(
             action(&["./src", "--build", "--build-dir", "out"]),
@@ -780,8 +808,17 @@ mod tests {
             path: path("./src"),
             build_dir: path(DEFAULT_BUILD_DIR),
             experimental: true,
+            project_name: None,
         });
         assert_eq!(action(&["build", "./src", "--experimental"]), experimental);
+
+        let named = Action::Build(BuildArgs {
+            path: path("./src"),
+            build_dir: path(DEFAULT_BUILD_DIR),
+            experimental: false,
+            project_name: Some("Acme".to_string()),
+        });
+        assert_eq!(action(&["build", "./src", "--project-name", "Acme"]), named);
     }
 
     #[test]

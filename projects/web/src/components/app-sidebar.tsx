@@ -14,18 +14,18 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { AppMenu } from '@/features/app-menu'
 import { useProjectRecords } from '@/features/records/use-project-records'
 import { useExperimentalFeatures } from '@/hooks/use-experimental-features'
+import { useMetadata } from '@/hooks/use-metadata'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import { filterByQuery, parseQuery } from '@/lib/smart-query-parser'
 import type { Feature } from '@/models/feature'
 import { AppSidebarSearchInput } from './app-sidebar-search-input'
 import { ExperimentalBadge } from './experimental-badge'
-import { ModeToggle } from './mode-toggle'
 import { NavFeatures } from './nav-features'
 import { OwnerDot } from './owner-dot'
-import { VersionIndicator } from './version-indicator'
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   activeFeature: Feature | null
@@ -57,6 +57,8 @@ export function AppSidebar({
   const { features, isAggregated, repositories, reconciliationErrors } =
     useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
+  const { metadata } = useMetadata()
+  const projectName = metadata?.projectName?.trim() || 'Features'
   const { records: projectRecords } = useProjectRecords()
   const { enabled: experimentalEnabled } = useExperimentalFeatures()
   // Project-level records are experimental: only counted when they are shown
@@ -93,14 +95,15 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link to={'/'}>
-                <img
-                  src="./feature-icon.svg"
-                  alt="Feature Icon"
-                  className="size-8"
-                />
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Features</span>
+              <Link to={'/'} title={projectName}>
+                <span
+                  aria-hidden
+                  className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sm font-semibold text-sidebar-primary-foreground"
+                >
+                  {projectName.charAt(0).toUpperCase()}
+                </span>
+                <div className="flex min-w-0 flex-col gap-0.5 leading-none">
+                  <span className="truncate font-medium">{projectName}</span>
                   {isAggregated && (
                     <span className="text-xs text-muted-foreground">
                       {repositories.length} repositories
@@ -242,10 +245,7 @@ export function AppSidebar({
             </SidebarMenu>
           )}
         </SidebarGroup>
-        <div className="flex flex-row justify-between items-center">
-          <ModeToggle />
-          <VersionIndicator />
-        </div>
+        <AppMenu />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

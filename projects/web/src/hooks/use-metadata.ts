@@ -7,6 +7,8 @@ export interface Metadata {
   /** Experimental pages enabled (`--experimental` of `features serve` and `features build`) */
   experimental?: boolean
   builtAt?: string
+  /** Project name (`--project-name`, features.config.toml or the project manifest) */
+  projectName?: string
 }
 
 const fetcher = async (url: string): Promise<Metadata> => {
