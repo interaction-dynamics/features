@@ -17,5 +17,6 @@ pub mod models;
 pub mod ownership;
 pub mod printer;
 pub mod readme_parser;
+pub mod records;
 pub mod scan;
 pub mod skip_dirs;

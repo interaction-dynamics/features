@@ -87,7 +87,7 @@ You need one place to overview all your features: what exists, who owns it, how 
 - Compare feature, fix and refactor commits, lines of code and file count per feature
 
 **For new joiners**
-- Browse every feature with its description, docs and decision records
+- Browse every feature with its description, docs, specs and decision records
 - Read a feature's history from its git log
 
 **For product and QA**
@@ -155,7 +155,7 @@ Add a few lines to your `AGENTS.md`, `CLAUDE.md` or `.cursor/rules` file:
 
 This codebase is organized by feature. Before exploring the code:
 
-- Run `npx features-cli@latest scan ./src --json --skip-changes` to list the features with their path, description, owner and decision records.
+- Run `npx features-cli@latest scan ./src --json --skip-changes` to list the features with their path, description, owner, specs and decision records.
 - Run `npx features-cli@latest find-owner <file>` to find who owns a file.
 - Before opening a pull request, run `npx features-cli@latest diff ./src --since origin/main` and mention the features and owners touched.
 ```

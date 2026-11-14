@@ -1,12 +1,12 @@
 import {
   BarChart3,
-  CheckSquare,
   FileText,
   Flag,
   FlaskConical,
   FolderTree,
   GitCommitVertical,
   Network,
+  ScrollText,
   Settings,
   Table,
   ToggleLeft,
@@ -15,6 +15,7 @@ import {
 import { lazy, useContext } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FeatureRepositories } from '@/features/reconciliation/feature-repositories'
+import { featureRecords } from '@/features/records/utils'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
@@ -22,7 +23,7 @@ import { FeatureMeta } from './feature-meta'
 import { FeatureOwner } from './feature-owner'
 
 const FeatureChanges = lazy(() => import('./feature-changes'))
-const FeatureDecisions = lazy(() => import('./feature-decisions'))
+const FeatureRecords = lazy(() => import('@/features/records'))
 const FeatureDependencies = lazy(() => import('@/features/dependencies'))
 const FeatureDescription = lazy(() => import('./feature-description'))
 const FeatureInsights = lazy(() => import('./feature-insights'))
@@ -65,6 +66,8 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
     if (key.includes('config')) return Settings
     return Table
   }
+
+  const recordsCount = featureRecords(feature).length
 
   return (
     <div className="flex flex-col gap-4">
@@ -117,9 +120,17 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
               Tests
             </TabsTrigger>
           )}
-          <TabsTrigger value="decisions">
-            <CheckSquare className="h-4 w-4" />
-            Decisions
+          <TabsTrigger value="records">
+            <ScrollText className="h-4 w-4" />
+            Specs & Decisions
+            {recordsCount > 0 && (
+              <span
+                className="rounded bg-muted px-1.5 text-xs tabular-nums text-muted-foreground"
+                data-testid="records-count"
+              >
+                {recordsCount}
+              </span>
+            )}
           </TabsTrigger>
           {feature.stats && (
             <TabsTrigger value="insights">
@@ -154,8 +165,8 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             <FeatureTests stats={feature.stats} />
           </TabsContent>
         )}
-        <TabsContent value="decisions" className="mt-1">
-          <FeatureDecisions decisions={feature.decisions} />
+        <TabsContent value="records" className="mt-1">
+          <FeatureRecords feature={feature} />
         </TabsContent>
         {feature.stats && (
           <TabsContent value="insights" className="mt-1">

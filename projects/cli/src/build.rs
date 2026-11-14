@@ -177,6 +177,23 @@ async fn generate_features_json<T: serde::Serialize + ?Sized>(
     Ok(())
 }
 
+/// Writes `records.json` (`{ "records": [...] }`) with the project-level
+/// specs and decision records, next to `features.json`
+pub async fn write_records_json(
+    records: &[crate::models::Record],
+    output_dir: &Path,
+) -> Result<()> {
+    let records_json = serde_json::to_string_pretty(&serde_json::json!({ "records": records }))
+        .map_err(|e| anyhow::anyhow!("Failed to serialize records to JSON: {}", e))?;
+
+    let records_path = output_dir.join("records.json");
+    fs::write(&records_path, records_json).await?;
+
+    println!("  Created: {}", records_path.display());
+
+    Ok(())
+}
+
 /// Returns the current time in the format used for `builtAt` in metadata.json
 pub fn current_build_timestamp() -> String {
     chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)

@@ -19,6 +19,7 @@ fn create_test_feature(name: &str, path: &str) -> Feature {
         meta: BTreeMap::new(),
         changes: Vec::new(),
         decisions: Vec::new(),
+        records: Vec::new(),
         stats: None,
         dependencies: Vec::new(),
     }

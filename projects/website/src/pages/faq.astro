@@ -39,10 +39,10 @@ const faqs = [
   },
   {
     id: 'how-can-i-add-a-decision',
-    question: 'How can I add a decision?',
-    text: 'In the feature directory, create a __docs__/decisions/ or .docs/decisions/ folder and add a Markdown file with a descriptive name. Structure it with a title, status, context, decision and consequences. The template is inspired by MADR.',
+    question: 'How can I add a spec or a decision?',
+    text: 'Run features new spec <feature> "<title>" or features new decision <feature> "<title>", or add numbered Markdown files to the feature\'s __docs__/specs/ or __docs__/decisions/ folder with a status and date frontmatter. Link them with decisions: [002-use-jwt] on a spec and spec: 001-login-flow on a decision. Project-level records go in docs/specs/, docs/decisions/ or docs/adr/. Decisions follow MADR.',
     answer:
-      'In the feature directory, create a <code>__docs__/decisions/</code> or <code>.docs/decisions/</code> folder and add a Markdown file with a descriptive name such as <code>use-typescript.md</code>. Structure it with a <strong>title</strong>, <strong>status</strong> (proposed, accepted, rejected, deprecated, superseded), <strong>context</strong>, <strong>decision</strong> and <strong>consequences</strong>. The template is inspired by <a href="https://adr.github.io/madr/" rel="noopener">MADR</a>.',
+      'Specs say <strong>what</strong> to build, decisions say <strong>why</strong> it is built that way; both show in the feature\'s <strong>Specs &amp; Decisions</strong> tab. Run <code>features new spec auth "Login flow"</code> or <code>features new decision auth "Use JWT"</code>, or add numbered Markdown files to <code>__docs__/specs/</code> or <code>__docs__/decisions/</code> (<code>.docs/</code> works too) starting with a frontmatter:<pre><code>---\nstatus: accepted\ndate: 2026-01-15\nspec: 001-login-flow\nsupersedes: 001-use-sessions\n---</code></pre>On a spec, list its decisions with <code>decisions: [002-use-jwt]</code>; links work both ways. A large spec can be a folder with a <code>spec.md</code> and a <code>tasks.md</code>, whose checklist shows as a progress bar. Records about the whole project go in <code>docs/specs/</code>, <code>docs/decisions/</code> or <code>docs/adr/</code>. Decisions follow <a href="https://adr.github.io/madr/" rel="noopener">MADR</a>; classic MADR files with a <code>## Status</code> section work too.',
   },
   {
     id: 'how-can-i-add-a-test-coverage-report',

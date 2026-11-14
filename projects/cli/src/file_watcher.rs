@@ -27,6 +27,23 @@ pub const MAX_WAIT: Duration = Duration::from_secs(3);
 /// folder structure doesn't change
 const FEATURE_DEFINITION_FILES: &[&str] = &["README.md", "README.mdx", "FEATURES.toml"];
 
+/// Folders holding specs and decision records, whose markdown edits matter
+const RECORD_DIRS: &[&str] = &["specs", "decisions", "adr"];
+
+/// Whether `path` is a markdown file inside a specs or decisions folder
+fn is_record_file(path: &Path) -> bool {
+    let is_markdown = path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("mdx"));
+    is_markdown
+        && path.ancestors().skip(1).take(3).any(|dir| {
+            dir.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| RECORD_DIRS.contains(&name))
+        })
+}
+
 /// Decides which file system events can change the features
 #[derive(Debug, Clone)]
 pub struct WatchFilter {
@@ -79,6 +96,7 @@ impl WatchFilter {
                 .file_name()
                 .and_then(|name| name.to_str())
                 .is_some_and(|name| FEATURE_DEFINITION_FILES.contains(&name))
+            || is_record_file(path)
     }
 
     /// Whether `path` is inside a folder the watcher leaves out
@@ -205,6 +223,23 @@ mod tests {
         }
         let source = root.path().join("src/features/a/index.ts");
         assert!(!filter.is_relevant_change(&source, &MODIFY));
+    }
+
+    #[test]
+    fn test_record_edits_are_relevant() {
+        let root = tempfile::TempDir::new().unwrap();
+        let filter = filter(root.path());
+        for path in [
+            "feature/__docs__/decisions/001-a.md",
+            "feature/__docs__/specs/003-sso/tasks.md",
+            "docs/adr/0001-x.md",
+        ] {
+            assert!(
+                filter.is_relevant_change(&root.path().join(path), &MODIFY),
+                "{path}"
+            );
+        }
+        assert!(!filter.is_relevant_change(&root.path().join("feature/notes.md"), &MODIFY));
     }
 
     #[test]

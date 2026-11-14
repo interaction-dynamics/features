@@ -1,4 +1,4 @@
-import { BarChart3, TriangleAlert } from 'lucide-react'
+import { BarChart3, ScrollText, TriangleAlert } from 'lucide-react'
 import type * as React from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { Link, NavLink } from 'react-router'
@@ -14,6 +14,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { useProjectRecords } from '@/features/records/use-project-records'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import { filterByQuery, parseQuery } from '@/lib/smart-query-parser'
@@ -54,6 +55,7 @@ export function AppSidebar({
   const { features, isAggregated, repositories, reconciliationErrors } =
     useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
+  const { records: projectRecords } = useProjectRecords()
 
   // Filter features based on search query using smart query parser
   const filteredFeatures = useMemo(() => {
@@ -183,6 +185,26 @@ export function AppSidebar({
                   )}
                 </NavLink>
               </SidebarMenuItem>
+              {!isAggregated && (
+                <SidebarMenuItem>
+                  <NavLink to="/records">
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        className="cursor-pointer"
+                        isActive={isActive}
+                      >
+                        <ScrollText className="h-4 w-4" />
+                        Project records
+                        {projectRecords.length > 0 && (
+                          <span className="ml-auto rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
+                            {projectRecords.length}
+                          </span>
+                        )}
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
+                </SidebarMenuItem>
+              )}
               {isAggregated && (
                 <SidebarMenuItem>
                   <NavLink to="/reconciliation">
