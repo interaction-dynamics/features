@@ -690,7 +690,7 @@ jobs:
 
       - name: Render formula
         if: steps.token.outputs.present == 'true'
-        run: packaging/homebrew/render.sh "$VERSION" "$RUNNER_TEMP/checksums.txt" "$RUNNER_TEMP/features.rb"
+        run: projects/cli/packaging/homebrew/render.sh "$VERSION" "$RUNNER_TEMP/checksums.txt" "$RUNNER_TEMP/features.rb"
 
       - name: Checkout tap repository
         if: steps.token.outputs.present == 'true'
