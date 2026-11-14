@@ -264,7 +264,7 @@ const owners = (): Node[] => {
 }
 
 /**
- * Intent kept in the repository: every feature is a chip in its folder,
+ * Specs mapped to features: every feature is a chip in its folder,
  * its own datasheets standing right behind it and wired to it: decision
  * records, the spec in front, a superseded record dashed at the back. In a
  * loop, the next task of the middle feature's spec gets done.
