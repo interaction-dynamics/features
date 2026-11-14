@@ -12,7 +12,7 @@ const { id, eyebrow, title, lead, class: className = '' } = Astro.props
 
 <section id={id} class:list={['mx-auto max-w-6xl scroll-mt-24 px-4 py-16 sm:px-6', className]}>
   <div class="max-w-2xl">
-    {eyebrow && <p class="font-mono text-xs tracking-[0.2em] text-magenta uppercase">{eyebrow}</p>}
+    {eyebrow && <p class="font-mono text-xs tracking-[0.2em] text-accent-2 uppercase">{eyebrow}</p>}
     <h2 class="mt-3 text-3xl font-bold tracking-tight text-balance">{title}</h2>
     {lead && <p class="mt-4 text-pretty text-muted">{lead}</p>}
   </div>

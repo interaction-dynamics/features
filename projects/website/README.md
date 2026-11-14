@@ -6,28 +6,28 @@ Built with [Astro](https://astro.build) and Tailwind CSS. Hosted on [Vercel](htt
 
 ## Pages
 
-| Path | Content | Source |
-| ---- | ------- | ------ |
-| `/` | What Features does, how it works, dashboard, pull request integration | `README.md` |
-| `/feature-based-architecture` | The concept, layered vs feature-based, anatomy of a feature | `FAQ.md`, `README.md` |
-| `/guidelines` | Folder structure, README front matter, specs and decisions, annotations | `docs/folder-architecture-guidelines.md`, `docs/readme-format.md` |
-| `/cli` | Install, commands, options, `diff` + GitHub Actions, CODEOWNERS, coverage | `README.md`, `FAQ.md` |
-| `/faq` | Frequently asked questions (with `FAQPage` structured data) | `FAQ.md` |
+| Path                          | Content                                                                   | Source                                                            |
+| ----------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `/`                           | What Features does, how it works, dashboard, pull request integration     | `README.md`                                                       |
+| `/feature-based-architecture` | The concept, layered vs feature-based, anatomy of a feature               | `FAQ.md`, `README.md`                                             |
+| `/guidelines`                 | Folder structure, README front matter, specs and decisions, annotations   | `docs/folder-architecture-guidelines.md`, `docs/readme-format.md` |
+| `/cli`                        | Install, commands, options, `diff` + GitHub Actions, CODEOWNERS, coverage | `README.md`, `FAQ.md`                                             |
+| `/faq`                        | Frequently asked questions (with `FAQPage` structured data)               | `FAQ.md`                                                          |
 
 The content mirrors the repository docs. When the README, FAQ or docs change, update the matching page.
 
 ## Getting started
 
 ```bash
-pnpm install
-pnpm dev
+bun install
+bun run dev
 ```
 
 ```bash
-pnpm build   # static site in dist/
-pnpm preview
-pnpm format  # biome
-pnpm lint
+bun run build   # static site in dist/
+bun run preview
+bun run format  # oxfmt (format:check to only check)
+bun run lint    # oxlint
 ```
 
 ## Deploying on Vercel
@@ -45,7 +45,7 @@ Canonical URLs, the sitemap and Open Graph tags need the absolute site URL. On V
 `public/screenshots/*.webp` are real screenshots of the [live demo](https://interaction-dynamics.io/features/), at 1x (1280px) and 2x (2560px), shown with the `Screenshot` component. To refresh them after a dashboard change, install the dashboard dependencies (the script reuses its Playwright) and run:
 
 ```bash
-pnpm --dir ../web install
+bun install --cwd ../web
 node scripts/capture-screenshots.mjs # optional: a demo URL, e.g. http://localhost:3000/
 ```
 

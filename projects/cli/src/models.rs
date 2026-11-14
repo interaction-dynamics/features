@@ -37,7 +37,7 @@ pub struct Feature {
     pub meta: BTreeMap<String, serde_json::Value>,
     pub changes: Vec<Change>,
     pub decisions: Vec<String>,
-    /// Specs and decision records of the feature (see [`Record`])
+    /// Specs and decision records of the feature, see [`Record`]
     #[serde(default)]
     pub records: Vec<Record>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -45,19 +45,45 @@ pub struct Feature {
     pub dependencies: Vec<Dependency>,
 }
 
-/// Whether a record describes what to build (spec) or why it was built that way (decision)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// What a [`Record`] documents
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum RecordKind {
+    /// What to build: requirements, plan, tasks
     Spec,
+    /// Why it was built that way (architecture decision record)
+    #[default]
     Decision,
 }
 
+impl RecordKind {
+    /// Name of the folder holding records of this kind (`specs`, `decisions`)
+    pub fn folder_name(self) -> &'static str {
+        match self {
+            RecordKind::Spec => "specs",
+            RecordKind::Decision => "decisions",
+        }
+    }
+
+    /// Short label for terminal output
+    pub fn label(self) -> &'static str {
+        match self {
+            RecordKind::Spec => "Spec",
+            RecordKind::Decision => "ADR",
+        }
+    }
+}
+
 /// Layout a record was read from
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum RecordSource {
-    /// `__docs__/{specs,decisions}`, `.docs/...` or root `docs/...`
+    /// `__docs__/{specs,decisions}`, `.docs/...` or root `docs/...` and `specs/*.md`
+    #[default]
     Native,
     /// GitHub Spec Kit: root `specs/NNN-name/spec.md`
     Speckit,
@@ -65,56 +91,80 @@ pub enum RecordSource {
     Kiro,
 }
 
+impl RecordSource {
+    pub fn is_native(&self) -> bool {
+        *self == RecordSource::Native
+    }
+}
+
+/// Links between records, by record id. Filled in both directions when scanning.
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+pub struct RecordLinks {
+    /// Related decisions (`decisions:` frontmatter, mostly on specs)
+    pub decisions: Vec<String>,
+    /// Related specs (`spec:` / `specs:` frontmatter, mostly on decisions)
+    pub specs: Vec<String>,
+    /// Records this one replaces (`supersedes:` frontmatter)
+    pub supersedes: Vec<String>,
+    /// Records replacing this one (the other side of `supersedes`)
+    pub superseded_by: Vec<String>,
+}
+
+impl RecordLinks {
+    pub fn is_empty(&self) -> bool {
+        self.decisions.is_empty()
+            && self.specs.is_empty()
+            && self.supersedes.is_empty()
+            && self.superseded_by.is_empty()
+    }
+}
+
 /// A secondary file of a folder record (`plan.md`, `tasks.md`, `contracts/api.yaml`...)
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct RecordFile {
-    /// Path relative to the record folder
     pub name: String,
-    /// Path relative to the scanned folder
     pub path: String,
     pub content: String,
 }
 
-/// Ids of the records linked to a record, resolved in both directions
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-pub struct RecordLinks {
-    pub decisions: Vec<String>,
-    pub specs: Vec<String>,
-    pub supersedes: Vec<String>,
-    pub superseded_by: Vec<String>,
-}
-
-/// Checkbox progress of a spec (`- [ ]` / `- [x]`)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Checklist progress: `- [x]` lines over `- [ ]` and `- [x]` lines
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TaskProgress {
     pub done: usize,
     pub total: usize,
 }
 
-/// A spec or a decision record
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// A spec or a decision record, read from a `specs`, `decisions` or `adr` folder
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct Record {
     pub kind: RecordKind,
-    /// File stem or folder name, e.g. `001-login-flow`
+    /// File stem, or folder name for a folder record (e.g. `002-use-jwt`)
     pub id: String,
     pub title: String,
-    /// Lowercased first word of the status (`accepted`, `superseded`...)
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Lowercased status (draft, proposed, accepted, implemented, superseded...)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub date: Option<String>,
     /// Path of the main file, relative to the scanned folder
     pub path: String,
-    /// Markdown of the main file
+    /// Markdown of the main file, without its frontmatter
     pub content: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    /// Other markdown files of a folder record
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<RecordFile>,
+    /// Layout the record was read from, omitted for native records
+    #[serde(skip_serializing_if = "RecordSource::is_native")]
     pub source: RecordSource,
-    #[serde(default)]
     pub links: RecordLinks,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tasks: Option<TaskProgress>,
+    /// Feature a project-level record is attached to (`feature:` frontmatter)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub feature: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

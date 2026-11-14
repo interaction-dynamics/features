@@ -1,7 +1,6 @@
 import { lazy, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HashRouter, Route, Routes } from 'react-router'
-
 import './index.css'
 import { FeaturesProvider } from './components/features-provider'
 import { MainLayout } from './components/main-layout'
@@ -13,7 +12,7 @@ const Insights = lazy(async () => import('./routes/insights'))
 
 const Reconciliation = lazy(async () => import('./routes/reconciliation'))
 
-const ProjectRecords = lazy(async () => import('./routes/records'))
+const ProjectRecords = lazy(async () => import('./routes/project-records'))
 
 const root = document.getElementById('root')
 

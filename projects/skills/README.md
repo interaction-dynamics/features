@@ -9,10 +9,10 @@ The skills follow the conventions of [features-cli](https://github.com/interacti
 | Skill | What it does |
 | ----- | ------------ |
 | [`organize-by-feature`](skills/organize-by-feature/SKILL.md) | Entry point. Runs the whole refactor: checks the baseline, plans the breakdown, then extracts, documents, validates and commits one feature at a time. |
-| [`explore-features`](skills/explore-features/SKILL.md) | Generates the `features scan --json` report into a file and reads it through a compact index script: every feature's path, owner, description, decision records and imports into other features. Useful on its own to get to know any codebase before changing it. |
+| [`explore-features`](skills/explore-features/SKILL.md) | Generates the `features scan --json` report into a file and reads it through a compact index script: every feature's path, owner, description, specs and decision records, and imports into other features. Useful on its own to get to know any codebase before changing it. |
 | [`plan-feature-breakdown`](skills/plan-feature-breakdown/SKILL.md) | Analyzes the codebase (`features scan`, entry points, domain words, files that change together, `CODEOWNERS`) and writes a breakdown plan for you to approve: features, target paths, files to move, shared code, owners and migration order. Read-only. |
 | [`extract-feature`](skills/extract-feature/SKILL.md) | Moves one feature's files into `features/<name>/` with `git mv`, updates imports and other path references, and runs your build and tests. No behavior change. |
-| [`document-feature`](skills/document-feature/SKILL.md) | Writes or fixes the feature's `README.md` (owner, creation date, title, description) its specs in `__docs__/specs/` and its decision records in `__docs__/decisions/`, linked together. Never invents an owner or a decision. |
+| [`document-feature`](skills/document-feature/SKILL.md) | Writes or fixes the feature's `README.md` (owner, creation date, title, description) and its decision records in `__docs__/decisions/`. Never invents an owner or a decision. |
 | [`validate-features`](skills/validate-features/SKILL.md) | Runs `features check` and `features scan`, plus a report script that flags features without description or owner, imports between sibling features, oversized features and code left outside any feature. |
 
 ## Install

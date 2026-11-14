@@ -4,8 +4,8 @@
 //! enriches it in separate passes, the same way `scan.rs` adds coverage:
 //!
 //! 1. [`metadata`]: `--feature-<key>` annotations merged into `meta`
-//! 2. [`decisions`]: decision records (raw markdown) and
-//!    [`crate::records`]: specs and decision records, root ones included
+//! 2. [`decisions`]: decision records (raw markdown, kept for compatibility)
+//!    and [`records`]: specs and decision records
 //! 3. [`stats`]: file, line and TODO counts
 //! 4. [`history`]: git changes and commit statistics (only with history)
 //! 5. [`dependencies`]: dependencies resolved from imports
@@ -16,6 +16,7 @@ mod decisions;
 mod dependencies;
 mod history;
 mod metadata;
+mod records;
 mod stats;
 mod walk;
 
@@ -24,8 +25,7 @@ use std::path::{Path, PathBuf};
 
 use crate::feature_metadata_detector;
 use crate::git_helper::{CommitHistory, get_all_commits_by_path};
-use crate::models::{Feature, Record};
-use crate::records::populate_records;
+use crate::models::Feature;
 use walk::{ReadmeCache, WalkFilter, Walker};
 
 /// Call `f` on every feature of the tree, parents before their nested features
@@ -42,23 +42,7 @@ pub fn list_files_recursive(
     ignore_paths: &[PathBuf],
     include_skipped_dirs: bool,
 ) -> Result<Vec<Feature>> {
-    scan_with_enrichment(dir, ignore_paths, include_skipped_dirs, None).map(|(f, _)| f)
-}
-
-/// Scan `dir` for features and project-level records (root specs and
-/// decisions not attached to a feature), with or without git history
-pub fn scan_features_and_records(
-    dir: &Path,
-    ignore_paths: &[PathBuf],
-    include_skipped_dirs: bool,
-    with_history: bool,
-) -> Result<(Vec<Feature>, Vec<Record>)> {
-    if with_history {
-        let history = get_all_commits_by_path(dir).unwrap_or_default();
-        scan_with_enrichment(dir, ignore_paths, include_skipped_dirs, Some(&history))
-    } else {
-        scan_with_enrichment(dir, ignore_paths, include_skipped_dirs, None)
-    }
+    scan_with_enrichment(dir, ignore_paths, include_skipped_dirs, None)
 }
 
 /// Build the feature tree with only what is needed to know who owns what:
@@ -90,17 +74,18 @@ pub fn list_files_recursive_with_changes(
     ignore_paths: &[PathBuf],
     include_skipped_dirs: bool,
 ) -> Result<Vec<Feature>> {
-    scan_features_and_records(dir, ignore_paths, include_skipped_dirs, true).map(|(f, _)| f)
+    // Get all commits once at the beginning for efficiency
+    let history = get_all_commits_by_path(dir).unwrap_or_default();
+    scan_with_enrichment(dir, ignore_paths, include_skipped_dirs, Some(&history))
 }
 
-/// Walk `dir` for the feature tree, then run every enrichment pass on it.
-/// Returns the features and the project-level records.
+/// Walk `dir` for the feature tree, then run every enrichment pass on it
 fn scan_with_enrichment(
     dir: &Path,
     ignore_paths: &[PathBuf],
     include_skipped_dirs: bool,
     history: Option<&CommitHistory>,
-) -> Result<(Vec<Feature>, Vec<Record>)> {
+) -> Result<Vec<Feature>> {
     // Scan entire base_path for feature metadata once
     let feature_metadata =
         feature_metadata_detector::scan_directory_for_feature_metadata(dir).unwrap_or_default();
@@ -119,14 +104,14 @@ fn scan_with_enrichment(
 
     metadata::apply_feature_metadata(&mut features, &feature_metadata);
     decisions::populate_decisions(&mut features, dir);
-    let project_records = populate_records(&mut features, dir);
+    records::populate_records(&mut features, dir);
     stats::populate_file_stats(&mut features, dir, &filter);
     if let Some(history) = history {
         history::populate_history(&mut features, dir, history);
     }
     dependencies::populate_dependencies(&mut features, dir, &filter, &readmes)?;
 
-    Ok((features, project_records))
+    Ok(features)
 }
 
 #[cfg(test)]
@@ -212,14 +197,11 @@ mod tests {
         assert_eq!(parent_stats.todos_count, Some(1));
         assert!(parent_stats.commits.is_empty());
         assert_eq!(child.decisions, vec!["# Decision\n".to_string()]);
-        assert_eq!(child.records.len(), 1);
-        assert_eq!(child.records[0].title, "Decision");
         assert_eq!(child.stats.as_ref().unwrap().lines_count, Some(2));
 
         // An ownership-only scan leaves everything but the tree out
         let owners = list_features_ownership_only(base, &[], false).unwrap();
         assert!(owners[0].stats.is_none());
         assert!(owners[0].features[0].decisions.is_empty());
-        assert!(owners[0].features[0].records.is_empty());
     }
 }

@@ -29,14 +29,14 @@ anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 serde_json = { version = "1.0", features = ["preserve_order"] }
-toml = "0.8"
+toml = "1.2"
 colored = "3.1"
 # Only local repositories are read, so the network transports (https/ssh) and
 # their OpenSSL/libssh2 dependencies are not needed
 git2 = { version = "0.21", default-features = false }
 chrono = "0.4"
 tokio = { version = "1.0", features = ["full"] }
-warp = "0.3"
+warp = { version = "0.4", features = ["server"] }
 include_dir = "0.7"
 notify = "6.0"
 indicatif = "0.18"
@@ -44,4 +44,5 @@ walkdir = "2.0"
 indexmap = { version = "2.0", features = ["serde"] }
 
 [dev-dependencies]
+warp = { version = "0.4", features = ["test"] }
 tempfile = "3.0"

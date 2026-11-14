@@ -23,7 +23,7 @@ export function MetadataTooltipContent({
             // Display only the identifier property
             const value = item[identifierKey]
             return (
-              // biome-ignore lint/suspicious/noArrayIndexKey: no other choice
+              // oxlint-disable-next-line react/no-array-index-key -- no other choice
               <div key={idx}>
                 {value.length > 50 ? `${value.substring(0, 50)}...` : value}
               </div>
@@ -32,7 +32,7 @@ export function MetadataTooltipContent({
 
           // Display all properties
           return (
-            // biome-ignore lint/suspicious/noArrayIndexKey: no other choice
+            // oxlint-disable-next-line react/no-array-index-key -- no other choice
             <div key={idx}>
               {Object.entries(item)
                 .filter(([k]) => k !== 'feature')

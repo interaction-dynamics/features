@@ -12,15 +12,13 @@ import {
   ToggleLeft,
   User,
 } from 'lucide-react'
-import { lazy, useContext, useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { lazy, useContext } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FeatureRepositories } from '@/features/reconciliation/feature-repositories'
-import { recordsOf } from '@/features/records/record-utils'
+import { featureRecords } from '@/features/records/utils'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
-
 import { FeatureMeta } from './feature-meta'
 import { FeatureOwner } from './feature-owner'
 
@@ -39,16 +37,6 @@ interface FeatureDetailsProps {
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
   const { features, isAggregated } = useContext(FeaturesContext)
-  const [searchParams] = useSearchParams()
-  const selectedRecord = searchParams.get('record')
-  const [tab, setTab] = useState(selectedRecord ? 'records' : 'description')
-
-  // A link to a record opens the Specs & Decisions tab
-  useEffect(() => {
-    if (selectedRecord) setTab('records')
-  }, [selectedRecord])
-
-  const recordsCount = recordsOf(feature).length
 
   // Extract metadata keys that have array values (e.g., 'flag', 'experiment', 'toggle')
   // Common feature metadata types
@@ -78,6 +66,8 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
     if (key.includes('config')) return Settings
     return Table
   }
+
+  const recordsCount = featureRecords(feature).length
 
   return (
     <div className="flex flex-col gap-4">
@@ -112,7 +102,7 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
         <FeatureMeta feature={feature} />
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} className="mt-4">
+      <Tabs defaultValue="description" className="mt-4">
         <TabsList>
           <TabsTrigger value="description">
             <FileText className="h-4 w-4" />
@@ -132,9 +122,12 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
           )}
           <TabsTrigger value="records">
             <ScrollText className="h-4 w-4" />
-            Specs &amp; Decisions
+            Specs & Decisions
             {recordsCount > 0 && (
-              <span className="rounded bg-muted px-1.5 text-xs tabular-nums">
+              <span
+                className="rounded bg-muted px-1.5 text-xs tabular-nums text-muted-foreground"
+                data-testid="records-count"
+              >
                 {recordsCount}
               </span>
             )}

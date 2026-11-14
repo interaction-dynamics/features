@@ -27,18 +27,20 @@ pub const MAX_WAIT: Duration = Duration::from_secs(3);
 /// folder structure doesn't change
 const FEATURE_DEFINITION_FILES: &[&str] = &["README.md", "README.mdx", "FEATURES.toml"];
 
-/// Folders holding specs and decision records (see `crate::records`)
+/// Folders holding specs and decision records, whose markdown edits matter
 const RECORD_DIRS: &[&str] = &["specs", "decisions", "adr"];
 
-/// Whether `path` is a text file inside a specs or decisions folder
+/// Whether `path` is a markdown file inside a specs or decisions folder
 fn is_record_file(path: &Path) -> bool {
-    let is_text = path
+    let is_markdown = path
         .extension()
         .and_then(|ext| ext.to_str())
-        .is_some_and(|ext| ["md", "mdx", "yaml", "yml", "json"].contains(&ext));
-    is_text
-        && path.components().any(|component| {
-            matches!(component, Component::Normal(name) if name.to_str().is_some_and(|name| RECORD_DIRS.contains(&name)))
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("mdx"));
+    is_markdown
+        && path.ancestors().skip(1).take(3).any(|dir| {
+            dir.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| RECORD_DIRS.contains(&name))
         })
 }
 
@@ -227,21 +229,17 @@ mod tests {
     fn test_record_edits_are_relevant() {
         let root = tempfile::TempDir::new().unwrap();
         let filter = filter(root.path());
-
         for path in [
-            "src/features/a/__docs__/decisions/001-x.md",
-            "src/features/a/.docs/specs/002-y/plan.md",
-            "docs/adr/0001-z.md",
-            "specs/003-auth/contracts/api.yaml",
-            ".kiro/specs/billing/tasks.md",
+            "feature/__docs__/decisions/001-a.md",
+            "feature/__docs__/specs/003-sso/tasks.md",
+            "docs/adr/0001-x.md",
         ] {
             assert!(
                 filter.is_relevant_change(&root.path().join(path), &MODIFY),
                 "{path}"
             );
         }
-        let other = root.path().join("docs/guide.md");
-        assert!(!filter.is_relevant_change(&other, &MODIFY));
+        assert!(!filter.is_relevant_change(&root.path().join("feature/notes.md"), &MODIFY));
     }
 
     #[test]

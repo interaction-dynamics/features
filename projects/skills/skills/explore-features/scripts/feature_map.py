@@ -6,21 +6,19 @@ specs and decision records, which can be large. This script prints a short
 index first, then the details of the features you ask for.
 
 Usage:
-    features scan ./src --json --project-records --skip-changes > features.json
+    features scan ./src --json --skip-changes > features.json
     python3 feature_map.py features.json                   # one line per feature
     python3 feature_map.py features.json --feature checkout  # details of one feature
     python3 feature_map.py features.json --owner team-payments
     python3 feature_map.py features.json --file src/features/checkout/api.ts
-    python3 feature_map.py features.json --records         # every spec and decision
-
-The report is either an array of features (`features scan --json`) or
-`{"features": [...], "records": [...]}` (`--project-records`, which adds the
-project-level specs and decisions). Reports of older versions without
-`records` fall back to the raw `decisions`.
+    features records ./src --json > records.json
+    python3 feature_map.py features.json --records records.json  # project-level records
 
 --feature matches a feature name or path (case-insensitive, substring).
 --file prints the feature that contains a file (path relative to the scanned
-folder, or ending with the feature path). Uses the Python standard library only.
+folder, or ending with the feature path). --records prints the project-level
+specs and decisions (root `docs/` records not attached to a feature).
+Uses the Python standard library only.
 """
 
 import argparse
@@ -42,19 +40,13 @@ def first_line(text):
     return ""
 
 
-def records_of(feature):
-    """The specs and decisions of a feature, or its raw decisions in old reports."""
+def feature_records(feature):
+    """Specs and decisions of a feature; older reports only have raw decisions."""
     if "records" in feature:
-        return feature["records"] or []
+        return feature["records"]
     return [
-        {
-            "kind": "decision",
-            "id": f"decision-{index}",
-            "title": first_heading(content) or f"Decision {index}",
-            "content": content,
-            "links": {},
-        }
-        for index, content in enumerate(feature.get("decisions", []), 1)
+        {"kind": "decision", "id": str(index), "title": first_heading(text), "content": text}
+        for index, text in enumerate(feature.get("decisions", []), 1)
     ]
 
 
@@ -63,46 +55,49 @@ def first_heading(text):
         line = line.strip()
         if line.startswith("#"):
             return line.lstrip("#").strip()
-    return ""
+    return "Untitled"
 
 
-SOURCES = {"speckit": "Spec Kit", "kiro": "Kiro"}
-
-
-def record_line(record, feature_path=None):
-    kind = "spec" if record.get("kind") == "spec" else "decision"
-    facts = [record[key] for key in ("status", "date") if record.get(key)]
+def record_line(record):
+    kind = "Spec" if record.get("kind") == "spec" else "ADR"
+    details = [record[key] for key in ("status", "date") if record.get(key)]
     tasks = record.get("tasks")
     if tasks:
-        facts.append(f"tasks {tasks['done']}/{tasks['total']}")
-    if record.get("source") in SOURCES:
-        facts.append(SOURCES[record["source"]])
-    line = f"- [{kind}] {record['id']}: {record.get('title', '')}"
-    if facts:
-        line += f" ({', '.join(facts)})"
-    if record.get("path"):
-        line += f" -> {record['path']}"
-    if feature_path is not None:
-        line += f" [feature: {feature_path or 'project'}]"
-    links = [
-        f"{key.replace('_', ' ')}: {', '.join(ids)}"
-        for key, ids in (record.get("links") or {}).items()
-        if ids
+        details.append(f"{tasks['done']}/{tasks['total']} tasks")
+    line = f"- [{kind}] {record.get('id')}: {record.get('title')}"
+    if details:
+        line += f" ({', '.join(details)})"
+    links = record.get("links") or {}
+    linked = [
+        f"{label} {', '.join(links[key])}"
+        for key, label in (
+            ("specs", "specs:"),
+            ("decisions", "decisions:"),
+            ("supersedes", "supersedes:"),
+            ("superseded_by", "superseded by:"),
+        )
+        if links.get(key)
     ]
-    if links:
-        line += f"\n    links: {'; '.join(links)}"
+    if linked:
+        line += f" [{'; '.join(linked)}]"
+    if record.get("path"):
+        line += f" <{record['path']}>"
     return line
 
 
-def record_counts(records):
-    specs = sum(1 for r in records if r.get("kind") == "spec")
-    decisions = len(records) - specs
-    parts = []
-    if specs:
-        parts.append(f"{specs} spec(s)")
-    if decisions:
-        parts.append(f"{decisions} decision(s)")
-    return ", ".join(parts)
+def print_records(records, title):
+    if not records:
+        return
+    print(f"\n## {title}\n")
+    for record in records:
+        print(record_line(record))
+    for record in records:
+        kind = "Spec" if record.get("kind") == "spec" else "Decision record"
+        print(f"\n### {kind} {record.get('id')}: {record.get('title')}\n")
+        print((record.get("content") or "").strip())
+        for sub_file in record.get("files") or []:
+            print(f"\n#### {sub_file.get('name')}\n")
+            print((sub_file.get("content") or "").strip())
 
 
 def summary(feature, depth):
@@ -113,9 +108,16 @@ def summary(feature, depth):
     description = first_line(feature.get("description"))
     if description:
         parts.append(f": {description}")
-    counts = record_counts(records_of(feature))
+    records = feature_records(feature)
+    specs = sum(1 for r in records if r.get("kind") == "spec")
+    decisions = len(records) - specs
+    counts = [
+        f"{count} {label}"
+        for count, label in ((specs, "spec(s)"), (decisions, "decision(s)"))
+        if count
+    ]
     if counts:
-        parts.append(f" ({counts})")
+        parts.append(f" ({', '.join(counts)})")
     return "".join(parts)
 
 
@@ -148,17 +150,7 @@ def details(feature):
             print(f"  - {kind} {path}: {count} import(s)")
     print("\n## Description\n")
     print((feature.get("description") or "(none)").strip())
-    records = records_of(feature)
-    if records:
-        print("\n## Specs and decisions\n")
-        for record in records:
-            print(record_line(record))
-        for record in records:
-            kind = "Spec" if record.get("kind") == "spec" else "Decision"
-            print(f"\n## {kind} {record['id']}: {record.get('title', '')}\n")
-            print((record.get("content") or "").strip())
-            for file in record.get("files") or []:
-                print(f"\n(also: {file['path']})")
+    print_records(feature_records(feature), "Specs and decisions")
     print()
 
 
@@ -171,9 +163,21 @@ def main():
     parser.add_argument("--owner", help="list only the features of this owner")
     parser.add_argument("--file", help="print the feature that contains this file")
     parser.add_argument(
-        "--records", action="store_true", help="list every spec and decision record"
+        "--records",
+        metavar="RECORDS_JSON",
+        help="print the project-level records of `features records --json`",
     )
     args = parser.parse_args()
+
+    if args.records:
+        with open(args.records, encoding="utf-8") as handle:
+            records = json.load(handle).get("records", [])
+        if not records:
+            print("No project-level specs or decisions.")
+            return
+        print(f"{len(records)} project-level record(s)")
+        print_records(records, "Project specs and decisions")
+        return
 
     if args.input:
         with open(args.input, encoding="utf-8") as handle:
@@ -181,25 +185,7 @@ def main():
     else:
         data = json.load(sys.stdin)
 
-    if isinstance(data, dict):
-        features = data.get("features", [])
-        project_records = data.get("records", [])
-    else:
-        features, project_records = data, []
-
-    entries = list(flatten(features))
-
-    if args.records:
-        lines = [
-            record_line(record, feature["path"])
-            for feature, _ in entries
-            for record in records_of(feature)
-        ]
-        lines += [record_line(record, "") for record in project_records]
-        print(f"{len(lines)} spec(s) and decision(s)\n")
-        for line in lines:
-            print(line)
-        return
+    entries = list(flatten(data))
 
     if args.file:
         target = args.file.replace("\\", "/")
@@ -237,11 +223,6 @@ def main():
     print(f"{len(entries)} feature(s)\n")
     for feature, depth in entries:
         print(summary(feature, depth))
-
-    if project_records and not args.owner:
-        print(f"\nProject-level specs and decisions ({record_counts(project_records)}):")
-        for record in project_records:
-            print(record_line(record))
 
 
 if __name__ == "__main__":

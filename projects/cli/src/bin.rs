@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use features_cli::aggregate;
-use features_cli::build::{BuildConfig, create_build};
+use features_cli::build::{BuildConfig, create_build, write_records_json};
 use features_cli::checker::run_checks;
 use features_cli::cli::{
     Action, AggregateArgs, Cli, CodeownersOptions, DiffArgs, Invocation, ScanArgs,
@@ -13,10 +13,11 @@ use features_cli::cli::{
 use features_cli::codeowners::generate_codeowners;
 use features_cli::diff;
 use features_cli::http_server::{ServerConfig, serve_features_with_watching};
-use features_cli::models::Feature;
+use features_cli::models::{Feature, Record};
 use features_cli::ownership::find_owner_for_path;
 use features_cli::printer::print_features;
-use features_cli::scan::{ScanConfig, ScanOutput, scan_features_with, scan_project_with};
+use features_cli::records::{create_record, project_records};
+use features_cli::scan::{ScanConfig, scan_features_with};
 
 /// Resolve `--ignore-path` values to canonical absolute paths.
 ///
@@ -145,12 +146,12 @@ async fn run(invocation: Invocation) -> Result<()> {
     let current_dir = std::env::current_dir()?;
 
     // Scan the features, then generate CODEOWNERS if requested alongside the action
-    let scan_path = |path: &Path, config: &ScanConfig| -> Result<ScanOutput> {
-        let output = scan_project_with(path, config)?;
+    let scan_path = |path: &Path, config: &ScanConfig| -> Result<Vec<Feature>> {
+        let features = scan_features_with(path, config)?;
         if let Some(options) = &codeowners {
-            write_codeowners(&output.features, path, &scan, options, &current_dir)?;
+            write_codeowners(&features, path, &scan, options, &current_dir)?;
         }
-        Ok(output)
+        Ok(features)
     };
 
     match action {
@@ -163,7 +164,7 @@ async fn run(invocation: Invocation) -> Result<()> {
 
         Action::List(args) => {
             let config = scan_config(&scan, &current_dir).with_coverage(args.json || args.coverage);
-            let ScanOutput { features, records } = scan_path(&args.path, &config)?;
+            let features = scan_path(&args.path, &config)?;
 
             let output_features = if args.flat {
                 flatten_features(&features)
@@ -171,13 +172,7 @@ async fn run(invocation: Invocation) -> Result<()> {
                 features
             };
 
-            if args.json && args.project_records {
-                let output = ScanOutput {
-                    features: output_features,
-                    records,
-                };
-                println!("{}", serde_json::to_string_pretty(&output)?);
-            } else if args.json {
+            if args.json {
                 let json = serde_json::to_string_pretty(&output_features)?;
                 println!("{}", json);
             } else {
@@ -193,13 +188,13 @@ async fn run(invocation: Invocation) -> Result<()> {
         Action::Serve(args) => {
             let spinner = serve_spinner();
             let config = scan_config(&scan, &current_dir).with_coverage(true);
-            let output = scan_path(&args.path, &config)?;
+            let features = scan_path(&args.path, &config)?;
 
             spinner.set_message("Server is starting...");
             let server_config =
                 ServerConfig::new(args.port).with_allowed_origins(args.allow_origin);
             serve_features_with_watching(
-                &output,
+                &features,
                 server_config,
                 args.path,
                 Some(Box::new(move || spinner.finish_and_clear())),
@@ -210,18 +205,48 @@ async fn run(invocation: Invocation) -> Result<()> {
 
         Action::Build(args) => {
             let config = scan_config(&scan, &current_dir).with_coverage(true);
-            let output = scan_path(&args.path, &config)?;
+            let features = scan_path(&args.path, &config)?;
+            let records = project_records(&features, &args.path);
             create_build(
-                &output.features,
-                BuildConfig::new(args.build_dir).with_project_records(output.records),
+                &features,
+                BuildConfig::new(args.build_dir.clone()),
                 scan.skip_changes,
             )
             .await?;
+            write_records_json(&records, &args.build_dir).await?;
         }
 
         Action::Check { path } => {
-            let output = scan_path(&path, &scan_config(&scan, &current_dir))?;
-            run_checks(&output.features, &output.records)?;
+            let features = scan_path(&path, &scan_config(&scan, &current_dir))?;
+            run_checks(&features, &project_records(&features, &path))?;
+        }
+
+        Action::Records { path, json } => {
+            let config = scan_config(&scan, &current_dir).skip_changes(true);
+            let features = scan_path(&path, &config)?;
+            let records = project_records(&features, &path);
+            if json {
+                let json =
+                    serde_json::to_string_pretty(&serde_json::json!({ "records": records }))?;
+                println!("{}", json);
+            } else {
+                print_records(&features, &records);
+            }
+        }
+
+        Action::New(args) => {
+            let config = scan_config(&scan, &current_dir).ownership_only(true);
+            let features = scan_path(&args.path, &config)?;
+            let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+            let created = create_record(
+                &args.path,
+                &features,
+                args.kind.into(),
+                &args.feature,
+                &args.title,
+                &today,
+            )?;
+            println!("{}", created.display());
         }
 
         Action::Codeowners { path } => {
@@ -236,7 +261,7 @@ async fn run(invocation: Invocation) -> Result<()> {
 
         Action::Owners { path, json } => {
             let config = scan_config(&scan, &current_dir).ownership_only(true);
-            let features = scan_path(&path, &config)?.features;
+            let features = scan_path(&path, &config)?;
             let unique_owners = extract_unique_owners(&features);
 
             if json {
@@ -252,6 +277,57 @@ async fn run(invocation: Invocation) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Print the project-level records, then the records of every feature
+fn print_records(features: &[Feature], project: &[Record]) {
+    fn print_list(records: &[Record]) {
+        for record in records {
+            let mut details: Vec<String> = Vec::new();
+            if let Some(status) = &record.status {
+                details.push(status.clone());
+            }
+            if let Some(date) = &record.date {
+                details.push(date.clone());
+            }
+            if let Some(tasks) = record.tasks {
+                details.push(format!("{}/{} tasks", tasks.done, tasks.total));
+            }
+            let details = if details.is_empty() {
+                String::new()
+            } else {
+                format!(" ({})", details.join(", "))
+            };
+            println!(
+                "  [{}] {}: {}{}",
+                record.kind.label(),
+                record.id,
+                record.title,
+                details
+            );
+        }
+    }
+
+    fn visit(features: &[Feature], found: &mut bool) {
+        for feature in features {
+            if !feature.records.is_empty() {
+                *found = true;
+                println!("{} ({}):", feature.name, feature.path);
+                print_list(&feature.records);
+            }
+            visit(&feature.features, found);
+        }
+    }
+
+    let mut found = !project.is_empty();
+    if found {
+        println!("Project:");
+        print_list(project);
+    }
+    visit(features, &mut found);
+    if !found {
+        eprintln!("No specs or decision records found.");
+    }
 }
 
 fn write_codeowners(

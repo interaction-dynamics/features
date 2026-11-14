@@ -2,7 +2,6 @@ import { BarChart3, ScrollText, TriangleAlert } from 'lucide-react'
 import type * as React from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { Link, NavLink } from 'react-router'
-
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +14,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { useProjectRecords } from '@/features/records/use-project-records'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import { filterByQuery, parseQuery } from '@/lib/smart-query-parser'
@@ -52,14 +52,10 @@ export function AppSidebar({
   onFeatureClick,
   ...props
 }: AppSidebarProps) {
-  const {
-    features,
-    isAggregated,
-    repositories,
-    reconciliationErrors,
-    projectRecords,
-  } = useContext(FeaturesContext)
+  const { features, isAggregated, repositories, reconciliationErrors } =
+    useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
+  const { records: projectRecords } = useProjectRecords()
 
   // Filter features based on search query using smart query parser
   const filteredFeatures = useMemo(() => {
@@ -198,7 +194,7 @@ export function AppSidebar({
                         isActive={isActive}
                       >
                         <ScrollText className="h-4 w-4" />
-                        Specs &amp; Decisions
+                        Project records
                         {projectRecords.length > 0 && (
                           <span className="ml-auto rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
                             {projectRecords.length}

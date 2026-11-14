@@ -602,10 +602,14 @@ fn merge_occurrences(key: &NodeKey, ctx: &BuildContext<'_>) -> AggregatedFeature
         }
     }
 
+    // Records with the same path in several repositories are the same record
     let mut records: Vec<Record> = Vec::new();
     for occurrence in &members {
         for record in &occurrence.feature.records {
-            if !records.contains(record) {
+            if !records
+                .iter()
+                .any(|r| r.path == record.path && r.id == record.id)
+            {
                 records.push(record.clone());
             }
         }

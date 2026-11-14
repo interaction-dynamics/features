@@ -1,184 +1,352 @@
-import { Eye, EyeOff } from 'lucide-react'
-import { useContext, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router'
-import { HelpButton } from '@/components/help-button'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { FeaturesContext } from '@/lib/features-context'
-import type { DocRecord } from '@/models/feature'
-import { RecordCard, recordElementId } from './record-card'
 import {
-  countByKind,
+  ChevronRight,
+  ClipboardList,
+  FileText,
+  Lightbulb,
+  Link2,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { MarkdownRenderer } from '@/components/markdown-renderer'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { cn } from '@/lib/utils'
+import type { FeatureRecord } from '@/models/feature'
+import {
+  contentWithoutTitle,
   filterRecords,
-  indexRecords,
-  isInactive,
+  findLinkTarget,
+  fileMarkdown,
+  isToolRecord,
+  KIND_LABELS,
   type KindFilter,
+  type RecordLink,
+  recordAnchorId,
+  recordLinks,
+  SOURCE_LABELS,
+  type StatusTone,
   sortRecords,
-} from './record-utils'
+  statusTone,
+} from './utils'
 
-const FAQ_URL =
-  'https://github.com/interaction-dynamics/features/blob/master/FAQ.md'
+const TONE_CLASSES: Record<StatusTone, string> = {
+  neutral: 'bg-muted text-muted-foreground',
+  progress: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+  success:
+    'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+  muted: 'bg-muted text-muted-foreground line-through decoration-1',
+  danger: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
+}
 
-const KIND_FILTERS: { value: KindFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'spec', label: 'Specs' },
-  { value: 'decision', label: 'Decisions' },
-]
+const pillClass =
+  'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium'
 
-function EmptyState({ scope }: { scope: 'feature' | 'project' }) {
+function KindBadge({ record }: { record: FeatureRecord }) {
+  const Icon = record.kind === 'spec' ? ClipboardList : Lightbulb
   return (
-    <Card>
-      <CardContent>
-        <div className="flex flex-col items-start gap-2">
-          <p className="text-sm font-medium">No specs or decisions yet</p>
-          {scope === 'feature' ? (
-            <p className="text-sm text-muted-foreground">
-              Add specs (what to build) in the feature's{' '}
-              <code className="font-mono text-xs">__docs__/specs/</code> folder
-              and decision records (why it's built this way) in{' '}
-              <code className="font-mono text-xs">__docs__/decisions/</code>.
-              Root specs, GitHub Spec Kit and Kiro specs show up here when they
-              match the feature.
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Specs and decisions at the root of the project (
-              <code className="font-mono text-xs">docs/specs/</code>,{' '}
-              <code className="font-mono text-xs">docs/decisions/</code>,{' '}
-              <code className="font-mono text-xs">docs/adr/</code>, Spec Kit's{' '}
-              <code className="font-mono text-xs">specs/</code> and{' '}
-              <code className="font-mono text-xs">.kiro/specs/</code>) that are
-              not attached to a feature show up here.
-            </p>
+    <span
+      className={cn(
+        pillClass,
+        record.kind === 'spec'
+          ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+          : 'bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300',
+      )}
+      data-testid="record-kind"
+    >
+      <Icon className="h-3 w-3" />
+      {KIND_LABELS[record.kind]}
+    </span>
+  )
+}
+
+function SourceBadge({ record }: { record: FeatureRecord }) {
+  const label = SOURCE_LABELS[record.source ?? 'native']
+  if (!label) return null
+  return (
+    <span
+      className={cn(pillClass, 'border text-muted-foreground')}
+      data-testid="record-source"
+    >
+      {label}
+    </span>
+  )
+}
+
+function StatusBadge({ status }: { status?: string }) {
+  if (!status) {
+    return (
+      <span
+        className={cn(pillClass, 'border border-dashed text-muted-foreground')}
+      >
+        no status
+      </span>
+    )
+  }
+  return (
+    <span
+      className={cn(pillClass, TONE_CLASSES[statusTone(status)])}
+      data-testid="record-status"
+    >
+      {status}
+    </span>
+  )
+}
+
+function TaskProgressBar({ done, total }: { done: number; total: number }) {
+  return (
+    <div
+      className="flex items-center gap-2 text-xs text-muted-foreground"
+      title={`${done} of ${total} tasks done`}
+    >
+      <progress
+        className={cn(
+          'h-1.5 w-24 appearance-none overflow-hidden rounded-full bg-muted',
+          '[&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:rounded-full',
+          done === total
+            ? '[&::-moz-progress-bar]:bg-emerald-500 [&::-webkit-progress-value]:bg-emerald-500'
+            : '[&::-moz-progress-bar]:bg-primary [&::-webkit-progress-value]:bg-primary',
+        )}
+        value={done}
+        max={total}
+        aria-label="Tasks done"
+      />
+      <span className="tabular-nums">
+        {done}/{total}
+      </span>
+    </div>
+  )
+}
+
+interface RecordCardProps {
+  record: FeatureRecord
+  allRecords: FeatureRecord[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onLinkClick: (target: FeatureRecord) => void
+}
+
+function RecordCard({
+  record,
+  allRecords,
+  open,
+  onOpenChange,
+  onLinkClick,
+}: RecordCardProps) {
+  const links = recordLinks(record)
+
+  const renderLink = (link: RecordLink) => {
+    const target = findLinkTarget(allRecords, link)
+    const key = `${link.label}-${link.targetId}`
+    if (!target) {
+      return (
+        <span
+          key={key}
+          className={cn(
+            pillClass,
+            'border border-dashed text-muted-foreground',
           )}
-          <div className="flex flex-wrap gap-4">
-            <HelpButton
-              title="How to add a spec"
-              url={`${FAQ_URL}#how-can-i-add-a-spec`}
-            />
-            <HelpButton
-              title="How to add a decision"
-              url={`${FAQ_URL}#how-can-i-add-a-decision`}
-            />
+          title="This record is not part of this list"
+        >
+          <Link2 className="h-3 w-3" />
+          {link.label}: {link.targetId}
+        </span>
+      )
+    }
+    return (
+      <button
+        key={key}
+        type="button"
+        className={cn(
+          pillClass,
+          'border bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer',
+        )}
+        onClick={() => onLinkClick(target)}
+        title={target.title}
+      >
+        <Link2 className="h-3 w-3" />
+        {link.label}: {target.title}
+      </button>
+    )
+  }
+
+  return (
+    <Card
+      id={recordAnchorId(record)}
+      className="py-0 gap-0 scroll-mt-20"
+      data-testid="record-card"
+    >
+      <Collapsible open={open} onOpenChange={onOpenChange}>
+        <CollapsibleTrigger className="w-full group text-left cursor-pointer">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <KindBadge record={record} />
+                  {(record.status || !isToolRecord(record)) && (
+                    <StatusBadge status={record.status} />
+                  )}
+                  <SourceBadge record={record} />
+                  {record.date && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {record.date}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm font-medium leading-relaxed">
+                  {record.title}
+                </p>
+                {record.tasks && record.tasks.total > 0 && (
+                  <TaskProgressBar
+                    done={record.tasks.done}
+                    total={record.tasks.total}
+                  />
+                )}
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-90 flex-shrink-0 mt-0.5" />
+            </div>
+          </CardContent>
+        </CollapsibleTrigger>
+        {links.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-6 pb-4 -mt-1">
+            {links.map(renderLink)}
           </div>
-        </div>
-      </CardContent>
+        )}
+        <CollapsibleContent>
+          <CardContent className="border-t pt-3 pb-4">
+            {record.path && (
+              <p className="mb-2 text-xs font-mono text-muted-foreground">
+                {record.path}
+              </p>
+            )}
+            <MarkdownRenderer markdown={contentWithoutTitle(record)} />
+            {record.files?.map((file) => (
+              <div key={file.path} className="mt-4 border-t pt-3">
+                <p className="mb-2 flex items-center gap-1 text-xs font-mono text-muted-foreground">
+                  <FileText className="h-3 w-3" />
+                  {file.name}
+                </p>
+                <MarkdownRenderer
+                  markdown={fileMarkdown(file.name, file.content)}
+                />
+              </div>
+            ))}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
     </Card>
   )
 }
 
-interface RecordsTimelineProps {
-  records: DocRecord[]
-  /** Feature the records belong to, `null` for project-level records */
-  featurePath: string | null
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        'rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer',
+        active
+          ? 'bg-primary text-primary-foreground border-primary'
+          : 'bg-background text-muted-foreground hover:text-foreground',
+      )}
+    >
+      {children}
+    </button>
+  )
 }
 
-export function RecordsTimeline({
-  records,
-  featurePath,
-}: RecordsTimelineProps) {
-  const { features, projectRecords } = useContext(FeaturesContext)
-  const [searchParams] = useSearchParams()
-  const selectedPath = searchParams.get('record')
+interface RecordsTimelineProps {
+  records: FeatureRecord[]
+}
 
+/**
+ * Specs and decisions merged in one timeline, newest first, with filters and
+ * link chips that open the linked record
+ */
+export function RecordsTimeline({ records }: RecordsTimelineProps) {
   const [kind, setKind] = useState<KindFilter>('all')
   const [hideInactive, setHideInactive] = useState(false)
-  const [openPaths, setOpenPaths] = useState<Set<string>>(
-    () => new Set(selectedPath ? [selectedPath] : []),
-  )
+  const [openAnchors, setOpenAnchors] = useState<Set<string>>(new Set())
 
-  const index = useMemo(
-    () => indexRecords(features, projectRecords),
-    [features, projectRecords],
-  )
   const sorted = useMemo(() => sortRecords(records), [records])
   const visible = filterRecords(sorted, kind, hideInactive)
-  const counts = countByKind(records)
-  const inactiveCount = records.filter(isInactive).length
+  const specsCount = records.filter((r) => r.kind === 'spec').length
+  const decisionsCount = records.length - specsCount
 
-  // Open and scroll to the record of the URL (from a link chip)
-  useEffect(() => {
-    if (!selectedPath) return
-    const selected = records.find((r) => r.path === selectedPath)
-    if (!selected) return
-    setOpenPaths((paths) => new Set(paths).add(selectedPath))
-    setKind((current) =>
-      current === 'all' || current === selected.kind ? current : 'all',
-    )
-    if (isInactive(selected)) setHideInactive(false)
-    requestAnimationFrame(() => {
-      document
-        .getElementById(recordElementId(selected))
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-  }, [selectedPath, records])
-
-  if (records.length === 0) {
-    return <EmptyState scope={featurePath === null ? 'project' : 'feature'} />
-  }
-
-  const setOpen = (path: string, open: boolean) =>
-    setOpenPaths((paths) => {
-      const next = new Set(paths)
-      if (open) next.add(path)
-      else next.delete(path)
+  const setOpen = (anchor: string, open: boolean) =>
+    setOpenAnchors((current) => {
+      const next = new Set(current)
+      if (open) next.add(anchor)
+      else next.delete(anchor)
       return next
     })
 
+  const openLinked = (target: FeatureRecord) => {
+    if (!visible.includes(target)) {
+      setKind('all')
+      setHideInactive(false)
+    }
+    const anchor = recordAnchorId(target)
+    setOpen(anchor, true)
+    requestAnimationFrame(() =>
+      document
+        .getElementById(anchor)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    )
+  }
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {KIND_FILTERS.map((filter) => (
-          <Button
-            key={filter.value}
-            size="sm"
-            variant={kind === filter.value ? 'secondary' : 'outline'}
-            aria-pressed={kind === filter.value}
-            onClick={() => setKind(filter.value)}
-          >
-            {filter.label}
-            <span className="tabular-nums text-muted-foreground">
-              {counts[filter.value]}
-            </span>
-          </Button>
-        ))}
-        {inactiveCount > 0 && (
-          <Button
-            size="sm"
-            variant={hideInactive ? 'secondary' : 'ghost'}
-            aria-pressed={hideInactive}
-            onClick={() => setHideInactive((hide) => !hide)}
-            className="ml-auto"
-          >
-            {hideInactive ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
-            {hideInactive
-              ? `Show superseded and rejected (${inactiveCount})`
-              : 'Hide superseded and rejected'}
-          </Button>
-        )}
+        <FilterChip active={kind === 'all'} onClick={() => setKind('all')}>
+          All ({records.length})
+        </FilterChip>
+        <FilterChip active={kind === 'spec'} onClick={() => setKind('spec')}>
+          Specs ({specsCount})
+        </FilterChip>
+        <FilterChip
+          active={kind === 'decision'}
+          onClick={() => setKind('decision')}
+        >
+          Decisions ({decisionsCount})
+        </FilterChip>
+        <span className="mx-1 h-4 w-px bg-border" />
+        <FilterChip
+          active={hideInactive}
+          onClick={() => setHideInactive((value) => !value)}
+        >
+          Hide superseded/rejected
+        </FilterChip>
       </div>
       {visible.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No spec or decision matches these filters.
+          No record matches these filters.
         </p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {visible.map((record) => (
+        visible.map((record) => {
+          const anchor = recordAnchorId(record)
+          return (
             <RecordCard
-              key={record.path}
+              key={`${anchor}-${record.path}`}
               record={record}
-              featurePath={featurePath}
-              index={index}
-              open={openPaths.has(record.path)}
-              onOpenChange={(open) => setOpen(record.path, open)}
-              highlighted={record.path === selectedPath}
+              allRecords={sorted}
+              open={openAnchors.has(anchor)}
+              onOpenChange={(open) => setOpen(anchor, open)}
+              onLinkClick={openLinked}
             />
-          ))}
-        </div>
+          )
+        })
       )}
     </div>
   )

@@ -1,38 +1,36 @@
 # Spec template
 
-Save it as `__docs__/specs/NNN-kebab-case-title.md` in the feature folder (`.docs/specs/` also works), numbered from `001`. For a large spec, use a folder `__docs__/specs/NNN-kebab-case-title/` with this file as `spec.md` and the plan and tasks in `plan.md` and `tasks.md`.
+A spec says what to build: the requirements a change must meet and the plan to get there. Save it as `__docs__/specs/NNN-kebab-case-title.md` in the feature folder (`.docs/specs/` also works), numbered from `001`, or let `features new spec <feature> "<title>"` pick the number. A large spec can be a folder, `__docs__/specs/NNN-title/`, with `spec.md` as its main file and `plan.md` or `tasks.md` next to it.
 
 ```markdown
 ---
-status: draft # draft, accepted, implemented, superseded
-date: 2026-01-02
-decisions: [002-use-jwt] # optional: decisions taken for this spec
+status: accepted # draft, accepted, implemented or superseded
+date: 2026-01-15
+decisions: [002-use-stripe-checkout] # decision records taken for this spec
 ---
 
-# Login flow
+# Card payments
 
 ## Context
 
-Why this change is needed: the problem, who has it, the constraints.
+Why this change is needed.
 
 ## Requirements
 
-- [ ] Users sign in with an email and a password
-- [ ] The account is locked after 5 failed attempts
+- What must be true when it is done (behavior, constraints, edge cases).
 
 ## Out of scope
 
-- Single sign-on
+- What is explicitly not covered.
 
 ## Plan
 
-1. Build the form
-2. Issue a token
+- [x] Create the checkout session endpoint
+- [ ] Handle the payment webhook
 ```
 
 ## Rules
 
-- One spec per change worth reviewing. A short title that names the behavior, not the implementation.
-- Requirements say what must be true when it's done, as checkboxes. Tick them as they ship.
-- Set `status: accepted` once the user approves the spec and `status: implemented` when every task is done.
-- When a spec is replaced, add a new one with `supersedes: <old id>` and set the old one's status to `superseded`.
+- Write the requirements as observable behavior, not as code.
+- Checklists (`- [ ]`, `- [x]`) show as a progress bar in the dashboard. Set `status: implemented` only when every task is checked: `features check` warns otherwise.
+- Link the decisions taken for the spec in `decisions:`; the decisions get the link back automatically.
