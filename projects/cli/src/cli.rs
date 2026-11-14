@@ -187,6 +187,11 @@ pub struct ScanArgs {
     /// Remove commit author emails from the output (JSON, web dashboard and static build)
     #[arg(long)]
     pub strip_emails: bool,
+
+    /// JSON file with data from external tools, by feature key, e.g.
+    /// { "checkout": { "weekly_users": 1200 } } (can be repeated)
+    #[arg(long, value_name = "FILE")]
+    pub data: Vec<PathBuf>,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -253,6 +258,11 @@ pub struct AggregateArgs {
     /// Print the aggregated JSON instead of creating a static build
     #[arg(long)]
     pub json: bool,
+
+    /// JSON file with data from external tools, by feature key, applied to the
+    /// aggregated features (can be repeated)
+    #[arg(long, value_name = "FILE")]
+    pub data: Vec<PathBuf>,
 }
 
 /// Kind of record created by `features new`
@@ -850,6 +860,7 @@ mod tests {
             coverage_dir: Some(path("cov")),
             project_dir: None,
             strip_emails: true,
+            data: vec![path("usage.json"), path("errors.json")],
         };
         let flags = [
             "--skip-changes",
@@ -861,6 +872,10 @@ mod tests {
             "--coverage-dir",
             "cov",
             "--strip-emails",
+            "--data",
+            "usage.json",
+            "--data",
+            "errors.json",
         ];
         for prefix in [vec!["./src", "--serve"], vec!["serve", "./src"]] {
             let args: Vec<&str> = prefix.into_iter().chain(flags).collect();
@@ -957,14 +972,24 @@ mod tests {
                 folder: path("./reports"),
                 build_dir: path(DEFAULT_BUILD_DIR),
                 json: false,
+                data: vec![],
             })
         );
         assert_eq!(
-            action(&["aggregate", "./reports", "--build-dir", "out", "--json"]),
+            action(&[
+                "aggregate",
+                "./reports",
+                "--build-dir",
+                "out",
+                "--json",
+                "--data",
+                "usage.json",
+            ]),
             Action::Aggregate(AggregateArgs {
                 folder: path("./reports"),
                 build_dir: path("out"),
                 json: true,
+                data: vec![path("usage.json")],
             })
         );
 

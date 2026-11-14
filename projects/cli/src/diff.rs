@@ -398,17 +398,20 @@ mod tests {
     fn feature(name: &str, path: &str, owner: &str, children: Vec<Feature>) -> Feature {
         Feature {
             name: name.to_string(),
+            key: name.to_string(),
             description: String::new(),
             owner: owner.to_string(),
             is_owner_inherited: false,
             path: path.to_string(),
             features: children,
             meta: Default::default(),
+            links: Default::default(),
             changes: Vec::new(),
             decisions: Vec::new(),
             records: Vec::new(),
             stats: None,
             dependencies: Vec::new(),
+            external: Default::default(),
         }
     }
 

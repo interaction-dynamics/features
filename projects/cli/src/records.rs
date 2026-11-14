@@ -746,17 +746,20 @@ mod tests {
     fn feature(name: &str, path: &str, features: Vec<Feature>) -> Feature {
         Feature {
             name: name.to_string(),
+            key: name.to_string(),
             description: String::new(),
             owner: String::new(),
             is_owner_inherited: false,
             path: path.to_string(),
             features,
             meta: BTreeMap::new(),
+            links: BTreeMap::new(),
             changes: Vec::new(),
             decisions: Vec::new(),
             records: Vec::new(),
             stats: None,
             dependencies: Vec::new(),
+            external: BTreeMap::new(),
         }
     }
 
