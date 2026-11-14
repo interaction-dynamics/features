@@ -19,7 +19,7 @@ The dashboard screenshots on the website still showed the old blue "F" logo and 
   - featured screenshots: an indigo/violet glow (`spotlight-color`) instead of the gray spotlight.
 - `Screenshot` gets a `fade` prop: the frame dissolves into the page from 45% of its height (`fade-shot` mask) and the caption moves up. Used on the tall screenshots only (home Insights, concept page nested features), not on short ones where it would hide content.
 - Favicons: `favicon.ico` (16/32/48) and `apple-touch-icon.png` (180) rendered from `favicon.svg` by `scripts/render-icons.mjs`; the SVG link carries a `?v=2` cache buster.
-- `.claude/launch.json` gets a `dashboard` configuration (port 5173) to serve the dashboard locally for captures.
+- The `web` configuration of `.claude/launch.json` (port 5173) serves the dashboard locally for captures.
 
 ## Out of scope
 

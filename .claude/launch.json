@@ -15,7 +15,7 @@
       "port": 4321
     },
     {
-      "name": "dashboard",
+      "name": "web",
       "runtimeExecutable": "bun",
       "runtimeArgs": [
         "run",
@@ -23,8 +23,7 @@
         "dev",
         "--",
         "--port",
-        "5173",
-        "--strictPort"
+        "5173"
       ],
       "port": 5173
     }
