@@ -36,10 +36,20 @@ const pathname = Astro.url.pathname
   .replace(/\/$/, '')
 const canonical = new URL(pathname || '/', siteUrl).href
 const ogImage = new URL('/og.png', siteUrl).href
+// Markdown twin of the page, generated after the build by integrations/llms.ts.
+const markdownPath = `/${pathname.replace(/^\//, '') || 'index'}.md`
 const fullTitle =
   title === site.name
     ? `${site.name} — ${site.tagline}`
     : `${title} | ${site.name}`
+
+const organization = {
+  '@type': 'Organization',
+  '@id': `${site.organizationUrl}/#organization`,
+  name: site.organization,
+  url: site.organizationUrl,
+  sameAs: [site.repository.replace(/\/[^/]+$/, '')],
+}
 
 const structuredData: Record<string, unknown>[] = [
   {
@@ -48,11 +58,8 @@ const structuredData: Record<string, unknown>[] = [
     name: site.name,
     url: new URL('/', siteUrl).href,
     description: site.description,
-    publisher: {
-      '@type': 'Organization',
-      name: site.organization,
-      url: site.organizationUrl,
-    },
+    inLanguage: 'en',
+    publisher: organization,
   },
   ...(breadcrumbs.length > 0
     ? [
@@ -85,6 +92,8 @@ const structuredData: Record<string, unknown>[] = [
     <meta name="theme-color" content="#08090a" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    {!noindex && <link rel="alternate" type="text/markdown" href={markdownPath} title="Markdown version" />}
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="Site summary for LLMs" />
     <meta name="generator" content={Astro.generator} />
 
     <meta property="og:type" content="website" />

@@ -6,7 +6,9 @@
 //!   `.docs/decisions` (every folder is read);
 //! * at the root of the scanned folder, in `docs/specs`, `docs/decisions` and
 //!   `docs/adr`. A root record with a `feature: <name or path>` frontmatter field
-//!   belongs to that feature, every other one is a project-level record.
+//!   belongs to that feature, every other one is a project-level record;
+//! * at the root too, in the layouts of spec-driven tools: GitHub Spec Kit
+//!   (`specs/NNN-name/`) and Kiro (`.kiro/specs/<name>/`), see [`layouts`].
 //!
 //! A record is a markdown file (`specs/001-login.md`) or a folder
 //! (`specs/003-sso/`) whose main file is `spec.md`, `decision.md`, `README.md`
@@ -21,7 +23,11 @@ use serde_yaml::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::models::{Feature, Record, RecordFile, RecordKind, RecordLinks, TaskProgress};
+use crate::models::{
+    Feature, Record, RecordFile, RecordKind, RecordLinks, RecordSource, TaskProgress,
+};
+
+mod layouts;
 
 /// Feature-level documentation folders, read in this order
 const FEATURE_DOCS_DIRS: &[&str] = &["__docs__", ".docs"];
@@ -64,7 +70,8 @@ pub fn read_feature_records(feature_dir: &Path, base_path: &Path) -> Vec<Record>
     records
 }
 
-/// Read the records of the `docs/` folder at the root of `base_path`
+/// Read the records at the root of `base_path`: the `docs/` folder, Spec Kit's
+/// `specs/` folder and Kiro's `.kiro/specs/` folder
 pub fn read_root_records(base_path: &Path) -> Vec<Record> {
     let docs_dir = base_path.join("docs");
     let mut records = read_records_dir(&docs_dir.join("specs"), RecordKind::Spec, base_path);
@@ -75,6 +82,14 @@ pub fn read_root_records(base_path: &Path) -> Vec<Record> {
             base_path,
         ));
     }
+    records.extend(layouts::read_speckit_dir(
+        &base_path.join("specs"),
+        base_path,
+    ));
+    records.extend(layouts::read_kiro_dir(
+        &base_path.join(".kiro").join("specs"),
+        base_path,
+    ));
     records
 }
 
@@ -223,6 +238,7 @@ pub fn parse_record(kind: RecordKind, id: &str, path: &str, raw: &str) -> Record
         path: path.to_string(),
         content: body.trim_start_matches(['\n', '\r']).to_string(),
         files: Vec::new(),
+        source: RecordSource::Native,
         links: RecordLinks {
             decisions: list(&["decisions", "decision"]),
             specs: list(&["specs", "spec"]),
@@ -529,8 +545,27 @@ pub fn find_feature_path(features: &[Feature], target: &str) -> Option<String> {
         .map(|f| f.path.clone())
 }
 
+/// Path of the feature a Spec Kit or Kiro folder name names: the name
+/// without its `NNN-` prefix, slugified, is a feature's slugified name or the
+/// last segment of its path (first match in tree order)
+fn feature_path_from_folder(features: &[Feature], folder: &str) -> Option<String> {
+    let target = slugify(layouts::strip_number_prefix(folder));
+    if target.is_empty() {
+        return None;
+    }
+    features.iter().find_map(|feature| {
+        let segment = feature.path.rsplit('/').next().unwrap_or_default();
+        if slugify(&feature.name) == target || slugify(segment) == target {
+            Some(feature.path.clone())
+        } else {
+            feature_path_from_folder(&feature.features, folder)
+        }
+    })
+}
+
 /// Root records split into the ones attached to a feature (with its path)
-/// and the project-level ones
+/// and the project-level ones. A record is attached by its `feature:`
+/// frontmatter field, or for Spec Kit and Kiro records by its folder name.
 pub fn split_root_records(
     root_records: Vec<Record>,
     features: &[Feature],
@@ -538,11 +573,16 @@ pub fn split_root_records(
     let mut attached = Vec::new();
     let mut project = Vec::new();
     for record in root_records {
-        match record
+        let by_frontmatter = record
             .feature
             .as_deref()
-            .and_then(|target| find_feature_path(features, target))
-        {
+            .and_then(|target| find_feature_path(features, target));
+        let by_folder = || {
+            (record.feature.is_none() && !record.source.is_native())
+                .then(|| feature_path_from_folder(features, &record.id))
+                .flatten()
+        };
+        match by_frontmatter.or_else(by_folder) {
             Some(path) => attached.push((path, record)),
             None => project.push(record),
         }
@@ -587,7 +627,10 @@ pub fn record_warnings(records: &[Record], scope: &[Record], owner: &str) -> Vec
         }
 
         match record.status.as_deref() {
-            None => warnings.push(format!("{name} has no status ({})", record.path)),
+            // Kiro has no status, Spec Kit's is optional
+            None if record.source.is_native() => {
+                warnings.push(format!("{name} has no status ({})", record.path))
+            }
             Some("superseded") if links.superseded_by.is_empty() => warnings.push(format!(
                 "{name} is superseded but no record supersedes it ({})",
                 record.path
@@ -703,17 +746,20 @@ mod tests {
     fn feature(name: &str, path: &str, features: Vec<Feature>) -> Feature {
         Feature {
             name: name.to_string(),
+            key: name.to_string(),
             description: String::new(),
             owner: String::new(),
             is_owner_inherited: false,
             path: path.to_string(),
             features,
             meta: BTreeMap::new(),
+            links: BTreeMap::new(),
             changes: Vec::new(),
             decisions: Vec::new(),
             records: Vec::new(),
             stats: None,
             dependencies: Vec::new(),
+            external: BTreeMap::new(),
         }
     }
 

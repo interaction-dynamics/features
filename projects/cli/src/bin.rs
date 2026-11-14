@@ -12,6 +12,7 @@ use features_cli::cli::{
 };
 use features_cli::codeowners::generate_codeowners;
 use features_cli::diff;
+use features_cli::external_data::import_external_data;
 use features_cli::http_server::{ServerConfig, serve_features_with_watching};
 use features_cli::models::{Feature, Record};
 use features_cli::ownership::find_owner_for_path;
@@ -54,17 +55,20 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
         // Create a flattened version of this feature (without nested features)
         let flat_feature = Feature {
             name: feature.name.clone(),
+            key: feature.key.clone(),
             description: feature.description.clone(),
             owner: feature.owner.clone(),
             is_owner_inherited: feature.is_owner_inherited,
             path: feature.path.clone(),
             features: Vec::new(), // Empty for flat structure
             meta: feature.meta.clone(),
+            links: feature.links.clone(),
             changes: Vec::new(),
             decisions: Vec::new(),
             records: Vec::new(),
             stats: feature.stats.clone(),
             dependencies: feature.dependencies.clone(),
+            external: feature.external.clone(),
         };
 
         flat_features.push(flat_feature);
@@ -109,7 +113,8 @@ fn scan_config(scan: &ScanArgs, current_dir: &Path) -> ScanConfig {
         .skip_changes(scan.skip_changes)
         .ignore_paths(resolve_ignore_paths(&scan.ignore_path, current_dir))
         .include_skipped_dirs(scan.include_skipped_dirs)
-        .strip_emails(scan.strip_emails);
+        .strip_emails(scan.strip_emails)
+        .data_files(scan.data.clone());
 
     if let Some(coverage_dir) = &scan.coverage_dir {
         config = config.coverage_dir(coverage_dir);
@@ -350,7 +355,8 @@ fn write_codeowners(
 
 /// Aggregate the features reports of several repositories
 async fn run_aggregate(args: AggregateArgs) -> Result<()> {
-    let report = aggregate::aggregate_folder(&args.folder)?;
+    let mut report = aggregate::aggregate_folder(&args.folder)?;
+    import_external_data(&mut report.features, &args.data)?;
 
     eprintln!(
         "Aggregated {} repositories: {}",

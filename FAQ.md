@@ -7,6 +7,7 @@
 - [How can I add a feature description?](#how-can-i-add-a-feature-description)
 - [How can I add an owner?](#how-can-i-add-an-owner)
 - [How can I add a spec or a decision?](#how-can-i-add-a-spec-or-a-decision)
+- [Are GitHub Spec Kit and Kiro specs supported?](#are-github-spec-kit-and-kiro-specs-supported)
 - [How can I add a test coverage report?](#how-can-i-add-a-test-coverage-report)
 - [What is the technical debt of a feature?](#what-is-the-technical-debt-of-a-feature)
 - [How can I generate codeowners file?](#how-can-i-generate-codeowners-file)
@@ -82,6 +83,15 @@ A large spec can be a folder: `__docs__/specs/003-sso/` with `spec.md` as its ma
 Records that concern the whole project go in `docs/specs/`, `docs/decisions/` or `docs/adr/` at the root of the scanned folder. They show on the **Project records** page of the web interface, and `features records --json` prints them (`{ "records": [...] }`, also served as `records.json`). A root record with `feature: <name or path>` in its frontmatter is shown in that feature instead.
 
 `features check` warns about links to records that don't exist, records without a status, superseded records that nothing replaces, and implemented specs with open tasks.
+
+## Are GitHub Spec Kit and Kiro specs supported?
+
+Yes. At the root of the scanned folder, Features also reads the layouts of two spec-driven tools:
+
+- [GitHub Spec Kit](https://github.com/github/spec-kit): `specs/NNN-name/` folders with a `spec.md`. `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `tasks.md` and `contracts/*` are shown with it. The status comes from the `**Status**:` line and the date from the `**Created**:` line. Loose `.md` files in `specs/` are read as ordinary specs.
+- [Kiro](https://kiro.dev/docs/specs/): `.kiro/specs/<name>/` folders, with `requirements.md` as the main file and `design.md` and `tasks.md` next to it. The title is the folder name in words.
+
+Their task progress comes from `tasks.md`, and they get a **Spec Kit** or **Kiro** badge (`"source": "speckit"` or `"kiro"` in the JSON report). Each one is attached to a feature by a `feature:` frontmatter key, else by its folder name without the `NNN-` prefix matching a feature name or folder (`specs/003-checkout/` goes to the `checkout` feature). The others are project-level records. `features check` doesn't ask them for a status.
 
 ## How can I add a test coverage report?
 

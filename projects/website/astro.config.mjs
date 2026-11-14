@@ -1,6 +1,7 @@
 import sitemap from '@astrojs/sitemap'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, envField } from 'astro/config'
+import llms from './integrations/llms'
 
 // Canonical URLs, the sitemap and Open Graph tags need an absolute site URL.
 // Set SITE_URL for a custom domain; on Vercel the production domain is used by default.
@@ -43,7 +44,7 @@ export default defineConfig({
       }),
     },
   },
-  integrations: [sitemap()],
+  integrations: [sitemap(), llms()],
   vite: {
     plugins: [tailwindcss()],
     server: {
