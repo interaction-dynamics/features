@@ -5,7 +5,7 @@ import { site } from '../data/site'
 import Base from '../layouts/Base.astro'
 
 const description =
-  'Answers about Features and feature-based architecture: adding features, descriptions, owners, specs, decisions, Spec Kit and Kiro, coverage reports, technical debt, CODEOWNERS and Linux installation.'
+  'Answers about Features and feature-based architecture: Feature-Sliced Design, adding features, descriptions, owners, specs, decisions, Spec Kit and Kiro, coverage reports, technical debt, CODEOWNERS and Linux installation.'
 
 /** `answer` is HTML rendered on the page; `text` is the plain version used in structured data. */
 const faqs = [
@@ -15,6 +15,13 @@ const faqs = [
     text: 'Feature-based architecture organizes code and folders around features or business capabilities rather than technical layers like components, services or utils. Each feature lives in its own self-contained folder with everything it needs. It is similar to domain-driven design but more recursive and more structured, and it complements other architectures such as hexagonal architecture.',
     answer:
       'It organizes code and folders around <strong>features</strong>, the business capabilities of a product, rather than technical layers like components, services or utils. Each feature lives in its own self-contained folder with everything it needs. It is similar to domain-driven design but more recursive and more structured, and it complements other architectures such as hexagonal architecture. <a href="/feature-based-architecture">Read the full explanation</a>.',
+  },
+  {
+    id: 'is-feature-based-architecture-the-same-as-feature-sliced-design',
+    question: 'Is feature-based architecture the same as Feature-Sliced Design?',
+    text: 'No. Feature-Sliced Design (FSD) is a stricter methodology built on the same idea. It sorts code into fixed layers (app, pages, widgets, features, entities, shared), splits each layer into slices made of fixed segments (ui, model, api, lib), and only lets a layer import from the layers below it. Feature-based architecture keeps only the core idea: each business feature gets its own folder. Features can be nested, and the layout inside a feature and the import rules are up to you. Features works with an FSD codebase too: slices in a features folder are detected automatically, and you can add feature: true to the README front matter of slices in other layers to show them as features.',
+    answer:
+      'No. <a href="https://feature-sliced.design/" rel="noopener">Feature-Sliced Design</a> (FSD) is a stricter methodology built on the same idea. It sorts code into fixed layers (<code>app</code>, <code>pages</code>, <code>widgets</code>, <code>features</code>, <code>entities</code>, <code>shared</code>), splits each layer into slices made of fixed segments (<code>ui</code>, <code>model</code>, <code>api</code>, <code>lib</code>), and only lets a layer import from the layers below it. Feature-based architecture keeps only the core idea: each business feature gets its own folder. Features can be nested, and the layout inside a feature and the import rules are up to you. Features works with an FSD codebase too: slices in a <code>features</code> folder are detected automatically, and you can add <code>feature: true</code> to the README front matter of slices in other layers (<code>entities</code>, <code>widgets</code>, <code>pages</code>) to show them as features.',
   },
   {
     id: 'which-languages-are-supported',

@@ -382,6 +382,37 @@ const article = {
     />
   </Section>
 
+  <!-- Not Feature-Sliced Design -->
+  <Section
+    eyebrow="Related approaches"
+    title="Feature-based architecture vs Feature-Sliced Design"
+    lead="Feature-Sliced Design (FSD) is a stricter methodology built on the same idea. Feature-based architecture keeps only the core of it: one folder per business feature."
+  >
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="card prose-site p-6">
+        <h3 class="font-semibold">Feature-Sliced Design</h3>
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-sm">
+          <li>Fixed layers: <code>app</code>, <code>pages</code>, <code>widgets</code>, <code>features</code>, <code>entities</code>, <code>shared</code></li>
+          <li>Flat slices inside each layer, made of fixed segments: <code>ui</code>, <code>model</code>, <code>api</code>, <code>lib</code></li>
+          <li>A layer only imports from the layers below it</li>
+        </ul>
+      </div>
+      <div class="card prose-site p-6">
+        <h3 class="font-semibold">Feature-based architecture</h3>
+        <ul class="mt-3 list-disc space-y-2 pl-5 text-sm">
+          <li>Any <code>features</code> folder, or any folder flagged with <code>feature: true</code></li>
+          <li>Features can be nested inside each other</li>
+          <li>The layout inside a feature and the import rules are up to you</li>
+        </ul>
+      </div>
+    </div>
+    <p class="mt-8 text-muted">
+      Already using FSD? Features works with it: slices in a <code>features</code> folder are detected
+      automatically, and adding <code>feature: true</code> to the README of slices in other layers shows them
+      as features too. <a href="https://feature-sliced.design/" rel="noopener" class="link">Learn more about Feature-Sliced Design →</a>
+    </p>
+  </Section>
+
   <!-- Not design -->
   <Section eyebrow="Good to know" title="Feature-based architecture is not feature-based design">
     <div class="grid gap-6 md:grid-cols-2">
