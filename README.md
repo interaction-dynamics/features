@@ -395,7 +395,7 @@ Pull requests from forks get a read-only token, so commenting from those needs a
 
 ## Contributing
 
-Contributions are welcome! Read the [contributing guide](https://github.com/interaction-dynamics/features/blob/master/CONTRIBUTING.md), pick a [good first issue](https://github.com/interaction-dynamics/features/labels/good%20first%20issue) or check the [roadmap](https://github.com/orgs/interaction-dynamics/projects/18/views/4).
+Contributions are welcome! Read the [contributing guide](https://github.com/interaction-dynamics/features/blob/master/CONTRIBUTING.md) or pick a [good first issue](https://github.com/interaction-dynamics/features/labels/good%20first%20issue).
 
 If `features-cli` helps you, **[give it a ⭐ on GitHub](https://github.com/interaction-dynamics/features)**. It helps other developers find it.
 

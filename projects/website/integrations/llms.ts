@@ -200,7 +200,6 @@ ${docs}
 - [Live demo](${site.demo}): the dashboard running on this repository
 - [npm package](${site.npm}): prebuilt binaries for macOS, Linux and Windows
 - [crates.io](${site.crate}): Rust crate, to build from source
-- [Roadmap](${site.roadmap}): planned work
 
 ## Optional
 

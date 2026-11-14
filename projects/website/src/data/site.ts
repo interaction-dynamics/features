@@ -7,7 +7,6 @@ export const site = {
   demo: 'https://interaction-dynamics.io/features/',
   npm: 'https://www.npmjs.com/package/features-cli',
   crate: 'https://crates.io/crates/features-cli',
-  roadmap: 'https://github.com/orgs/interaction-dynamics/projects/18/views/4',
   organization: 'Interaction Dynamics',
   organizationUrl: 'https://interaction-dynamics.io',
   license: 'MIT',
