@@ -12,7 +12,7 @@ The CLI page showed the four install methods as four cards and the options as on
 ## Requirements
 
 - CLI page hero: a combo box (native `<select>`) picks the install tool (npx, npm, Homebrew, cargo) and shows only that tool's command and a one-line hint. Without JavaScript, every command is shown and the picker is hidden.
-- CLI page "Options at a glance": a tab bar (`All commands` plus one tab per command) filters the option rows to the ones the selected command accepts. Options marked `all` show under every command; groups left empty are hidden. Tabs follow the ARIA tabs pattern (arrow keys, Home, End).
+- CLI page "Options at a glance": a tab bar (`All commands` plus one tab per command) filters the option rows to the ones the selected command accepts. Options marked `all` show under every command; groups left empty are hidden. Groups are stacked in a single column. Tabs follow the ARIA tabs pattern (arrow keys, Home, End).
 - New `/ai` page, linked in the main navigation between CLI and FAQ: why a feature map helps agents, the snippet for `AGENTS.md` / `CLAUDE.md` / `.cursor/rules`, a per-task command loop (scan, find-owner, check, diff), the Claude skills plugin with its six skills and example prompts, and keeping decisions next to each feature.
 - Landing page: the badge reads "Open source · Any language" (no "Rust"), and the AI section lead ends with "Tracking, documenting and maintaining what you built is."
 - No horizontal page scroll at phone width.
