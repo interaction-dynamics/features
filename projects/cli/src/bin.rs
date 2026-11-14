@@ -8,6 +8,7 @@ mod checker;
 mod codeowners;
 mod coverage_parser;
 mod dependency_resolver;
+mod diff;
 mod feature_metadata_detector;
 mod features_toml_parser;
 mod file_scanner;
@@ -15,6 +16,7 @@ mod git_helper;
 mod http_server;
 mod import_detector;
 mod models;
+mod ownership;
 mod printer;
 mod readme_parser;
 mod scan;
@@ -25,6 +27,7 @@ use checker::run_checks;
 use codeowners::generate_codeowners;
 use http_server::serve_features_with_watching;
 use models::Feature;
+use ownership::find_owner_for_path;
 use printer::print_features;
 use scan::{ScanConfig, scan_features};
 
@@ -179,79 +182,6 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
     }
 
     flat_features
-}
-
-#[derive(Debug, serde::Serialize)]
-struct OwnerInfo {
-    owner: String,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    inherited: bool,
-    feature_name: String,
-    feature_path: String,
-}
-
-fn find_owner_for_path(
-    target_path: &std::path::Path,
-    features: &[Feature],
-    base_path: &std::path::Path,
-) -> Option<OwnerInfo> {
-    // Canonicalize the target path
-    let canonical_target = std::fs::canonicalize(target_path).ok()?;
-
-    // Helper function to recursively search for the closest feature
-    fn find_closest_feature(
-        target: &std::path::Path,
-        features: &[Feature],
-        _parent_owner: Option<&str>,
-        base_path: &std::path::Path,
-    ) -> Option<OwnerInfo> {
-        let mut best_match: Option<OwnerInfo> = None;
-        let mut best_match_depth = usize::MAX;
-
-        for feature in features {
-            let feature_path = base_path.join(&feature.path);
-            if let Ok(canonical_feature_path) = std::fs::canonicalize(&feature_path) {
-                // Check if target is within this feature's directory
-                if target.starts_with(&canonical_feature_path) {
-                    // Calculate depth (how many components between feature and target)
-                    let depth = target
-                        .strip_prefix(&canonical_feature_path)
-                        .ok()
-                        .map(|p| p.components().count())
-                        .unwrap_or(usize::MAX);
-
-                    // Check nested features first
-                    if let Some(nested_match) = find_closest_feature(
-                        target,
-                        &feature.features,
-                        Some(&feature.owner),
-                        base_path,
-                    ) {
-                        if best_match.is_none() || depth < best_match_depth {
-                            best_match = Some(nested_match);
-                            best_match_depth = depth;
-                        }
-                    } else {
-                        // This is the closest feature so far
-                        if depth < best_match_depth {
-                            let owner = OwnerInfo {
-                                owner: feature.owner.clone(),
-                                inherited: feature.is_owner_inherited,
-                                feature_name: feature.name.clone(),
-                                feature_path: feature.path.clone(),
-                            };
-                            best_match = Some(owner);
-                            best_match_depth = depth;
-                        }
-                    }
-                }
-            }
-        }
-
-        best_match
-    }
-
-    find_closest_feature(&canonical_target, features, None, base_path)
 }
 
 /// Add coverage data from .coverage and coverage directories to features
