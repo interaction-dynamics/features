@@ -64,26 +64,37 @@ When a new version tag (e.g., `v0.5.0`) is pushed, the GitHub Actions workflow a
 4. **Publishes to npm** - creates and publishes npm packages for all platforms
 5. **Creates GitHub release** - with release notes and binary attachments
 
-### Required Secrets
+### Publishing credentials (trusted publishing)
 
-For maintainers setting up the release workflow, the following GitHub secrets are required:
+The release workflow does not use long-lived registry tokens. Both registries
+use [trusted publishing](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect):
+the job exchanges a short-lived GitHub OIDC token for a publish token that
+expires on its own.
 
-#### For crates.io Publishing
-- `CRATES_IO_TOKEN`: API token from [crates.io](https://crates.io/me)
-  - Go to crates.io → Account Settings → API Tokens
-  - Create a new token with publish permissions
-  - Add it as a repository secret
+Maintainers must configure, once:
 
-#### For npm Publishing  
-- `NPM_TOKEN`: API token from [npmjs.com](https://www.npmjs.com/)
-  - Go to npmjs.com → Access Tokens → Generate New Token
-  - Select "Publish" or "Automation" type
-  - Add it as a repository secret
+#### crates.io
+- On [crates.io](https://crates.io/crates/features-cli) → Settings → Trusted Publishing, add a GitHub publisher:
+  - Repository owner: `interaction-dynamics`
+  - Repository name: `features`
+  - Workflow filename: `release.yml`
+  - Environment: `crates-publish`
+- Then delete the old `CRATES_IO_TOKEN` repository secret and revoke the token on crates.io.
+
+#### npm
+- For `features-cli` and every `@features-cli/*` platform package, on npmjs.com → package Settings → Trusted Publisher, add GitHub Actions with
+  workflow `release.yml` and environment `npm-publish`.
+- An `NPM_TOKEN` secret is not needed.
 
 #### GitHub Environments
-The workflow uses these environments (configure in repository settings):
-- `crates-publish`: For crates.io publishing (requires `CRATES_IO_TOKEN`)
-- `npm-publish`: For npm publishing (requires `NPM_TOKEN`)
+The workflow uses these environments (configure in repository settings). Restrict
+both to the `master` branch so only the release workflow on `master` can publish:
+- `crates-publish`: crates.io publishing
+- `npm-publish`: npm publishing
+
+#### Pinned actions
+Third-party actions are pinned to full commit SHAs, with the version in a
+comment. Dependabot (`.github/dependabot.yml`) opens PRs to update them.
 
 ### Version Management
 
