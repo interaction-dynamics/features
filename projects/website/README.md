@@ -1,6 +1,6 @@
 # Website
 
-Marketing and documentation website for `features-cli`. It explains the concept of feature-based architecture and the tool with visual pages, built for search engines: static HTML, per-page meta tags, Open Graph image, JSON-LD structured data, `sitemap-index.xml` and `robots.txt`.
+Marketing and documentation website for `features-cli`. It explains the concept of feature-based architecture and the tool with visual pages, built for search engines: static HTML, per-page meta tags, Open Graph image, JSON-LD structured data, `sitemap-index.xml` and `robots.txt`. It is also built for AI assistants and answer engines (GEO), see [AI assistants](#ai-assistants-geo).
 
 Built with [Astro](https://astro.build) and Tailwind CSS. Hosted on [Vercel](https://vercel.com).
 
@@ -15,6 +15,16 @@ Built with [Astro](https://astro.build) and Tailwind CSS. Hosted on [Vercel](htt
 | `/faq`                        | Frequently asked questions (with `FAQPage` structured data)               | `FAQ.md`                                                          |
 
 The content mirrors the repository docs. When the README, FAQ or docs change, update the matching page.
+
+## AI assistants (GEO)
+
+To be read and cited by ChatGPT, Claude, Perplexity, Gemini and other answer engines:
+
+- `robots.txt` allows the AI crawlers by name and points to `llms.txt`.
+- [`integrations/llms.ts`](./integrations/llms.ts) runs after the build and converts the `<main>` of every page to Markdown: `/cli.md`, `/index.md`... plus [`/llms.txt`](https://llmstxt.org) (index of the site) and `/llms-full.txt` (every page in one file). Pages link their Markdown twin with `<link rel="alternate" type="text/markdown">`.
+- The Markdown follows the pages automatically. Icons, SVGs and `aria-hidden` elements are dropped and `role="img"` illustrations become their `aria-label`. When a component is visual or interactive, give it a plain-text version with `data-markdown-code` (and `data-markdown-lang`), like `FileTree` and the install picker on `/cli`.
+
+Check the output in `dist/*.md` and `dist/llms.txt` after `bun run build`.
 
 ## Getting started
 

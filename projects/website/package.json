@@ -17,9 +17,11 @@
     "@lucide/astro": "^1.62.0",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "^7.4.12",
-    "tailwindcss": "^4.3.5"
+    "tailwindcss": "^4.3.5",
+    "turndown": "^7.2.5"
   },
   "devDependencies": {
+    "@types/turndown": "^5.0.6",
     "oxfmt": "^0.78.0",
     "oxlint": "^1.93.0"
   },

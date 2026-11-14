@@ -33,6 +33,19 @@ const flatten = (items: TreeNode[], prefix = ''): Row[] =>
 
 const rows = flatten(nodes)
 
+// Plain-text version of the tree, used for the Markdown pages read by AI assistants.
+const plainText = rows
+  .map(({ node, prefix }) =>
+    [
+      `${prefix}${node.name}${node.children ? '/' : ''}`,
+      node.owner && `(owner: ${node.owner})`,
+      node.note && `# ${node.note}`,
+    ]
+      .filter(Boolean)
+      .join('  '),
+  )
+  .join('\n')
+
 type Kind = NonNullable<TreeNode['kind']>
 
 const styles: Record<Kind, { text: string; icon: typeof Folder }> = {
@@ -50,7 +63,7 @@ const initials = (owner: string) =>
     .toUpperCase()
 ---
 
-<figure class:list={['card overflow-hidden', className]}>
+<figure class:list={['card overflow-hidden', className]} data-markdown-code={plainText}>
   {
     title && (
       <figcaption class="flex items-center gap-2 border-b border-line bg-gradient-to-b from-surface-2 to-surface px-4 py-2.5 font-mono text-xs text-muted">
