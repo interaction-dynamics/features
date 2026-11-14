@@ -1,9 +1,14 @@
-import { GitCommitVertical, History as HistoryIcon } from 'lucide-react'
+import {
+  GitBranch,
+  GitCommitVertical,
+  History as HistoryIcon,
+} from 'lucide-react'
 import { useContext, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { Header } from '@/components/header'
 import { StatsCard } from '@/components/stats-card'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   buildHistory,
   type CommitType,
@@ -13,6 +18,7 @@ import {
   flattenFeatures,
   groupByMonth,
   HistoryActivityChart,
+  HistoryFeatureGraph,
   type HistoryFilterState as Filters,
   HistoryFilters,
   HistoryTimeline,
@@ -30,6 +36,18 @@ export default function History() {
   const { features, isAggregated } = useContext(FeaturesContext)
   const { metadata } = useMetadata()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const view = searchParams.get('view') === 'graph' ? 'graph' : 'timeline'
+
+  const changeView = (next: string) =>
+    setSearchParams(
+      (params) => {
+        if (next === 'graph') params.set('view', 'graph')
+        else params.delete('view')
+        return params
+      },
+      { replace: true },
+    )
 
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
   const [limit, setLimit] = useState(PAGE_SIZE)
@@ -101,70 +119,91 @@ export default function History() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 p-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatsCard title="Commits" value={summary.commits} />
-            <StatsCard title="Features introduced" value={summary.introduced} />
-            <StatsCard title="Contributors" value={summary.contributors} />
-            <StatsCard
-              title="Period"
-              value={
-                summary.first
-                  ? formatDate(summary.first.replace(' ', 'T'))
-                  : '—'
-              }
-              subtitle={
-                summary.last
-                  ? `to ${formatDate(summary.last.replace(' ', 'T'))}`
-                  : undefined
-              }
+        <Tabs value={view} onValueChange={changeView} className="gap-4 p-4">
+          <TabsList>
+            <TabsTrigger value="timeline">
+              <GitCommitVertical />
+              Timeline
+            </TabsTrigger>
+            <TabsTrigger value="graph">
+              <GitBranch />
+              Graph
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="graph">
+            <HistoryFeatureGraph
+              features={features}
+              onOpenFeature={openFeature}
             />
-          </div>
-          <HistoryActivityChart commits={filtered} />
-          <HistoryFilters
-            filters={filters}
-            onChange={updateFilters}
-            types={types}
-            selectedFeature={selectedFeature}
-          />
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-12 text-center">
-              <p className="text-sm text-muted-foreground">
-                No commit matches these filters.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => updateFilters(EMPTY_FILTERS)}
-              >
-                Clear filters
-              </Button>
-            </div>
-          ) : (
-            <>
-              <HistoryTimeline
-                months={months}
-                repository={repository}
-                activeFeaturePath={filters.featurePath}
-                onFilterFeature={(feature) =>
-                  updateFilters({ ...filters, featurePath: feature.path })
-                }
-                onOpenFeature={openFeature}
+          </TabsContent>
+          <TabsContent value="timeline" className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatsCard title="Commits" value={summary.commits} />
+              <StatsCard
+                title="Features introduced"
+                value={summary.introduced}
               />
-              {filtered.length > limit && (
-                <div className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLimit((current) => current + PAGE_SIZE)}
-                  >
-                    Show more ({filtered.length - limit} left)
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+              <StatsCard title="Contributors" value={summary.contributors} />
+              <StatsCard
+                title="Period"
+                value={
+                  summary.first
+                    ? formatDate(summary.first.replace(' ', 'T'))
+                    : '—'
+                }
+                subtitle={
+                  summary.last
+                    ? `to ${formatDate(summary.last.replace(' ', 'T'))}`
+                    : undefined
+                }
+              />
+            </div>
+            <HistoryActivityChart commits={filtered} />
+            <HistoryFilters
+              filters={filters}
+              onChange={updateFilters}
+              types={types}
+              selectedFeature={selectedFeature}
+            />
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-12 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No commit matches these filters.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateFilters(EMPTY_FILTERS)}
+                >
+                  Clear filters
+                </Button>
+              </div>
+            ) : (
+              <>
+                <HistoryTimeline
+                  months={months}
+                  repository={repository}
+                  activeFeaturePath={filters.featurePath}
+                  onFilterFeature={(feature) =>
+                    updateFilters({ ...filters, featurePath: feature.path })
+                  }
+                  onOpenFeature={openFeature}
+                />
+                {filtered.length > limit && (
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLimit((current) => current + PAGE_SIZE)}
+                    >
+                      Show more ({filtered.length - limit} left)
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   )
