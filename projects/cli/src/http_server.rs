@@ -25,7 +25,7 @@ use warp::{Filter, Reply};
 use crate::build::current_build_timestamp;
 use crate::file_scanner::list_files_recursive_with_changes;
 use crate::git_helper::get_repository_url;
-use crate::models::Feature;
+use crate::models::{Feature, strip_author_emails};
 
 // Embed the public directory at compile time
 static STATIC_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/public");
@@ -73,6 +73,17 @@ impl ServerConfig {
         self.allowed_origins = origins;
         self
     }
+}
+
+/// Options used when the file watcher recomputes the features
+#[derive(Debug, Clone, Default)]
+pub struct RescanOptions {
+    /// Folders to ignore when features are recomputed
+    pub ignore_paths: Vec<PathBuf>,
+    /// Whether to scan folders skipped by default when features are recomputed
+    pub include_skipped_dirs: bool,
+    /// Whether to remove commit author emails from recomputed features
+    pub strip_emails: bool,
 }
 
 /// Validates and normalizes a value passed to `--allow-origin`.
@@ -162,8 +173,7 @@ fn host_guard() -> impl Filter<Extract = (), Error = warp::Rejection> + Clone {
 /// * `watch_path` - Path to watch for file changes
 /// * `on_ready` - Optional callback to be called when server is ready
 /// * `skip_changes` - Whether changes were skipped during feature computation
-/// * `ignore_paths` - Folders to ignore when features are recomputed
-/// * `include_skipped_dirs` - Whether to scan folders skipped by default when features are recomputed
+/// * `rescan` - Options used when the file watcher recomputes the features
 ///
 /// # Returns
 ///
@@ -174,8 +184,7 @@ pub async fn serve_features_with_watching(
     watch_path: PathBuf,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
     skip_changes: bool,
-    ignore_paths: Vec<PathBuf>,
-    include_skipped_dirs: bool,
+    rescan: RescanOptions,
 ) -> Result<()> {
     serve_features_with_config_and_watching(
         features,
@@ -183,8 +192,7 @@ pub async fn serve_features_with_watching(
         Some(watch_path),
         on_ready,
         skip_changes,
-        ignore_paths,
-        include_skipped_dirs,
+        rescan,
     )
     .await
 }
@@ -198,8 +206,7 @@ pub async fn serve_features_with_watching(
 /// * `watch_path` - Optional path to watch for file changes
 /// * `on_ready` - Optional callback to be called when server is ready
 /// * `skip_changes` - Whether changes were skipped during feature computation
-/// * `ignore_paths` - Folders to ignore when features are recomputed
-/// * `include_skipped_dirs` - Whether to scan folders skipped by default when features are recomputed
+/// * `rescan` - Options used when the file watcher recomputes the features
 ///
 /// # Returns
 ///
@@ -210,8 +217,7 @@ pub async fn serve_features_with_config_and_watching(
     watch_path: Option<PathBuf>,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
     skip_changes: bool,
-    ignore_paths: Vec<PathBuf>,
-    include_skipped_dirs: bool,
+    rescan: RescanOptions,
 ) -> Result<()> {
     // Create shared state for features
     let features_data = Arc::new(RwLock::new(features.to_vec()));
@@ -235,8 +241,7 @@ pub async fn serve_features_with_config_and_watching(
                 features_data_clone,
                 built_at_clone,
                 watch_path_clone,
-                ignore_paths,
-                include_skipped_dirs,
+                rescan,
             )
             .await
             {
@@ -396,8 +401,7 @@ async fn setup_file_watcher(
     features_data: Arc<RwLock<Vec<Feature>>>,
     built_at: Arc<RwLock<String>>,
     watch_path: PathBuf,
-    ignore_paths: Vec<PathBuf>,
-    include_skipped_dirs: bool,
+    rescan: RescanOptions,
 ) -> Result<()> {
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
@@ -441,10 +445,13 @@ async fn setup_file_watcher(
 
             match list_files_recursive_with_changes(
                 &watch_path,
-                &ignore_paths,
-                include_skipped_dirs,
+                &rescan.ignore_paths,
+                rescan.include_skipped_dirs,
             ) {
-                Ok(new_features) => {
+                Ok(mut new_features) => {
+                    if rescan.strip_emails {
+                        strip_author_emails(&mut new_features);
+                    }
                     let mut features = features_data.write().await;
                     *features = new_features;
                     *built_at.write().await = current_build_timestamp();

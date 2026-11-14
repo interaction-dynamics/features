@@ -62,6 +62,7 @@ Commands and their descriptions are listed below:
 | `--skip-changes` | Skip computing git commit history (faster for large repos) |
 | `--ignore-path <path>` | Ignore a folder and all its subfolders when scanning for features. Can be repeated to ignore multiple folders |
 | `--include-skipped-dirs` | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
+| `--strip-emails` | Remove commit author emails from the output (`--json`, `--serve` and `--build`). Useful before publishing a static build. Author names are kept |
 | `--serve` | Start an HTTP server to serve features and the web dashboard UI |
 | `--port <port>` | Change the port (default: 3000). Should be used with `--serve` |
 | `--allow-origin <origin>` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]`. Should be used with `--serve` |
