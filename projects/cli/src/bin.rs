@@ -196,8 +196,9 @@ async fn run(invocation: Invocation) -> Result<()> {
             let features = scan_path(&args.path, &config)?;
 
             spinner.set_message("Server is starting...");
-            let server_config =
-                ServerConfig::new(args.port).with_allowed_origins(args.allow_origin);
+            let server_config = ServerConfig::new(args.port)
+                .with_allowed_origins(args.allow_origin)
+                .with_experimental(args.experimental);
             serve_features_with_watching(
                 &features,
                 server_config,
@@ -214,7 +215,7 @@ async fn run(invocation: Invocation) -> Result<()> {
             let records = project_records(&features, &args.path);
             create_build(
                 &features,
-                BuildConfig::new(args.build_dir.clone()),
+                BuildConfig::new(args.build_dir.clone()).with_experimental(args.experimental),
                 scan.skip_changes,
             )
             .await?;

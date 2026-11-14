@@ -1,8 +1,11 @@
 import { FileText, Shapes, TriangleAlert } from 'lucide-react'
 import { useContext } from 'react'
+import { Navigate } from 'react-router'
+import { ExperimentalBadge } from '@/components/experimental-badge'
 import { Header } from '@/components/header'
 import { UnmergedFeatures } from '@/features/reconciliation/unmerged-features'
 import { ProjectRecords, useProjectRecords } from '@/features/records'
+import { useExperimentalFeatures } from '@/hooks/use-experimental-features'
 import { FeaturesContext } from '@/lib/features-context'
 
 /**
@@ -13,9 +16,17 @@ import { FeaturesContext } from '@/lib/features-context'
 export default function OutsideFeatures() {
   const { isAggregated, reconciliationErrors } = useContext(FeaturesContext)
   const { records } = useProjectRecords()
+  const { enabled: experimentalEnabled, isLoading } = useExperimentalFeatures()
 
-  // records.json is not written for aggregated reports: hide the empty section
-  const showRecords = !isAggregated || records.length > 0
+  // Project-level records are experimental. records.json is not written for
+  // aggregated reports: hide the empty section
+  const showRecords =
+    experimentalEnabled && (!isAggregated || records.length > 0)
+
+  // Nothing to show: a single-repository report without experimental pages
+  if (!isAggregated && !experimentalEnabled) {
+    return isLoading ? null : <Navigate to="/" replace />
+  }
 
   return (
     <div className="absolute inset-0 overflow-auto">
@@ -37,6 +48,7 @@ export default function OutsideFeatures() {
               <span className="rounded bg-secondary px-1.5 text-xs font-normal tabular-nums text-secondary-foreground">
                 {records.length}
               </span>
+              <ExperimentalBadge />
             </h2>
             <ProjectRecords />
           </section>

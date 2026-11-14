@@ -231,6 +231,10 @@ pub struct ServerArgs {
     /// responses via CORS. Can be repeated. Use '*' to allow any origin.
     #[arg(long, value_name = "ORIGIN", value_parser = parse_allowed_origin)]
     pub allow_origin: Vec<String>,
+
+    /// Enable the experimental parts of the web dashboard (History, project records)
+    #[arg(long)]
+    pub experimental: bool,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -242,6 +246,10 @@ pub struct BuildArgs {
     /// Output directory for the static build
     #[arg(long, default_value = DEFAULT_BUILD_DIR)]
     pub build_dir: PathBuf,
+
+    /// Enable the experimental parts of the web dashboard (History, project records)
+    #[arg(long)]
+    pub experimental: bool,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -621,11 +629,13 @@ impl LegacyArgs {
                 path,
                 port: self.port,
                 allow_origin: self.allow_origin,
+                experimental: false,
             })
         } else if self.build {
             Action::Build(BuildArgs {
                 path,
                 build_dir: self.build_dir,
+                experimental: false,
             })
         } else if self.check {
             Action::Check { path }
@@ -686,6 +696,7 @@ mod tests {
             path: path(p),
             port: DEFAULT_PORT,
             allow_origin: Vec::new(),
+            experimental: false,
         }
     }
 
@@ -744,16 +755,33 @@ mod tests {
     }
 
     #[test]
+    fn test_serve_experimental() {
+        let expected = Action::Serve(ServerArgs {
+            experimental: true,
+            ..serve("./src")
+        });
+        assert_eq!(action(&["serve", "./src", "--experimental"]), expected);
+    }
+
+    #[test]
     fn test_build() {
         let expected = Action::Build(BuildArgs {
             path: path("./src"),
             build_dir: path("out"),
+            experimental: false,
         });
         assert_eq!(
             action(&["./src", "--build", "--build-dir", "out"]),
             expected
         );
         assert_eq!(action(&["build", "./src", "--build-dir", "out"]), expected);
+
+        let experimental = Action::Build(BuildArgs {
+            path: path("./src"),
+            build_dir: path(DEFAULT_BUILD_DIR),
+            experimental: true,
+        });
+        assert_eq!(action(&["build", "./src", "--experimental"]), experimental);
     }
 
     #[test]

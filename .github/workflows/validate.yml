@@ -231,11 +231,12 @@ jobs:
           echo "Generated features.json with $(wc -l < ../web/public/features.json) lines"
 
       # Generate metadata.json with version from Cargo.toml
+      # The end-to-end tests run with the experimental pages (History, project records in Outside features)
       - name: Generate metadata.json 📋
         working-directory: ./projects/cli
         run: |
           VERSION=$(grep "^version" Cargo.toml | head -n1 | cut -d'"' -f2)
-          echo "{\"version\": \"$VERSION\", \"repository\": \"git@github.com:interaction-dynamics/features.git\" }" > ../web/public/metadata.json
+          echo "{\"version\": \"$VERSION\", \"repository\": \"git@github.com:interaction-dynamics/features.git\", \"experimental\": true }" > ../web/public/metadata.json
           echo "Generated metadata.json with version: $VERSION"
 
       # Setup Node.js for web app

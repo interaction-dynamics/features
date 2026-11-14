@@ -18,6 +18,8 @@ pub struct BuildConfig {
     pub output_dir: PathBuf,
     /// Whether to clean the output directory before building
     pub clean: bool,
+    /// Whether the experimental pages of the web dashboard are enabled
+    pub experimental: bool,
 }
 
 impl Default for BuildConfig {
@@ -25,6 +27,7 @@ impl Default for BuildConfig {
         Self {
             output_dir: PathBuf::from("build"),
             clean: true,
+            experimental: false,
         }
     }
 }
@@ -42,6 +45,12 @@ impl BuildConfig {
     #[allow(dead_code)]
     pub fn with_clean(mut self, clean: bool) -> Self {
         self.clean = clean;
+        self
+    }
+
+    /// Enable the experimental pages of the web dashboard
+    pub fn with_experimental(mut self, experimental: bool) -> Self {
+        self.experimental = experimental;
         self
     }
 }
@@ -64,7 +73,8 @@ impl BuildConfig {
 /// The build directory will contain:
 /// * All static files from the embedded public directory
 /// * `features.json` - Generated features data
-/// * `metadata.json` - Generated metadata with version, skipChanges flag and data build date
+/// * `metadata.json` - Generated metadata with version, skipChanges and experimental flags
+///   and data build date
 ///
 /// # Example
 ///
@@ -105,7 +115,7 @@ pub async fn create_build<T: serde::Serialize + ?Sized>(
     generate_features_json(features, &config.output_dir).await?;
 
     // Generate metadata.json
-    generate_metadata_json(&config.output_dir, skip_changes).await?;
+    generate_metadata_json(&config.output_dir, skip_changes, config.experimental).await?;
 
     println!("Build completed successfully!");
     println!("Output directory: {}", config.output_dir.display());
@@ -200,12 +210,17 @@ pub fn current_build_timestamp() -> String {
 }
 
 /// Generates the metadata.json file
-async fn generate_metadata_json(output_dir: &Path, skip_changes: bool) -> Result<()> {
+async fn generate_metadata_json(
+    output_dir: &Path,
+    skip_changes: bool,
+    experimental: bool,
+) -> Result<()> {
     println!("Generating metadata.json...");
 
     let metadata = serde_json::json!({
         "version": env!("CARGO_PKG_VERSION"),
         "skipChanges": skip_changes,
+        "experimental": experimental,
         "builtAt": current_build_timestamp()
     });
 
@@ -228,7 +243,7 @@ mod tests {
     async fn metadata_json_contains_data_build_date() {
         let output_dir = tempfile::tempdir().unwrap();
 
-        generate_metadata_json(output_dir.path(), false)
+        generate_metadata_json(output_dir.path(), false, false)
             .await
             .unwrap();
 
@@ -239,5 +254,23 @@ mod tests {
         let built_at = metadata["builtAt"].as_str().unwrap();
 
         assert!(chrono::DateTime::parse_from_rfc3339(built_at).is_ok());
+    }
+
+    #[tokio::test]
+    async fn metadata_json_contains_experimental_flag() {
+        for experimental in [false, true] {
+            let output_dir = tempfile::tempdir().unwrap();
+
+            generate_metadata_json(output_dir.path(), false, experimental)
+                .await
+                .unwrap();
+
+            let content = fs::read_to_string(output_dir.path().join("metadata.json"))
+                .await
+                .unwrap();
+            let metadata: serde_json::Value = serde_json::from_str(&content).unwrap();
+
+            assert_eq!(metadata["experimental"], experimental);
+        }
     }
 }

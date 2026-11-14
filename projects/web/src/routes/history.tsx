@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useContext, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import { ExperimentalBadge } from '@/components/experimental-badge'
 import { Header } from '@/components/header'
 import { StatsCard } from '@/components/stats-card'
 import { Button } from '@/components/ui/button'
@@ -106,6 +107,7 @@ export default function History() {
         <div className="flex items-center gap-2 font-medium">
           <HistoryIcon className="h-4 w-4" />
           History
+          <ExperimentalBadge />
         </div>
       </Header>
       {history.length === 0 ? (

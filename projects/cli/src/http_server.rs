@@ -40,6 +40,8 @@ pub struct ServerConfig {
     /// Origins allowed to read the server's responses cross-origin (CORS).
     /// Empty means no CORS headers are sent. `*` allows any origin.
     pub allowed_origins: Vec<String>,
+    /// Whether the experimental pages of the web dashboard are enabled
+    pub experimental: bool,
 }
 
 impl Default for ServerConfig {
@@ -48,6 +50,7 @@ impl Default for ServerConfig {
             port: 3000,
             host: [127, 0, 0, 1],
             allowed_origins: Vec::new(),
+            experimental: false,
         }
     }
 }
@@ -71,6 +74,12 @@ impl ServerConfig {
     /// Set the origins allowed to make cross-origin requests
     pub fn with_allowed_origins(mut self, origins: Vec<String>) -> Self {
         self.allowed_origins = origins;
+        self
+    }
+
+    /// Enable the experimental pages of the web dashboard
+    pub fn with_experimental(mut self, experimental: bool) -> Self {
+        self.experimental = experimental;
         self
     }
 }
@@ -335,6 +344,8 @@ fn build_app(
             }
         });
 
+    let experimental = config.experimental;
+
     // Route for metadata.json with version info and repository URL
     let metadata_route = warp::path("metadata.json")
         .and(warp::path::end())
@@ -347,6 +358,7 @@ fn build_app(
                 let mut metadata = serde_json::json!({
                     "version": env!("CARGO_PKG_VERSION"),
                     "skipChanges": skip_changes,
+                    "experimental": experimental,
                     "builtAt": built_at
                 });
 
@@ -657,7 +669,10 @@ mod tests {
     use super::*;
 
     fn app(allowed_origins: Vec<String>) -> BoxedFilter<(warp::reply::Response,)> {
-        let config = ServerConfig::new(3000).with_allowed_origins(allowed_origins);
+        app_with_config(ServerConfig::new(3000).with_allowed_origins(allowed_origins))
+    }
+
+    fn app_with_config(config: ServerConfig) -> BoxedFilter<(warp::reply::Response,)> {
         build_app(
             Arc::new(RwLock::new(Vec::new())),
             Arc::new(RwLock::new(Vec::new())),
@@ -745,6 +760,22 @@ mod tests {
             .reply(&app(Vec::new()))
             .await;
         assert_eq!(res.status(), 403);
+    }
+
+    #[tokio::test]
+    async fn test_metadata_experimental_flag() {
+        for experimental in [false, true] {
+            let res = warp::test::request()
+                .path("/metadata.json")
+                .header("host", "localhost:3000")
+                .reply(&app_with_config(
+                    ServerConfig::new(3000).with_experimental(experimental),
+                ))
+                .await;
+            assert_eq!(res.status(), 200);
+            let body: serde_json::Value = serde_json::from_slice(res.body()).unwrap();
+            assert_eq!(body["experimental"], experimental);
+        }
     }
 
     #[tokio::test]

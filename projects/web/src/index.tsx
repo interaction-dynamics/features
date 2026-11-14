@@ -2,6 +2,7 @@ import { lazy, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HashRouter, Navigate, Route, Routes } from 'react-router'
 import './index.css'
+import { ExperimentalRoute } from './components/experimental-route'
 import { FeaturesProvider } from './components/features-provider'
 import { MainLayout } from './components/main-layout'
 import { ThemeProvider } from './components/theme-provider'
@@ -39,7 +40,14 @@ createRoot(root).render(
                 path="/records"
                 element={<Navigate to="/outside-features" replace />}
               />
-              <Route path="/history" element={<History />} />
+              <Route
+                path="/history"
+                element={
+                  <ExperimentalRoute>
+                    <History />
+                  </ExperimentalRoute>
+                }
+              />
             </Route>
           </Routes>
         </HashRouter>
