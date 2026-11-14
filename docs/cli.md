@@ -30,7 +30,7 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
 | `--port <port>` | `serve` | Change the port (default: 3000) |
 | `--allow-origin <origin>` | `serve` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]` |
-| `--experimental` | `serve`, `build` | Enable the experimental pages of the web dashboard (History, Project records). They are hidden by default and marked as experimental when enabled |
+| `--experimental` | `serve`, `build` | Enable the experimental parts of the web dashboard (History page, project records in Outside features). They are hidden by default and marked as experimental when enabled |
 | `--build-dir <path>` | `build`, `aggregate` | Output directory for the static build (default: `build`) |
 | `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required) |
 | `--committed-only` | `diff` | Ignore uncommitted and untracked files |
@@ -154,6 +154,6 @@ Reconciliation rules:
 - Features with the same name are the same feature and are merged. Each aggregated feature lists, in `repositories`, every repository where it was found and its path there.
 - A merged feature takes the parent it has in the repositories where it is nested, and gets the children it has in every repository.
 - Features found in a single repository keep their place: unmatched root features stay at the root.
-- Features are **not** merged when merging them would create a loop (e.g. `B > C` in one repository and `C > B` in another) or when they have different parents in different repositories. They are kept once per repository, and the issue is listed in the `errors` section of `features.json` and on the *Reconciliation issues* page of the dashboard.
+- Features are **not** merged when merging them would create a loop (e.g. `B > C` in one repository and `C > B` in another) or when they have different parents in different repositories. They are kept once per repository, and the issue is listed in the `errors` section of `features.json` and in the *Not merged across repositories* section of the *Outside features* page of the dashboard.
 
 The aggregated `features.json` is an object: `{ "repositories": [...], "features": [...], "errors": [...] }`, where `features` has the same structure as the output of `features scan --json`.

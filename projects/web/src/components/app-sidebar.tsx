@@ -1,4 +1,4 @@
-import { BarChart3, History, ScrollText, TriangleAlert } from 'lucide-react'
+import { BarChart3, History, Shapes } from 'lucide-react'
 import type * as React from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { Link, NavLink } from 'react-router'
@@ -59,6 +59,12 @@ export function AppSidebar({
   const [searchQuery, setSearchQuery] = useState('')
   const { records: projectRecords } = useProjectRecords()
   const { enabled: experimentalEnabled } = useExperimentalFeatures()
+  // Project-level records are experimental: only counted when they are shown
+  const recordsCount = experimentalEnabled ? projectRecords.length : 0
+  // Records not attached to a feature + features not merged across repositories
+  const outsideCount = recordsCount + reconciliationErrors.length
+  // Without experimental pages, a single-repository report has nothing outside features
+  const showOutsideFeatures = isAggregated || experimentalEnabled
 
   // Filter features based on search query using smart query parser
   const filteredFeatures = useMemo(() => {
@@ -203,47 +209,30 @@ export function AppSidebar({
                   </NavLink>
                 </SidebarMenuItem>
               )}
-              {experimentalEnabled && !isAggregated && (
+              {showOutsideFeatures && (
                 <SidebarMenuItem>
-                  <NavLink to="/records">
+                  <NavLink to="/outside-features">
                     {({ isActive }) => (
                       <SidebarMenuButton
                         className="cursor-pointer"
                         isActive={isActive}
                       >
-                        <ScrollText className="h-4 w-4" />
-                        Project records
-                        <span className="ml-auto flex items-center gap-1">
-                          {projectRecords.length > 0 && (
-                            <span className="rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
-                              {projectRecords.length}
-                            </span>
-                          )}
-                          <ExperimentalBadge compact />
-                        </span>
-                      </SidebarMenuButton>
-                    )}
-                  </NavLink>
-                </SidebarMenuItem>
-              )}
-              {isAggregated && (
-                <SidebarMenuItem>
-                  <NavLink to="/reconciliation">
-                    {({ isActive }) => (
-                      <SidebarMenuButton
-                        className="cursor-pointer"
-                        isActive={isActive}
-                      >
-                        <TriangleAlert
+                        <Shapes
                           className={
                             reconciliationErrors.length > 0
                               ? 'h-4 w-4 text-amber-600 dark:text-amber-400'
                               : 'h-4 w-4'
                           }
                         />
-                        Reconciliation issues
-                        <span className="ml-auto rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
-                          {reconciliationErrors.length}
+                        Outside features
+                        <span className="ml-auto flex items-center gap-1">
+                          {outsideCount > 0 && (
+                            <span className="rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
+                              {outsideCount}
+                            </span>
+                          )}
+                          {/* Only project records (experimental) without an aggregated report */}
+                          {!isAggregated && <ExperimentalBadge compact />}
                         </span>
                       </SidebarMenuButton>
                     )}

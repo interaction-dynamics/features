@@ -232,7 +232,7 @@ pub struct ServerArgs {
     #[arg(long, value_name = "ORIGIN", value_parser = parse_allowed_origin)]
     pub allow_origin: Vec<String>,
 
-    /// Enable the experimental pages of the web dashboard (History, Project records)
+    /// Enable the experimental parts of the web dashboard (History, project records)
     #[arg(long)]
     pub experimental: bool,
 }
@@ -247,7 +247,7 @@ pub struct BuildArgs {
     #[arg(long, default_value = DEFAULT_BUILD_DIR)]
     pub build_dir: PathBuf,
 
-    /// Enable the experimental pages of the web dashboard (History, Project records)
+    /// Enable the experimental parts of the web dashboard (History, project records)
     #[arg(long)]
     pub experimental: bool,
 }

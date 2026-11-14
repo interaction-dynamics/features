@@ -1,6 +1,6 @@
 import { lazy, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter, Route, Routes } from 'react-router'
+import { HashRouter, Navigate, Route, Routes } from 'react-router'
 import './index.css'
 import { ExperimentalRoute } from './components/experimental-route'
 import { FeaturesProvider } from './components/features-provider'
@@ -11,9 +11,7 @@ const Features = lazy(async () => import('./routes/features'))
 
 const Insights = lazy(async () => import('./routes/insights'))
 
-const Reconciliation = lazy(async () => import('./routes/reconciliation'))
-
-const ProjectRecords = lazy(async () => import('./routes/project-records'))
+const OutsideFeatures = lazy(async () => import('./routes/outside-features'))
 
 const History = lazy(async () => import('./routes/history'))
 
@@ -32,14 +30,15 @@ createRoot(root).render(
             <Route element={<MainLayout />}>
               <Route path="/" element={<Features />} />
               <Route path="/insights" element={<Insights />} />
-              <Route path="/reconciliation" element={<Reconciliation />} />
+              <Route path="/outside-features" element={<OutsideFeatures />} />
+              {/* Former pages, merged into Outside features */}
+              <Route
+                path="/reconciliation"
+                element={<Navigate to="/outside-features" replace />}
+              />
               <Route
                 path="/records"
-                element={
-                  <ExperimentalRoute>
-                    <ProjectRecords />
-                  </ExperimentalRoute>
-                }
+                element={<Navigate to="/outside-features" replace />}
               />
               <Route
                 path="/history"

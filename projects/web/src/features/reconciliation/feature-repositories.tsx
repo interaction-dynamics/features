@@ -43,8 +43,8 @@ export function FeatureRepositories({ feature }: FeatureRepositoriesProps) {
             <TriangleAlert className="h-3.5 w-3.5" />
             Not merged with the features named "{unmerged.feature}" of other
             repositories.
-            <Link to="/reconciliation" className="underline">
-              See reconciliation issues
+            <Link to="/outside-features" className="underline">
+              See Outside features
             </Link>
           </p>
         )}

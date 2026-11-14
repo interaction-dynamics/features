@@ -21,9 +21,9 @@ bun run dev
 bun run build
 ```
 
-## Experimental pages
+## Experimental features
 
-The History and Project records pages are experimental: hidden unless `metadata.json` has `"experimental": true` (written by `features serve --experimental` and `features build --experimental`). When developing the dashboard, enable them with an environment variable:
+The History page and the project records of the Outside features page are experimental: hidden unless `metadata.json` has `"experimental": true` (written by `features serve --experimental` and `features build --experimental`). When developing the dashboard, enable them with an environment variable:
 
 ```bash
 VITE_EXPERIMENTAL_FEATURES=true bun run dev

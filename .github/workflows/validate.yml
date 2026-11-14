@@ -231,7 +231,7 @@ jobs:
           echo "Generated features.json with $(wc -l < ../web/public/features.json) lines"
 
       # Generate metadata.json with version from Cargo.toml
-      # The end-to-end tests run with the experimental pages (History, Project records)
+      # The end-to-end tests run with the experimental pages (History, project records in Outside features)
       - name: Generate metadata.json 📋
         working-directory: ./projects/cli
         run: |

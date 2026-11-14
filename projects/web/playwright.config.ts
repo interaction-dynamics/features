@@ -25,6 +25,8 @@ export default defineConfig({
   webServer: {
     command: 'bun run dev',
     url: 'http://localhost:5173',
+    // The end-to-end tests cover the experimental parts of the dashboard too
+    env: { VITE_EXPERIMENTAL_FEATURES: 'true' },
     reuseExistingServer: !process.env.CI,
   },
 })
