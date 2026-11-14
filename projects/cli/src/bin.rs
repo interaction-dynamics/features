@@ -1,13 +1,13 @@
-use anyhow::Result;
-use clap::Parser;
+use anyhow::{Context, Result};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use features_cli::build::{BuildConfig, create_build};
-use features_cli::checker::run_checks;
+use features_cli::checker::{CheckContext, print_rules, run_checks};
 use features_cli::cli::{Action, Cli, CodeownersOptions, DiffArgs, Invocation, ScanArgs};
 use features_cli::codeowners::generate_codeowners;
+use features_cli::config::ProjectConfig;
 use features_cli::diff;
 use features_cli::http_server::{ServerConfig, serve_features_with_watching};
 use features_cli::models::Feature;
@@ -91,11 +91,31 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let invocation = match Cli::parse().into_invocation() {
-        Ok(invocation) => invocation,
+    let (mut invocation, explicit) = match Cli::try_parse_invocation(std::env::args_os()) {
+        Ok(parsed) => parsed,
         Err(err) => err.exit(),
     };
-    run(invocation).await
+    if invocation.action == Action::Version {
+        println!("{}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
+    // Options not given on the command line come from the configuration file
+    let current_dir = std::env::current_dir()?;
+    let project_config = ProjectConfig::load_for_scan(
+        invocation.scan.config.as_deref(),
+        invocation.scan_path().unwrap_or(&current_dir),
+        invocation.scan.project_dir.as_deref(),
+        &current_dir,
+    )?;
+    invocation
+        .apply_config(&project_config, &explicit)
+        .with_context(|| match &project_config.source {
+            Some(path) => format!("invalid config `{}`", path.display()),
+            None => "invalid config".to_string(),
+        })?;
+
+    run(invocation, &project_config, &current_dir).await
 }
 
 /// Scan configuration from the scan options shared by every action
@@ -132,19 +152,24 @@ fn serve_spinner() -> ProgressBar {
     pb
 }
 
-async fn run(invocation: Invocation) -> Result<()> {
+async fn run(
+    invocation: Invocation,
+    project_config: &ProjectConfig,
+    current_dir: &Path,
+) -> Result<()> {
     let Invocation {
         action,
         scan,
+        generate_codeowners,
         codeowners,
     } = invocation;
-    let current_dir = std::env::current_dir()?;
+    let current_dir = current_dir.to_path_buf();
 
     // Scan the features, then generate CODEOWNERS if requested alongside the action
     let scan_path = |path: &Path, config: &ScanConfig| -> Result<Vec<Feature>> {
         let features = scan_features_with(path, config)?;
-        if let Some(options) = &codeowners {
-            write_codeowners(&features, path, &scan, options, &current_dir)?;
+        if generate_codeowners {
+            write_codeowners(&features, path, &scan, &codeowners, &current_dir)?;
         }
         Ok(features)
     };
@@ -209,9 +234,22 @@ async fn run(invocation: Invocation) -> Result<()> {
             .await?;
         }
 
-        Action::Check { path } => {
-            let features = scan_path(&path, &scan_config(&scan, &current_dir))?;
-            run_checks(&features)?;
+        Action::Check { path, check } => {
+            // Resolve the rules first: they decide whether coverage is needed
+            let check_config = check.resolve_config(project_config)?;
+            if check.list_rules {
+                return print_rules(&check_config, check.output_format());
+            }
+
+            let config = scan_config(&scan, &current_dir)
+                .with_coverage(check_config.is_enabled("min-coverage"));
+            let features = scan_path(&path, &config)?;
+            run_checks(
+                &features,
+                &check_config,
+                &CheckContext::new(&path),
+                check.output_format(),
+            )?;
         }
 
         Action::Codeowners { path } => {
@@ -262,6 +300,7 @@ fn write_codeowners(
 
 /// Diff mode: print the features touched since `args.since`.
 fn run_diff(args: &DiffArgs, scan: &ScanArgs, current_dir: &Path) -> Result<()> {
+    let since = args.since()?;
     let base_path = args
         .path
         .clone()
@@ -270,8 +309,8 @@ fn run_diff(args: &DiffArgs, scan: &ScanArgs, current_dir: &Path) -> Result<()> 
     let features = scan_features_with(&base_path, &config)?;
 
     let include_uncommitted = !args.committed_only;
-    let changes = diff::collect_changes(&base_path, &args.since, include_uncommitted)?;
-    let report = diff::build_report(&args.since, include_uncommitted, &changes, &features);
+    let changes = diff::collect_changes(&base_path, since, include_uncommitted)?;
+    let report = diff::build_report(since, include_uncommitted, &changes, &features);
 
     if args.owners_only {
         for owner in diff::unique_owners(&report, &args.codeowners_prefix) {

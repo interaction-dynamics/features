@@ -58,24 +58,29 @@ Each action is a command. `PATH` is the folder to scan for features and defaults
 | `features codeowners [PATH]` | Generate or update a CODEOWNERS file with feature ownership information |
 | `features find-owner <TARGET> [PATH]` | Find the owner of a specific file or folder |
 | `features owners [PATH]` | Display only the unique list of owners |
-| `features check [PATH]` | Run validation checks on features (e.g., duplicate names) |
+| `features check [PATH]` | Run validation checks on features (duplicate names, missing owners, stale flags...). See [Checks](#checks) |
 | `features diff [PATH] --since <ref>` | List the features touched since `<ref>`, with their owners. See [Features touched by a change](#features-touched-by-a-change) |
 
 Run `features <command> --help` for the options of a command. The options are:
 
 | Option | Commands | Description |
 | ------ | -------- | ----------- |
-| `--json` | `scan`, `find-owner`, `owners`, `diff` | Output as JSON |
+| `--json` | `scan`, `find-owner`, `owners`, `diff`, `check` | Output as JSON |
 | `--flat` | `scan` | Output features as a flat array instead of nested structure |
 | `--description` | `scan` | Include feature descriptions in the output |
 | `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
 | `--port <port>` | `serve` | Change the port (default: 3000) |
 | `--allow-origin <origin>` | `serve` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]` |
 | `--build-dir <path>` | `build` | Output directory for the static build (default: `build`) |
-| `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required) |
+| `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required, here or as `diff.since` in the [configuration file](#configuration-file)) |
 | `--committed-only` | `diff` | Ignore uncommitted and untracked files |
 | `--markdown` | `diff` | Output a markdown table for pull request comments |
 | `--owners-only` | `diff` | Print only the unique owners of the touched features, one per line |
+| `--rule <id>=<severity>` | `check` | Set the severity of a check rule (`error`, `warn` or `off`). Can be repeated |
+| `--enable-rule <id>` | `check` | Turn on a check rule that is `off` (it then reports errors). Can be repeated |
+| `--disable-rule <id>` | `check` | Turn off a check rule. Can be repeated |
+| `--format <format>` | `check` | Output format of the checks: `text` (default), `json` (same as `--json`) or `github` (GitHub Actions annotations) |
+| `--list-rules` | `check` | List the check rules with their effective severity |
 | `--generate-codeowners` | `serve`, `build`, `check` | Also generate or update the CODEOWNERS file |
 | `--codeowners-path <path>` | `codeowners`, and with `--generate-codeowners` | Custom path and filename for CODEOWNERS file (default: `CODEOWNERS` in project directory) |
 | `--codeowners-prefix <prefix>` | `codeowners`, `diff`, and with `--generate-codeowners` | Custom prefix for owner names in CODEOWNERS file and in `diff --markdown` / `--owners-only` output (default: `@`) |
@@ -84,6 +89,7 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--ignore-path <path>` | all | Ignore a folder and all its subfolders when scanning for features. Can be repeated to ignore multiple folders |
 | `--include-skipped-dirs` | all | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
 | `--coverage-dir <path>` | all | Specify a custom coverage directory (overrides automatic search) |
+| `--config <path>` | all | Path to the [configuration file](#configuration-file) (default: `.features.yml` or `.features.yaml` in the scanned folder, `--project-dir` or the current folder) |
 | `--strip-emails` | all | Remove commit author emails from the output (JSON, `serve` and `build`). Useful before publishing a static build. Author names are kept |
 
 > **Legacy flags.** Before commands existed, actions were flags: `features PATH --serve`, `--build`, `--check`, `--list-owners`, `--find-owner <TARGET>` and `--generate-codeowners`. They still work but are deprecated. Combining two actions (e.g. `--serve --build`) is now an error instead of silently running one of them; `--generate-codeowners` can still be combined with `--serve`, `--build`, `--check` and `--list-owners`. `features PATH --since <ref>` also still works, as an alias of `features diff PATH --since <ref>`.
@@ -240,6 +246,72 @@ This works in any programming language:
 
 ```bash
 # --feature-flag name: feature-flag1, environment: production, region: us-west-2
+```
+
+## Configuration file
+
+`features` reads an optional YAML configuration file: `.features.yml` (or `.features.yaml`). It looks for it in the scanned folder, then in the `--project-dir` folder, then in the current folder; `--config <path>` points to another file. Every command-line option can be set there: shared options at the top level, the options of a command in a section named after it. Options given on the command line win.
+
+```yaml
+path: src
+skip_changes: true
+serve:
+  port: 4000
+diff:
+  since: origin/main
+check:
+  format: github
+  rules:
+    missing-owner: error
+```
+
+Not to be confused with the per-feature `FEATURES.toml` files, which describe a single feature. See the [configuration guide](./docs/configuration.md) for every setting, the errors and a full example.
+
+## Checks
+
+`features check` validates your features against a set of rules and exits with a non-zero code when a rule with the `error` severity finds something, so it can run in CI:
+
+```bash
+features check ./src
+features check ./src --format github   # annotate the pull request in GitHub Actions
+features check ./src --json            # machine-readable report
+features check ./src --list-rules      # rules and their effective severity
+```
+
+| Rule | Default | Finds | Options (default) |
+| ---- | ------- | ----- | ----------------- |
+| `duplicate-names` | `error` | Two or more features with the same name | |
+| `missing-owner` | `warn` | Features without an owner | `allow_inherited` (`true`): accept an owner inherited from a parent feature |
+| `missing-readme` | `off` | Large features without `README.md`, `README.mdx` or `FEATURES.toml` | `max_files_without_readme` (`10`) |
+| `min-coverage` | `off` | Features whose line coverage is below a threshold. Only features with [coverage data](./FAQ.md#how-can-i-add-a-test-coverage-report) | `threshold` (`80`, in percent) |
+| `stale-flag` | `warn` | [Feature flags](#feature-metadata-annotations) whose `introduced_on` date (`YYYY-MM-DD`) is too old | `max_age_days` (`90`), `metadata_keys` (`[flag]`) |
+| `cross-feature-import` | `off` | Imports from a sibling feature (imports from parent and child features are fine) | `allow` (`[]`): paths of features anyone may import, e.g. shared features |
+
+Each rule has a severity: `error` findings fail the check, `warn` findings are only reported, and `off` rules don't run. Only `duplicate-names` is an error by default, so upgrading doesn't break existing CI pipelines.
+
+Configure the rules in the `check` section of the [configuration file](#configuration-file) (all options are described in the [configuration guide](./docs/configuration.md#check-section)):
+
+```yaml
+check:
+  rules:
+    duplicate-names: error   # severity only
+    stale-flag: off
+    missing-owner:           # severity and options
+      severity: error
+      allow_inherited: false
+    min-coverage:
+      severity: warn
+      threshold: 70
+    cross-feature-import:
+      severity: error
+      allow:
+        - libs/features/shared
+```
+
+Command-line options win over the file: `--rule <id>=<severity>` sets a severity, then `--enable-rule <id>` turns an `off` rule into `error`, then `--disable-rule <id>` turns a rule off.
+
+```bash
+features check ./src --enable-rule cross-feature-import --rule min-coverage=warn --disable-rule stale-flag
 ```
 
 ## Supported Programming Languages
