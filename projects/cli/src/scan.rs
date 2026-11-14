@@ -14,8 +14,10 @@ use crate::file_scanner::{
 use crate::models::{Feature, strip_author_emails};
 
 /// Configuration options for scanning features
+///
+/// It owns its paths, so a copy can be kept for later rescans (see `http_server`).
 #[derive(Debug, Clone)]
-pub struct ScanConfig<'a> {
+pub struct ScanConfig {
     /// Whether to include git history (changes, commits, stats)
     pub skip_changes: bool,
 
@@ -24,13 +26,13 @@ pub struct ScanConfig<'a> {
 
     /// Optional override for coverage directory location
     /// If None, will search in multiple default locations
-    pub coverage_dir_override: Option<&'a Path>,
+    pub coverage_dir_override: Option<PathBuf>,
 
     /// Current working directory (used for finding coverage)
-    pub current_dir: &'a Path,
+    pub current_dir: PathBuf,
 
     /// Optional project directory (used for finding coverage)
-    pub project_dir: Option<&'a Path>,
+    pub project_dir: Option<PathBuf>,
 
     /// Paths to ignore (and all their subfolders) when scanning for features
     pub ignore_paths: Vec<PathBuf>,
@@ -46,14 +48,14 @@ pub struct ScanConfig<'a> {
     pub strip_emails: bool,
 }
 
-impl<'a> ScanConfig<'a> {
+impl ScanConfig {
     /// Create a new ScanConfig with minimal required parameters
-    pub fn new(current_dir: &'a Path) -> Self {
+    pub fn new(current_dir: impl AsRef<Path>) -> Self {
         Self {
             skip_changes: false,
             should_add_coverage: false,
             coverage_dir_override: None,
-            current_dir,
+            current_dir: current_dir.as_ref().to_path_buf(),
             project_dir: None,
             ignore_paths: Vec::new(),
             ownership_only: false,
@@ -75,14 +77,14 @@ impl<'a> ScanConfig<'a> {
     }
 
     /// Set a specific coverage directory to use
-    pub fn coverage_dir(mut self, dir: &'a Path) -> Self {
-        self.coverage_dir_override = Some(dir);
+    pub fn coverage_dir(mut self, dir: impl AsRef<Path>) -> Self {
+        self.coverage_dir_override = Some(dir.as_ref().to_path_buf());
         self
     }
 
     /// Set the project directory for finding coverage
-    pub fn project_dir(mut self, dir: &'a Path) -> Self {
-        self.project_dir = Some(dir);
+    pub fn project_dir(mut self, dir: impl AsRef<Path>) -> Self {
+        self.project_dir = Some(dir.as_ref().to_path_buf());
         self
     }
 
@@ -137,6 +139,12 @@ impl<'a> ScanConfig<'a> {
 /// println!("Found {} features", features.len());
 /// ```
 pub fn scan_features(base_path: &Path, config: ScanConfig) -> Result<Vec<Feature>> {
+    scan_features_with(base_path, &config)
+}
+
+/// Same as [`scan_features`], borrowing the configuration so it can be reused,
+/// e.g. by the file watcher to rescan with the options of the initial scan
+pub fn scan_features_with(base_path: &Path, config: &ScanConfig) -> Result<Vec<Feature>> {
     if config.ownership_only {
         return list_features_ownership_only(
             base_path,
@@ -161,9 +169,9 @@ pub fn scan_features(base_path: &Path, config: ScanConfig) -> Result<Vec<Feature
         add_coverage_to_features(
             &mut features,
             base_path,
-            config.coverage_dir_override,
-            config.current_dir,
-            config.project_dir,
+            config.coverage_dir_override.as_deref(),
+            &config.current_dir,
+            config.project_dir.as_deref(),
         );
     }
 

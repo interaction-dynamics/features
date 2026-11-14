@@ -23,12 +23,10 @@ mod skip_dirs;
 use build::{BuildConfig, create_build};
 use checker::run_checks;
 use codeowners::generate_codeowners;
-use http_server::{
-    RescanOptions, ServerConfig, parse_allowed_origin, serve_features_with_watching,
-};
+use http_server::{ServerConfig, parse_allowed_origin, serve_features_with_watching};
 use models::Feature;
 use printer::print_features;
-use scan::{ScanConfig, scan_features};
+use scan::{ScanConfig, scan_features, scan_features_with};
 
 /// A CLI tool for discovering features in a folder by reading README.md or README.mdx files,
 /// and serving them via HTTP or static builds.
@@ -429,7 +427,7 @@ async fn main() -> Result<()> {
         config = config.project_dir(project_dir);
     }
 
-    let features = scan_features(&path, config)?;
+    let features = scan_features_with(&path, &config)?;
 
     // Generate CODEOWNERS file if requested
     if args.generate_codeowners {
@@ -447,11 +445,6 @@ async fn main() -> Result<()> {
     // Handle main actions - these can be combined with generate-codeowners
     if args.serve {
         let server_config = ServerConfig::new(args.port).with_allowed_origins(args.allow_origin);
-        let rescan = RescanOptions {
-            ignore_paths: ignore_paths.clone(),
-            include_skipped_dirs: args.include_skipped_dirs,
-            strip_emails: args.strip_emails,
-        };
         if let Some(pb) = spinner {
             pb.set_message("Server is starting...");
             let pb_clone = pb.clone();
@@ -462,20 +455,12 @@ async fn main() -> Result<()> {
                 Some(Box::new(move || {
                     pb_clone.finish_and_clear();
                 })),
-                args.skip_changes,
-                rescan,
+                config,
             )
             .await?;
         } else {
-            serve_features_with_watching(
-                &features,
-                server_config,
-                path.clone(),
-                None,
-                args.skip_changes,
-                rescan,
-            )
-            .await?;
+            serve_features_with_watching(&features, server_config, path.clone(), None, config)
+                .await?;
         }
     } else if args.build {
         let build_config = BuildConfig::new(args.build_dir);
