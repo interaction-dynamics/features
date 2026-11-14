@@ -15,11 +15,13 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useProjectRecords } from '@/features/records/use-project-records'
+import { useExperimentalFeatures } from '@/hooks/use-experimental-features'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import { filterByQuery, parseQuery } from '@/lib/smart-query-parser'
 import type { Feature } from '@/models/feature'
 import { AppSidebarSearchInput } from './app-sidebar-search-input'
+import { ExperimentalBadge } from './experimental-badge'
 import { ModeToggle } from './mode-toggle'
 import { NavFeatures } from './nav-features'
 import { OwnerDot } from './owner-dot'
@@ -56,6 +58,7 @@ export function AppSidebar({
     useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
   const { records: projectRecords } = useProjectRecords()
+  const { enabled: experimentalEnabled } = useExperimentalFeatures()
 
   // Filter features based on search query using smart query parser
   const filteredFeatures = useMemo(() => {
@@ -185,19 +188,22 @@ export function AppSidebar({
                   )}
                 </NavLink>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <NavLink to="/history">
-                  {({ isActive }) => (
-                    <SidebarMenuButton
-                      className="cursor-pointer"
-                      isActive={isActive}
-                    >
-                      <History className="h-4 w-4" /> History
-                    </SidebarMenuButton>
-                  )}
-                </NavLink>
-              </SidebarMenuItem>
-              {!isAggregated && (
+              {experimentalEnabled && (
+                <SidebarMenuItem>
+                  <NavLink to="/history">
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        className="cursor-pointer"
+                        isActive={isActive}
+                      >
+                        <History className="h-4 w-4" /> History
+                        <ExperimentalBadge compact className="ml-auto" />
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
+                </SidebarMenuItem>
+              )}
+              {experimentalEnabled && !isAggregated && (
                 <SidebarMenuItem>
                   <NavLink to="/records">
                     {({ isActive }) => (
@@ -207,11 +213,14 @@ export function AppSidebar({
                       >
                         <ScrollText className="h-4 w-4" />
                         Project records
-                        {projectRecords.length > 0 && (
-                          <span className="ml-auto rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
-                            {projectRecords.length}
-                          </span>
-                        )}
+                        <span className="ml-auto flex items-center gap-1">
+                          {projectRecords.length > 0 && (
+                            <span className="rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
+                              {projectRecords.length}
+                            </span>
+                          )}
+                          <ExperimentalBadge compact />
+                        </span>
                       </SidebarMenuButton>
                     )}
                   </NavLink>

@@ -1,4 +1,5 @@
 import { ScrollText } from 'lucide-react'
+import { ExperimentalBadge } from '@/components/experimental-badge'
 import { Header } from '@/components/header'
 import {
   RecordsEmptyState,
@@ -16,6 +17,7 @@ export default function ProjectRecords() {
         <div className="flex items-center gap-2 font-medium">
           <ScrollText className="h-4 w-4" />
           Project specs & decisions
+          <ExperimentalBadge />
         </div>
       </Header>
       <div className="flex flex-1 flex-col gap-4 p-4">

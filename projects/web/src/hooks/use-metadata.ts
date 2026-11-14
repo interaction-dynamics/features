@@ -4,6 +4,8 @@ export interface Metadata {
   version: string
   repository?: string
   skipChanges?: boolean
+  /** Experimental pages enabled (`--experimental` of `features serve` and `features build`) */
+  experimental?: boolean
   builtAt?: string
 }
 
