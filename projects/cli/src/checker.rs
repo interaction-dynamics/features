@@ -1,18 +1,34 @@
 use anyhow::Result;
 use std::collections::HashMap;
 
-use crate::models::Feature;
+use crate::models::{Feature, Record};
+use crate::records::record_warnings;
 
-pub fn run_checks(features: &[Feature]) -> Result<()> {
+/// Check the features: errors fail the check, warnings are only printed.
+///
+/// `project_records` are the root specs and decisions not attached to a feature.
+pub fn run_checks(features: &[Feature], project_records: &[Record]) -> Result<()> {
     let mut error_count = 0;
 
     error_count += check_duplicate_names(features);
+
+    let warnings = record_warnings(features, project_records);
+    for warning in &warnings {
+        eprintln!("Warning: {}", warning);
+    }
 
     if error_count > 0 {
         anyhow::bail!("Check failed: {} error(s) found", error_count);
     }
 
-    eprintln!("All checks passed successfully.");
+    if warnings.is_empty() {
+        eprintln!("All checks passed successfully.");
+    } else {
+        eprintln!(
+            "All checks passed successfully, with {} warning(s).",
+            warnings.len()
+        );
+    }
     Ok(())
 }
 

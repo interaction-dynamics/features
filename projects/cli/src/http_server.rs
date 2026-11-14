@@ -2,6 +2,7 @@
 //!
 //! This module provides functionality to start an HTTP server that serves:
 //! - Features data as JSON at `/features.json`
+//! - Project-level specs and decisions at `/records.json` (`{ "records": [...] }`)
 //! - Embedded static files from the compiled binary
 //! - A default index page at the root path
 //!
@@ -19,11 +20,10 @@ use tokio::sync::RwLock;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
-use crate::build::current_build_timestamp;
+use crate::build::{current_build_timestamp, records_json};
 use crate::file_watcher::{self, MAX_WAIT, QUIET_PERIOD, WatchFilter};
 use crate::git_helper::get_repository_url;
-use crate::models::Feature;
-use crate::scan::{ScanConfig, scan_features_with};
+use crate::scan::{ScanConfig, ScanOutput, scan_project_with};
 
 // Embed the public directory at compile time
 static STATIC_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/public");
@@ -166,7 +166,7 @@ fn host_guard() -> impl Filter<Extract = (), Error = warp::Rejection> + Clone {
 ///
 /// * `Result<()>` - Ok if server starts successfully, Err otherwise
 pub async fn serve_features_with_watching(
-    features: &[Feature],
+    features: &ScanOutput,
     config: ServerConfig,
     watch_path: PathBuf,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
@@ -197,7 +197,7 @@ pub async fn serve_features_with_watching(
 ///
 /// * `Result<()>` - Ok if server starts successfully, Err otherwise
 pub async fn serve_features_with_config_and_watching(
-    features: &[Feature],
+    features: &ScanOutput,
     config: ServerConfig,
     watch_path: Option<PathBuf>,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
@@ -206,7 +206,7 @@ pub async fn serve_features_with_config_and_watching(
     let skip_changes = scan_config.skip_changes;
 
     // Create shared state for features
-    let features_data = Arc::new(RwLock::new(features.to_vec()));
+    let features_data = Arc::new(RwLock::new(features.clone()));
 
     // When the features data was last built, refreshed by the file watcher
     let built_at = Arc::new(RwLock::new(current_build_timestamp()));
@@ -267,12 +267,36 @@ pub async fn serve_features_with_config_and_watching(
 /// Builds the complete request handler: routes, `Host` header guard, optional
 /// CORS and rejection handling.
 fn build_app(
-    features_data: Arc<RwLock<Vec<Feature>>>,
+    features_data: Arc<RwLock<ScanOutput>>,
     built_at: Arc<RwLock<String>>,
     repository_url: Option<String>,
     skip_changes: bool,
     config: &ServerConfig,
 ) -> BoxedFilter<(warp::reply::Response,)> {
+    // Route for records.json: the project-level records
+    let records_data = Arc::clone(&features_data);
+    let records_route = warp::path("records.json")
+        .and(warp::path::end())
+        .and(warp::get())
+        .and_then(move || {
+            let records_data = Arc::clone(&records_data);
+            async move {
+                let output = records_data.read().await;
+                let json = match records_json(&output.records) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        eprintln!("Failed to serialize records: {}", e);
+                        return Err(warp::reject::custom(SerializationError));
+                    }
+                };
+                Ok::<_, warp::Rejection>(warp::reply::with_header(
+                    json,
+                    "content-type",
+                    "application/json",
+                ))
+            }
+        });
+
     // Route for features.json with shared state
     let features_route = warp::path("features.json")
         .and(warp::path::end())
@@ -280,8 +304,8 @@ fn build_app(
         .and_then(move || {
             let features_data = Arc::clone(&features_data);
             async move {
-                let features = features_data.read().await;
-                let features_json = match serde_json::to_string_pretty(&*features) {
+                let output = features_data.read().await;
+                let features_json = match serde_json::to_string_pretty(&output.features) {
                     Ok(json) => json,
                     Err(e) => {
                         eprintln!("Failed to serialize features: {}", e);
@@ -343,6 +367,7 @@ fn build_app(
 
     let routes = host_guard().and(
         features_route
+            .or(records_route)
             .or(metadata_route)
             .or(index_route)
             .or(static_route),
@@ -385,7 +410,7 @@ fn build_app(
 /// Watches `watch_path` and recomputes the features when a relevant change
 /// happens, once per burst of changes.
 async fn setup_file_watcher(
-    features_data: Arc<RwLock<Vec<Feature>>>,
+    features_data: Arc<RwLock<ScanOutput>>,
     built_at: Arc<RwLock<String>>,
     watch_path: PathBuf,
     scan_config: ScanConfig,
@@ -423,8 +448,8 @@ async fn setup_file_watcher(
 
 /// Recomputes the features after a file change, with the same options as the
 /// initial scan (git history or not, coverage, ignored folders, emails...)
-fn rescan_features(watch_path: &Path, scan_config: &ScanConfig) -> Result<Vec<Feature>> {
-    scan_features_with(watch_path, scan_config)
+fn rescan_features(watch_path: &Path, scan_config: &ScanConfig) -> Result<ScanOutput> {
+    scan_project_with(watch_path, scan_config)
 }
 
 /// Custom error type for serialization failures
@@ -608,11 +633,12 @@ async fn handle_rejection(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::Feature;
 
     fn app(allowed_origins: Vec<String>) -> BoxedFilter<(warp::reply::Response,)> {
         let config = ServerConfig::new(3000).with_allowed_origins(allowed_origins);
         build_app(
-            Arc::new(RwLock::new(Vec::new())),
+            Arc::new(RwLock::new(ScanOutput::default())),
             Arc::new(RwLock::new(String::from("2026-01-01T00:00:00Z"))),
             None,
             false,
@@ -700,6 +726,18 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_records_json_lists_project_records() {
+        let res = warp::test::request()
+            .path("/records.json")
+            .header("host", "localhost:3000")
+            .reply(&app(Vec::new()))
+            .await;
+        assert_eq!(res.status(), 200);
+        let body: serde_json::Value = serde_json::from_slice(res.body()).unwrap();
+        assert_eq!(body, serde_json::json!({ "records": [] }));
+    }
+
+    #[tokio::test]
     async fn test_no_cors_headers_by_default() {
         let res = warp::test::request()
             .path("/features.json")
@@ -781,8 +819,8 @@ mod tests {
             .skip_changes(true)
             .with_coverage(true);
 
-        let initial = scan_features_with(&base, &config).unwrap();
-        let rescanned = rescan_features(&base, &config).unwrap();
+        let initial = scan_project_with(&base, &config).unwrap().features;
+        let rescanned = rescan_features(&base, &config).unwrap().features;
 
         for features in [&initial, &rescanned] {
             let features = all_features(features);
@@ -809,7 +847,7 @@ mod tests {
         let base = PathBuf::from("../../examples/rust-basic");
         let config = ScanConfig::new(&base).strip_emails(true);
 
-        let rescanned = rescan_features(&base, &config).unwrap();
+        let rescanned = rescan_features(&base, &config).unwrap().features;
         let changes: Vec<_> = all_features(&rescanned)
             .into_iter()
             .flat_map(|f| &f.changes)

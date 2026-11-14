@@ -14,7 +14,7 @@ Each action is a command. `PATH` is the folder to scan for features and defaults
 | `features codeowners [PATH]` | Generate or update a CODEOWNERS file with feature ownership information |
 | `features find-owner <TARGET> [PATH]` | Find the owner of a specific file or folder |
 | `features owners [PATH]` | Display only the unique list of owners |
-| `features check [PATH]` | Run validation checks on features (e.g., duplicate names) |
+| `features check [PATH]` | Run validation checks on features (e.g., duplicate names). Also prints warnings, which don't fail the check, about specs and decisions: broken links, missing status, superseded records with no replacement, implemented specs with open tasks |
 | `features diff [PATH] --since <ref>` | List the features touched since `<ref>`, with their owners. See [Ping the right teams on every pull request](../README.md#ping-the-right-teams-on-every-pull-request) |
 | `features aggregate <FOLDER>` | Aggregate the features JSON reports of several repositories into one dashboard. See [Aggregate several repositories](#aggregate-several-repositories) |
 
@@ -24,6 +24,7 @@ Run `features <command> --help` for the options of a command. The options are:
 | ------ | -------- | ----------- |
 | `--json` | `scan`, `find-owner`, `owners`, `diff`, `aggregate` | Output as JSON |
 | `--flat` | `scan` | Output features as a flat array instead of nested structure |
+| `--project-records` | `scan` (with `--json`) | Print `{ "features": [...], "records": [...] }` instead of the array of features, to also get the project-level specs and decisions. See [Specs and decisions](#specs-and-decisions) |
 | `--description` | `scan` | Include feature descriptions in the output |
 | `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
 | `--port <port>` | `serve` | Change the port (default: 3000) |
@@ -111,3 +112,36 @@ Reconciliation rules:
 - Features are **not** merged when merging them would create a loop (e.g. `B > C` in one repository and `C > B` in another) or when they have different parents in different repositories. They are kept once per repository, and the issue is listed in the `errors` section of `features.json` and on the *Reconciliation issues* page of the dashboard.
 
 The aggregated `features.json` is an object: `{ "repositories": [...], "features": [...], "errors": [...] }`, where `features` has the same structure as the output of `features scan --json`.
+
+## Specs and decisions
+
+Each feature of the JSON report has a `records` array with its specs and decision records (the raw `decisions` strings are kept for compatibility):
+
+```json
+{
+  "kind": "spec",
+  "id": "003-sso",
+  "title": "Single sign-on",
+  "status": "accepted",
+  "date": "2026-03-15",
+  "path": "src/features/auth/__docs__/specs/003-sso/spec.md",
+  "content": "# Single sign-on\n...",
+  "files": [{ "name": "tasks.md", "path": "src/features/auth/__docs__/specs/003-sso/tasks.md", "content": "..." }],
+  "source": "native",
+  "links": { "decisions": ["002-use-jwt"], "specs": [], "supersedes": [], "superseded_by": [] },
+  "tasks": { "done": 1, "total": 3 }
+}
+```
+
+`kind` is `spec` or `decision`, `source` is `native`, `speckit` ([GitHub Spec Kit](https://github.com/github/spec-kit)) or `kiro` ([Kiro](https://kiro.dev/docs/specs/)). `status`, `date`, `files` and `tasks` are left out when unknown. Links are resolved in both directions.
+
+Records are read from each feature's `__docs__/specs`, `__docs__/decisions`, `.docs/specs` and `.docs/decisions`, and from the root of the scanned folder: `docs/specs`, `docs/decisions`, `docs/adr`, Spec Kit's `specs/` and Kiro's `.kiro/specs/`. Root records are attached to a feature by their `feature:` frontmatter key or, for Spec Kit and Kiro, by their folder name; see the [FAQ](../FAQ.md#are-github-spec-kit-and-kiro-specs-supported). The other root records are project-level. To keep `features.json` an array of features, they are exposed separately:
+
+| Where | Shape |
+| ----- | ----- |
+| `features serve`: `/records.json` | `{ "records": [...] }` |
+| `features build`: `records.json` next to `features.json` | `{ "records": [...] }` |
+| `features scan --json --project-records` | `{ "features": [...], "records": [...] }` |
+
+`features aggregate` merges the records of features found in several repositories; it doesn't carry project-level records.
+

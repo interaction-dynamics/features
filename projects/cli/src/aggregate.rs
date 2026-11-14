@@ -30,7 +30,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
 
 use crate::coverage_parser::CoverageStats;
-use crate::models::{Change, Dependency, Stats};
+use crate::models::{Change, Dependency, Record, Stats};
 
 /// A feature as found in a features JSON report, or as produced by the aggregation.
 ///
@@ -49,6 +49,7 @@ pub struct AggregatedFeature {
     pub meta: BTreeMap<String, serde_json::Value>,
     pub changes: Vec<Change>,
     pub decisions: Vec<String>,
+    pub records: Vec<Record>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats: Option<Stats>,
     pub dependencies: Vec<Dependency>,
@@ -601,6 +602,15 @@ fn merge_occurrences(key: &NodeKey, ctx: &BuildContext<'_>) -> AggregatedFeature
         }
     }
 
+    let mut records: Vec<Record> = Vec::new();
+    for occurrence in &members {
+        for record in &occurrence.feature.records {
+            if !records.contains(record) {
+                records.push(record.clone());
+            }
+        }
+    }
+
     let dependencies = members
         .iter()
         .flat_map(|o| {
@@ -634,6 +644,7 @@ fn merge_occurrences(key: &NodeKey, ctx: &BuildContext<'_>) -> AggregatedFeature
         meta,
         changes,
         decisions,
+        records,
         stats,
         dependencies,
         repositories,

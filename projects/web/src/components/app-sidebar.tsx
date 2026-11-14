@@ -1,4 +1,4 @@
-import { BarChart3, TriangleAlert } from 'lucide-react'
+import { BarChart3, ScrollText, TriangleAlert } from 'lucide-react'
 import type * as React from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { Link, NavLink } from 'react-router'
@@ -52,8 +52,13 @@ export function AppSidebar({
   onFeatureClick,
   ...props
 }: AppSidebarProps) {
-  const { features, isAggregated, repositories, reconciliationErrors } =
-    useContext(FeaturesContext)
+  const {
+    features,
+    isAggregated,
+    repositories,
+    reconciliationErrors,
+    projectRecords,
+  } = useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
 
   // Filter features based on search query using smart query parser
@@ -184,6 +189,26 @@ export function AppSidebar({
                   )}
                 </NavLink>
               </SidebarMenuItem>
+              {!isAggregated && (
+                <SidebarMenuItem>
+                  <NavLink to="/records">
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        className="cursor-pointer"
+                        isActive={isActive}
+                      >
+                        <ScrollText className="h-4 w-4" />
+                        Specs &amp; Decisions
+                        {projectRecords.length > 0 && (
+                          <span className="ml-auto rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
+                            {projectRecords.length}
+                          </span>
+                        )}
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
+                </SidebarMenuItem>
+              )}
               {isAggregated && (
                 <SidebarMenuItem>
                   <NavLink to="/reconciliation">

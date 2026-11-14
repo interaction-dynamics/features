@@ -13,6 +13,8 @@ const Insights = lazy(async () => import('./routes/insights'))
 
 const Reconciliation = lazy(async () => import('./routes/reconciliation'))
 
+const ProjectRecords = lazy(async () => import('./routes/records'))
+
 const root = document.getElementById('root')
 
 if (!root) {
@@ -29,6 +31,7 @@ createRoot(root).render(
               <Route path="/" element={<Features />} />
               <Route path="/insights" element={<Insights />} />
               <Route path="/reconciliation" element={<Reconciliation />} />
+              <Route path="/records" element={<ProjectRecords />} />
             </Route>
           </Routes>
         </HashRouter>

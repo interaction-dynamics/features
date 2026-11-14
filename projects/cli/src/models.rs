@@ -37,9 +37,84 @@ pub struct Feature {
     pub meta: BTreeMap<String, serde_json::Value>,
     pub changes: Vec<Change>,
     pub decisions: Vec<String>,
+    /// Specs and decision records of the feature (see [`Record`])
+    #[serde(default)]
+    pub records: Vec<Record>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats: Option<Stats>,
     pub dependencies: Vec<Dependency>,
+}
+
+/// Whether a record describes what to build (spec) or why it was built that way (decision)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RecordKind {
+    Spec,
+    Decision,
+}
+
+/// Layout a record was read from
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RecordSource {
+    /// `__docs__/{specs,decisions}`, `.docs/...` or root `docs/...`
+    Native,
+    /// GitHub Spec Kit: root `specs/NNN-name/spec.md`
+    Speckit,
+    /// Kiro: `.kiro/specs/<name>/requirements.md`
+    Kiro,
+}
+
+/// A secondary file of a folder record (`plan.md`, `tasks.md`, `contracts/api.yaml`...)
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct RecordFile {
+    /// Path relative to the record folder
+    pub name: String,
+    /// Path relative to the scanned folder
+    pub path: String,
+    pub content: String,
+}
+
+/// Ids of the records linked to a record, resolved in both directions
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+pub struct RecordLinks {
+    pub decisions: Vec<String>,
+    pub specs: Vec<String>,
+    pub supersedes: Vec<String>,
+    pub superseded_by: Vec<String>,
+}
+
+/// Checkbox progress of a spec (`- [ ]` / `- [x]`)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct TaskProgress {
+    pub done: usize,
+    pub total: usize,
+}
+
+/// A spec or a decision record
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct Record {
+    pub kind: RecordKind,
+    /// File stem or folder name, e.g. `001-login-flow`
+    pub id: String,
+    pub title: String,
+    /// Lowercased first word of the status (`accepted`, `superseded`...)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
+    /// Path of the main file, relative to the scanned folder
+    pub path: String,
+    /// Markdown of the main file
+    pub content: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<RecordFile>,
+    pub source: RecordSource,
+    #[serde(default)]
+    pub links: RecordLinks,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tasks: Option<TaskProgress>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -100,6 +175,7 @@ mod tests {
             meta: BTreeMap::new(),
             changes,
             decisions: Vec::new(),
+            records: Vec::new(),
             stats: None,
             dependencies: Vec::new(),
         }

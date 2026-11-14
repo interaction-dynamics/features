@@ -185,6 +185,11 @@ pub struct ListArgs {
     /// Include coverage information in the output (always on with --json)
     #[arg(long)]
     pub coverage: bool,
+
+    /// With --json, print `{ "features": [...], "records": [...] }` to also get
+    /// the project-level specs and decisions (root records not attached to a feature)
+    #[arg(long, requires = "json")]
+    pub project_records: bool,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -570,6 +575,7 @@ impl LegacyArgs {
                 flat: self.flat,
                 description: self.description,
                 coverage: self.coverage,
+                project_records: false,
             })
         };
 
@@ -605,6 +611,7 @@ mod tests {
             flat: false,
             description: false,
             coverage: false,
+            project_records: false,
         }
     }
 
@@ -649,6 +656,17 @@ mod tests {
         });
         assert_eq!(action(&["./src", "--json", "--flat"]), expected);
         assert_eq!(action(&["scan", "./src", "--json", "--flat"]), expected);
+
+        let expected = Action::List(ListArgs {
+            json: true,
+            project_records: true,
+            ..list("./src")
+        });
+        assert_eq!(
+            action(&["scan", "./src", "--json", "--project-records"]),
+            expected
+        );
+        assert!(parse(&["scan", "./src", "--project-records"]).is_err());
     }
 
     #[test]

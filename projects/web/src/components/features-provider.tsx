@@ -4,10 +4,12 @@ import {
   FeaturesContext,
   type FeaturesContextValue,
 } from '@/lib/features-context'
-import type {
-  AggregatedReport,
-  Feature,
-  ReconciliationError,
+import {
+  type AggregatedReport,
+  type DocRecord,
+  type Feature,
+  ProjectRecordsSchema,
+  type ReconciliationError,
 } from '@/models/feature'
 
 type FeaturesData = {
@@ -77,12 +79,37 @@ const fetcher = async (url: string): Promise<FeaturesData> => {
   return parseFeaturesData(data)
 }
 
+/**
+ * records.json holds the project-level records. It is missing from aggregated
+ * builds and older versions: treat any failure as no records.
+ */
+export const fetchProjectRecords = async (
+  url: string,
+): Promise<DocRecord[]> => {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return []
+    const parsed = ProjectRecordsSchema.safeParse(await response.json())
+    return parsed.success ? parsed.data.records : []
+  } catch {
+    return []
+  }
+}
+
 export function FeaturesProvider({ children }: { children: React.ReactNode }) {
   const { data, isLoading, isValidating } = useSWR<FeaturesData>(
     './features.json',
     fetcher,
     {
       suspense: true,
+      refreshInterval: import.meta.env.WATCH === 'on' ? 1000 : undefined,
+    },
+  )
+
+  const { data: projectRecords } = useSWR<DocRecord[]>(
+    './records.json',
+    fetchProjectRecords,
+    {
       refreshInterval: import.meta.env.WATCH === 'on' ? 1000 : undefined,
     },
   )
@@ -96,8 +123,9 @@ export function FeaturesProvider({ children }: { children: React.ReactNode }) {
       isAggregated: data?.isAggregated ?? false,
       repositories: data?.repositories ?? [],
       reconciliationErrors: data?.reconciliationErrors ?? [],
+      projectRecords: projectRecords ?? [],
     }),
-    [data, isLoading, isValidating],
+    [data, projectRecords, isLoading, isValidating],
   )
 
   return (

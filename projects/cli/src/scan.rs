@@ -8,10 +8,20 @@ use anyhow::Result;
 use std::path::{Path, PathBuf};
 
 use crate::coverage_parser::{self, map_coverage_to_features, parse_coverage_reports};
-use crate::file_scanner::{
-    list_features_ownership_only, list_files_recursive, list_files_recursive_with_changes,
-};
-use crate::models::{Feature, strip_author_emails};
+use crate::file_scanner::{list_features_ownership_only, scan_features_and_records};
+use crate::models::{Feature, Record, strip_author_emails};
+
+/// Result of a scan: the feature tree and the project-level records
+///
+/// Project-level records are the specs and decisions found at the root of the
+/// scanned folder (`docs/specs`, `docs/decisions`, `docs/adr`, Spec Kit's
+/// `specs/`, `.kiro/specs/`) that could not be attached to a feature. They are
+/// kept apart so that `features.json` stays an array of features.
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct ScanOutput {
+    pub features: Vec<Feature>,
+    pub records: Vec<Record>,
+}
 
 /// Configuration options for scanning features
 ///
@@ -145,24 +155,30 @@ pub fn scan_features(base_path: &Path, config: ScanConfig) -> Result<Vec<Feature
 /// Same as [`scan_features`], borrowing the configuration so it can be reused,
 /// e.g. by the file watcher to rescan with the options of the initial scan
 pub fn scan_features_with(base_path: &Path, config: &ScanConfig) -> Result<Vec<Feature>> {
+    scan_project_with(base_path, config).map(|output| output.features)
+}
+
+/// Same as [`scan_features_with`], also returning the project-level records
+pub fn scan_project_with(base_path: &Path, config: &ScanConfig) -> Result<ScanOutput> {
     if config.ownership_only {
-        return list_features_ownership_only(
+        let features = list_features_ownership_only(
             base_path,
             &config.ignore_paths,
             config.include_skipped_dirs,
-        );
+        )?;
+        return Ok(ScanOutput {
+            features,
+            records: Vec::new(),
+        });
     }
 
     // Step 1: Scan features with or without git history
-    let mut features = if config.skip_changes {
-        list_files_recursive(base_path, &config.ignore_paths, config.include_skipped_dirs)?
-    } else {
-        list_files_recursive_with_changes(
-            base_path,
-            &config.ignore_paths,
-            config.include_skipped_dirs,
-        )?
-    };
+    let (mut features, records) = scan_features_and_records(
+        base_path,
+        &config.ignore_paths,
+        config.include_skipped_dirs,
+        !config.skip_changes,
+    )?;
 
     // Step 2: Add coverage if requested
     if config.should_add_coverage {
@@ -180,7 +196,7 @@ pub fn scan_features_with(base_path: &Path, config: &ScanConfig) -> Result<Vec<F
         strip_author_emails(&mut features);
     }
 
-    Ok(features)
+    Ok(ScanOutput { features, records })
 }
 
 /// Add coverage information to features

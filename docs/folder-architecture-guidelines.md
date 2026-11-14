@@ -9,3 +9,5 @@
 | **SHOULD** | Add a [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) into the README.md with a property `owner` | <pre>---<br/>owner: backend-team<br/>---</pre> |
 | **MAY** | Add all the properties you want in the [front matter](https://dev.to/dailydevtips1/what-exactly-is-frontmatter-123g) | <pre>---<br/>figma: <url><br/>---</pre> |
 | **MAY** | Add [MADR files](https://adr.github.io/madr/) into the feature's decisions folder | `features/feature-1/__docs__/decisions/001-use-jwt-tokens.md` |
+| **MAY** | Add specs (one Markdown file, or a folder with `spec.md`, `plan.md`, `tasks.md`…) into the feature's specs folder, with a frontmatter `status` and `date` | `features/feature-1/__docs__/specs/001-login-flow.md` |
+| **MAY** | Link specs and decisions with the frontmatter keys `decisions`, `spec` and `supersedes` | <pre>---<br/>status: accepted<br/>decisions: [002-use-jwt]<br/>---</pre> |

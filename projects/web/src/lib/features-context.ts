@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { Feature, ReconciliationError } from '@/models/feature'
+import type { DocRecord, Feature, ReconciliationError } from '@/models/feature'
 
 export interface FeaturesContextValue {
   features: Feature[]
@@ -12,6 +12,8 @@ export interface FeaturesContextValue {
   repositories: string[]
   /** Reconciliation issues of an aggregated report */
   reconciliationErrors: ReconciliationError[]
+  /** Root specs and decisions not attached to a feature (records.json) */
+  projectRecords: DocRecord[]
 }
 
 export const FeaturesContext = createContext<FeaturesContextValue>({
@@ -22,4 +24,5 @@ export const FeaturesContext = createContext<FeaturesContextValue>({
   isAggregated: false,
   repositories: [],
   reconciliationErrors: [],
+  projectRecords: [],
 })

@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 """Print a compact map of the features from a features-cli JSON report.
 
-The JSON report of `features scan --json` contains each feature's full README
-and decision records, which can be large. This script prints a short index
-first, then the details of the features you ask for.
+The JSON report of `features scan --json` contains each feature's full README,
+specs and decision records, which can be large. This script prints a short
+index first, then the details of the features you ask for.
 
 Usage:
-    features scan ./src --json --skip-changes > features.json
+    features scan ./src --json --project-records --skip-changes > features.json
     python3 feature_map.py features.json                   # one line per feature
     python3 feature_map.py features.json --feature checkout  # details of one feature
     python3 feature_map.py features.json --owner team-payments
     python3 feature_map.py features.json --file src/features/checkout/api.ts
+    python3 feature_map.py features.json --records         # every spec and decision
+
+The report is either an array of features (`features scan --json`) or
+`{"features": [...], "records": [...]}` (`--project-records`, which adds the
+project-level specs and decisions). Reports of older versions without
+`records` fall back to the raw `decisions`.
 
 --feature matches a feature name or path (case-insensitive, substring).
 --file prints the feature that contains a file (path relative to the scanned
@@ -36,6 +42,69 @@ def first_line(text):
     return ""
 
 
+def records_of(feature):
+    """The specs and decisions of a feature, or its raw decisions in old reports."""
+    if "records" in feature:
+        return feature["records"] or []
+    return [
+        {
+            "kind": "decision",
+            "id": f"decision-{index}",
+            "title": first_heading(content) or f"Decision {index}",
+            "content": content,
+            "links": {},
+        }
+        for index, content in enumerate(feature.get("decisions", []), 1)
+    ]
+
+
+def first_heading(text):
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if line.startswith("#"):
+            return line.lstrip("#").strip()
+    return ""
+
+
+SOURCES = {"speckit": "Spec Kit", "kiro": "Kiro"}
+
+
+def record_line(record, feature_path=None):
+    kind = "spec" if record.get("kind") == "spec" else "decision"
+    facts = [record[key] for key in ("status", "date") if record.get(key)]
+    tasks = record.get("tasks")
+    if tasks:
+        facts.append(f"tasks {tasks['done']}/{tasks['total']}")
+    if record.get("source") in SOURCES:
+        facts.append(SOURCES[record["source"]])
+    line = f"- [{kind}] {record['id']}: {record.get('title', '')}"
+    if facts:
+        line += f" ({', '.join(facts)})"
+    if record.get("path"):
+        line += f" -> {record['path']}"
+    if feature_path is not None:
+        line += f" [feature: {feature_path or 'project'}]"
+    links = [
+        f"{key.replace('_', ' ')}: {', '.join(ids)}"
+        for key, ids in (record.get("links") or {}).items()
+        if ids
+    ]
+    if links:
+        line += f"\n    links: {'; '.join(links)}"
+    return line
+
+
+def record_counts(records):
+    specs = sum(1 for r in records if r.get("kind") == "spec")
+    decisions = len(records) - specs
+    parts = []
+    if specs:
+        parts.append(f"{specs} spec(s)")
+    if decisions:
+        parts.append(f"{decisions} decision(s)")
+    return ", ".join(parts)
+
+
 def summary(feature, depth):
     owner = feature.get("owner") or "no owner"
     if feature.get("owner") and feature.get("is_owner_inherited"):
@@ -44,9 +113,9 @@ def summary(feature, depth):
     description = first_line(feature.get("description"))
     if description:
         parts.append(f": {description}")
-    decisions = len(feature.get("decisions", []))
-    if decisions:
-        parts.append(f" ({decisions} decision(s))")
+    counts = record_counts(records_of(feature))
+    if counts:
+        parts.append(f" ({counts})")
     return "".join(parts)
 
 
@@ -79,9 +148,17 @@ def details(feature):
             print(f"  - {kind} {path}: {count} import(s)")
     print("\n## Description\n")
     print((feature.get("description") or "(none)").strip())
-    for index, decision in enumerate(feature.get("decisions", []), 1):
-        print(f"\n## Decision record {index}\n")
-        print(decision.strip())
+    records = records_of(feature)
+    if records:
+        print("\n## Specs and decisions\n")
+        for record in records:
+            print(record_line(record))
+        for record in records:
+            kind = "Spec" if record.get("kind") == "spec" else "Decision"
+            print(f"\n## {kind} {record['id']}: {record.get('title', '')}\n")
+            print((record.get("content") or "").strip())
+            for file in record.get("files") or []:
+                print(f"\n(also: {file['path']})")
     print()
 
 
@@ -93,6 +170,9 @@ def main():
     parser.add_argument("--feature", help="print the details of matching features")
     parser.add_argument("--owner", help="list only the features of this owner")
     parser.add_argument("--file", help="print the feature that contains this file")
+    parser.add_argument(
+        "--records", action="store_true", help="list every spec and decision record"
+    )
     args = parser.parse_args()
 
     if args.input:
@@ -101,7 +181,25 @@ def main():
     else:
         data = json.load(sys.stdin)
 
-    entries = list(flatten(data))
+    if isinstance(data, dict):
+        features = data.get("features", [])
+        project_records = data.get("records", [])
+    else:
+        features, project_records = data, []
+
+    entries = list(flatten(features))
+
+    if args.records:
+        lines = [
+            record_line(record, feature["path"])
+            for feature, _ in entries
+            for record in records_of(feature)
+        ]
+        lines += [record_line(record, "") for record in project_records]
+        print(f"{len(lines)} spec(s) and decision(s)\n")
+        for line in lines:
+            print(line)
+        return
 
     if args.file:
         target = args.file.replace("\\", "/")
@@ -139,6 +237,11 @@ def main():
     print(f"{len(entries)} feature(s)\n")
     for feature, depth in entries:
         print(summary(feature, depth))
+
+    if project_records and not args.owner:
+        print(f"\nProject-level specs and decisions ({record_counts(project_records)}):")
+        for record in project_records:
+            print(record_line(record))
 
 
 if __name__ == "__main__":

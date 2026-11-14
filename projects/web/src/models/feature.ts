@@ -53,6 +53,49 @@ export type Dependency = {
   type: 'parent' | 'child' | 'sibling'
 }
 
+export type RecordKind = 'spec' | 'decision'
+
+export type RecordSource = 'native' | 'speckit' | 'kiro'
+
+/** A secondary file of a folder record (`plan.md`, `tasks.md`, …) */
+export type RecordFile = {
+  /** Path relative to the record folder */
+  name: string
+  /** Path relative to the scanned folder */
+  path: string
+  content: string
+}
+
+/** Ids of the linked records, resolved in both directions by the CLI */
+export type RecordLinks = {
+  decisions: string[]
+  specs: string[]
+  supersedes: string[]
+  superseded_by: string[]
+}
+
+/**
+ * A spec or a decision record. Named `DocRecord` to avoid shadowing the
+ * built-in `Record` type.
+ */
+export type DocRecord = {
+  kind: RecordKind
+  /** File stem or folder name, e.g. `001-login-flow` */
+  id: string
+  title: string
+  /** Lowercased first word of the status (`accepted`, `superseded`…) */
+  status?: string
+  date?: string
+  /** Path of the main file, relative to the scanned folder */
+  path: string
+  /** Markdown of the main file, without its frontmatter */
+  content: string
+  files?: RecordFile[]
+  source: RecordSource
+  links: RecordLinks
+  tasks?: { done: number; total: number }
+}
+
 export type FeatureRepository = {
   /** Name of the repository where the feature was found */
   name: string
@@ -71,6 +114,8 @@ export type Feature = {
   parent?: Feature
   changes: Change[]
   decisions: string[]
+  /** Specs and decisions; missing in reports of older versions */
+  records?: DocRecord[]
   stats?: Stats
   dependencies: Dependency[]
   /** Only set on aggregated reports (`features --aggregate`) */
@@ -155,6 +200,38 @@ export const DependencySchema: z.ZodType<Dependency> = z.object({
   type: z.enum(['parent', 'child', 'sibling']),
 })
 
+export const RecordFileSchema: z.ZodType<RecordFile> = z.object({
+  name: z.string(),
+  path: z.string(),
+  content: z.string(),
+})
+
+export const RecordLinksSchema: z.ZodType<RecordLinks> = z.object({
+  decisions: z.array(z.string()),
+  specs: z.array(z.string()),
+  supersedes: z.array(z.string()),
+  superseded_by: z.array(z.string()),
+})
+
+export const DocRecordSchema: z.ZodType<DocRecord> = z.object({
+  kind: z.enum(['spec', 'decision']),
+  id: z.string(),
+  title: z.string(),
+  status: z.string().optional(),
+  date: z.string().optional(),
+  path: z.string(),
+  content: z.string(),
+  files: z.array(RecordFileSchema).optional(),
+  source: z.enum(['native', 'speckit', 'kiro']),
+  links: RecordLinksSchema,
+  tasks: z.object({ done: z.number(), total: z.number() }).optional(),
+})
+
+/** records.json: the project-level records (`features serve` / `build`) */
+export const ProjectRecordsSchema = z.object({
+  records: z.array(DocRecordSchema),
+})
+
 export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
   z.object({
     name: z.string(),
@@ -167,6 +244,7 @@ export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
     parent: FeatureSchema.optional(),
     changes: z.array(ChangeSchema),
     decisions: z.array(z.string()),
+    records: z.array(DocRecordSchema).optional(),
     stats: StatsSchema.optional(),
     dependencies: z.array(DependencySchema),
     repositories: z

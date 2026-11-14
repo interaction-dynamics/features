@@ -8,6 +8,8 @@ use include_dir::{Dir, include_dir};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 
+use crate::models::Record;
+
 // Embed the public directory at compile time
 static STATIC_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/public");
 
@@ -18,6 +20,8 @@ pub struct BuildConfig {
     pub output_dir: PathBuf,
     /// Whether to clean the output directory before building
     pub clean: bool,
+    /// Root specs and decisions not attached to a feature, written to `records.json`
+    pub project_records: Vec<Record>,
 }
 
 impl Default for BuildConfig {
@@ -25,6 +29,7 @@ impl Default for BuildConfig {
         Self {
             output_dir: PathBuf::from("build"),
             clean: true,
+            project_records: Vec::new(),
         }
     }
 }
@@ -42,6 +47,12 @@ impl BuildConfig {
     #[allow(dead_code)]
     pub fn with_clean(mut self, clean: bool) -> Self {
         self.clean = clean;
+        self
+    }
+
+    /// Set the project-level records written to `records.json`
+    pub fn with_project_records(mut self, records: Vec<Record>) -> Self {
+        self.project_records = records;
         self
     }
 }
@@ -106,6 +117,9 @@ pub async fn create_build<T: serde::Serialize + ?Sized>(
 
     // Generate metadata.json
     generate_metadata_json(&config.output_dir, skip_changes).await?;
+
+    // Generate records.json
+    generate_records_json(&config.project_records, &config.output_dir).await?;
 
     println!("Build completed successfully!");
     println!("Output directory: {}", config.output_dir.display());
@@ -174,6 +188,21 @@ async fn generate_features_json<T: serde::Serialize + ?Sized>(
 
     println!("  Created: {}", features_path.display());
 
+    Ok(())
+}
+
+/// The body of `records.json`: `{ "records": [...] }`, the project-level records
+pub fn records_json(records: &[Record]) -> serde_json::Result<String> {
+    serde_json::to_string_pretty(&serde_json::json!({ "records": records }))
+}
+
+/// Generates the records.json file with the project-level records
+async fn generate_records_json(records: &[Record], output_dir: &Path) -> Result<()> {
+    let json = records_json(records)
+        .map_err(|e| anyhow::anyhow!("Failed to serialize records to JSON: {}", e))?;
+    let records_path = output_dir.join("records.json");
+    fs::write(&records_path, json).await?;
+    println!("  Created: {}", records_path.display());
     Ok(())
 }
 
