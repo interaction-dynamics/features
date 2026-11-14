@@ -187,7 +187,7 @@ const softwareApplication = {
     <div class="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pt-16 pb-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
       <div>
         <p class="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs text-muted">
-          <span class="size-1.5 rounded-full bg-lime" aria-hidden="true"></span>
+          <span class="size-1.5 rounded-full bg-accent-3" aria-hidden="true"></span>
           Open source · Any language
         </p>
         <h1 class="mt-6 text-4xl font-bold tracking-tight text-balance sm:text-6xl">
@@ -216,7 +216,7 @@ const softwareApplication = {
         <div class="bg-gradient-brand pointer-events-none absolute -inset-px -z-10 rounded-2xl opacity-30 blur-2xl" aria-hidden="true"></div>
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2 text-sm font-semibold">
-            <LayoutDashboard size={18} class="text-cyan" aria-hidden="true" /> src/features
+            <LayoutDashboard size={18} class="text-accent" aria-hidden="true" /> src/features
           </div>
           <span class="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-xs text-muted">4 features</span>
         </div>
@@ -225,7 +225,7 @@ const softwareApplication = {
             dashboardFeatures.map((feature) => (
               <li class="rounded-xl border border-line bg-ink/50 p-3.5">
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span class="font-mono text-sm font-semibold text-cyan">{feature.name}</span>
+                  <span class="font-mono text-sm font-semibold text-accent">{feature.name}</span>
                   <span class="rounded-full border border-line px-2 text-[0.7rem] leading-5 text-muted">
                     {feature.owner}
                   </span>
@@ -241,9 +241,9 @@ const softwareApplication = {
                   <span class="font-mono text-text">{feature.coverage}%</span>
                   <span>commits</span>
                   <span class="flex h-1.5 overflow-hidden rounded-full">
-                    <span class="bg-cyan" style={`width:${feature.mix[0]}%`} />
-                    <span class="bg-magenta" style={`width:${feature.mix[1]}%`} />
-                    <span class="bg-lime" style={`width:${feature.mix[2]}%`} />
+                    <span class="bg-accent" style={`width:${feature.mix[0]}%`} />
+                    <span class="bg-accent-2" style={`width:${feature.mix[1]}%`} />
+                    <span class="bg-accent-3" style={`width:${feature.mix[2]}%`} />
                   </span>
                   <span class="font-mono text-text">{feature.mix[0]}%</span>
                 </div>
@@ -252,9 +252,9 @@ const softwareApplication = {
           }
         </ul>
         <figcaption class="mt-4 flex flex-wrap gap-4 text-[0.7rem] text-muted">
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-cyan" aria-hidden="true"></span>feature</span>
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-magenta" aria-hidden="true"></span>fix</span>
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span>refactor</span>
+          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent" aria-hidden="true"></span>feature</span>
+          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent-2" aria-hidden="true"></span>fix</span>
+          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent-3" aria-hidden="true"></span>refactor</span>
         </figcaption>
       </figure>
     </div>
@@ -271,7 +271,7 @@ const softwareApplication = {
       {
         aiEraReasons.map(({ icon: Icon, title, text }) => (
           <li class="card p-5">
-            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-magenta">
+            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-accent-2">
               <Icon size={20} aria-hidden="true" />
             </span>
             <h3 class="mt-4 font-semibold">{title}</h3>
@@ -310,10 +310,10 @@ const softwareApplication = {
           Put each business feature in its own folder inside a <code>features</code> folder, or flag any folder with
           <code>feature: true</code> in its README.
         </p>
-        <pre class="mt-5 rounded-lg bg-ink/60 p-3 font-mono text-xs leading-6 text-muted"><span class="text-magenta">features/</span>
-├── <span class="text-cyan">auth/</span>
-├── <span class="text-cyan">billing/</span>
-└── <span class="text-cyan">search/</span></pre>
+        <pre class="mt-5 rounded-lg bg-ink/60 p-3 font-mono text-xs leading-6 text-muted"><span class="text-accent-2">features/</span>
+├── <span class="text-accent">auth/</span>
+├── <span class="text-accent">billing/</span>
+└── <span class="text-accent">search/</span></pre>
       </li>
       <li class="card relative p-6">
         <span class="font-mono text-5xl font-bold text-line" aria-hidden="true">02</span>
@@ -332,10 +332,10 @@ const softwareApplication = {
           Browse the dashboard, publish a static build, export JSON or comment on pull requests.
         </p>
         <ul class="mt-5 grid grid-cols-2 gap-2 text-xs md:grid-cols-1 lg:grid-cols-2">
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><LayoutDashboard size={14} class="shrink-0 text-cyan" aria-hidden="true" />Dashboard</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><Braces size={14} class="shrink-0 text-lime" aria-hidden="true" />JSON report</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><FileLock size={14} class="shrink-0 text-magenta" aria-hidden="true" />CODEOWNERS</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><GitPullRequest size={14} class="shrink-0 text-cyan" aria-hidden="true" />PR comment</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><LayoutDashboard size={14} class="shrink-0 text-accent" aria-hidden="true" />Dashboard</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><Braces size={14} class="shrink-0 text-accent-3" aria-hidden="true" />JSON report</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><FileLock size={14} class="shrink-0 text-accent-2" aria-hidden="true" />CODEOWNERS</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><GitPullRequest size={14} class="shrink-0 text-accent" aria-hidden="true" />PR comment</li>
         </ul>
       </li>
     </ol>
@@ -352,7 +352,7 @@ const softwareApplication = {
       {
         capabilities.map(({ icon: Icon, title, text }) => (
           <li class="card group p-5 transition hover:border-muted/60">
-            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-cyan transition group-hover:text-lime">
+            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-accent transition group-hover:text-accent-3">
               <Icon size={20} aria-hidden="true" />
             </span>
             <h3 class="mt-4 font-semibold">{title}</h3>
@@ -389,7 +389,7 @@ const softwareApplication = {
       />
     </div>
     <p class="mt-8">
-      <a href={site.demo} class="inline-flex items-center gap-1 text-cyan hover:underline">
+      <a href={site.demo} class="inline-flex items-center gap-1 text-accent hover:underline">
         Explore the live demo <ArrowRight size={16} aria-hidden="true" />
       </a>
     </p>
@@ -406,16 +406,16 @@ const softwareApplication = {
       <Terminal title="features diff src --since origin/master">
 <span class="text-muted">Features touched since origin/master (merge base 1a2b3c4):</span>
 
-  <span class="font-semibold text-cyan">Auth</span> <span class="text-muted">(features/auth) - owner:</span> <span class="text-lime">team-auth</span>
-    <span class="text-lime">M</span> src/features/auth/login.ts
-    <span class="text-magenta">R</span> src/features/auth/old.ts -> src/features/billing/moved.ts
+  <span class="font-semibold text-accent">Auth</span> <span class="text-muted">(features/auth) - owner:</span> <span class="text-accent-3">team-auth</span>
+    <span class="text-accent-3">M</span> src/features/auth/login.ts
+    <span class="text-accent-2">R</span> src/features/auth/old.ts -> src/features/billing/moved.ts
 
-  <span class="font-semibold text-cyan">Billing</span> <span class="text-muted">(features/billing) - owner:</span> <span class="text-lime">team-billing</span>
-    <span class="text-magenta">R</span> src/features/auth/old.ts -> src/features/billing/moved.ts
+  <span class="font-semibold text-accent">Billing</span> <span class="text-muted">(features/billing) - owner:</span> <span class="text-accent-3">team-billing</span>
+    <span class="text-accent-2">R</span> src/features/auth/old.ts -> src/features/billing/moved.ts
     <span class="text-[#ff5f57]">D</span> src/features/billing/legacy.ts
 
 <span class="text-muted">Files outside any feature:</span>
-    <span class="text-lime">M</span> README.md</Terminal>
+    <span class="text-accent-3">M</span> README.md</Terminal>
       <div class="card p-6">
         <div class="flex items-center gap-3">
           <span class="bg-gradient-brand inline-flex size-9 items-center justify-center rounded-full text-ink"><GitPullRequest size={18} aria-hidden="true" /></span>
@@ -431,8 +431,8 @@ const softwareApplication = {
               <tr class="border-b border-line"><th class="py-2 pr-4 font-medium">Feature</th><th class="py-2 pr-4 font-medium">Owner</th><th class="py-2 font-medium">Files</th></tr>
             </thead>
             <tbody>
-              <tr class="border-b border-line/60"><td class="py-2 pr-4 font-mono text-cyan">auth</td><td class="py-2 pr-4">@team-auth</td><td class="py-2">2</td></tr>
-              <tr><td class="py-2 pr-4 font-mono text-cyan">billing</td><td class="py-2 pr-4">@team-billing</td><td class="py-2">2</td></tr>
+              <tr class="border-b border-line/60"><td class="py-2 pr-4 font-mono text-accent">auth</td><td class="py-2 pr-4">@team-auth</td><td class="py-2">2</td></tr>
+              <tr><td class="py-2 pr-4 font-mono text-accent">billing</td><td class="py-2 pr-4">@team-billing</td><td class="py-2">2</td></tr>
             </tbody>
           </table>
         </div>

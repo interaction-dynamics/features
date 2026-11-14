@@ -128,7 +128,7 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
       {
         benefits.map(({ icon: Icon, title, text }) => (
           <li class="card p-5">
-            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-magenta">
+            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-accent-2">
               <Icon size={20} aria-hidden="true" />
             </span>
             <h3 class="mt-4 font-semibold">{title}</h3>
@@ -179,7 +179,7 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
       {
         loop.map((item, index) => (
           <li class="card flex flex-col p-5">
-            <p class="font-mono text-xs text-cyan">
+            <p class="font-mono text-xs text-accent">
               {String(index + 1).padStart(2, '0')} · {item.step}
             </p>
             <h3 class="mt-2 font-semibold">{item.title}</h3>
