@@ -5,7 +5,7 @@ import { site } from '../data/site'
 import Base from '../layouts/Base.astro'
 
 const description =
-  'Answers about Features and feature-based architecture: adding features, descriptions, owners, decisions, coverage reports, technical debt, CODEOWNERS and Linux installation.'
+  'Answers about Features and feature-based architecture: adding features, descriptions, owners, specs, decisions, Spec Kit and Kiro, coverage reports, technical debt, CODEOWNERS and Linux installation.'
 
 /** `answer` is HTML rendered on the page; `text` is the plain version used in structured data. */
 const faqs = [
@@ -43,6 +43,13 @@ const faqs = [
     text: 'Run features new spec <feature> "<title>" or features new decision <feature> "<title>", or add numbered Markdown files to the feature\'s __docs__/specs/ or __docs__/decisions/ folder with a status and date frontmatter. Link them with decisions: [002-use-jwt] on a spec and spec: 001-login-flow on a decision. Project-level records go in docs/specs/, docs/decisions/ or docs/adr/. Decisions follow MADR.',
     answer:
       'Specs say <strong>what</strong> to build, decisions say <strong>why</strong> it is built that way; both show in the feature\'s <strong>Specs &amp; Decisions</strong> tab. Run <code>features new spec auth "Login flow"</code> or <code>features new decision auth "Use JWT"</code>, or add numbered Markdown files to <code>__docs__/specs/</code> or <code>__docs__/decisions/</code> (<code>.docs/</code> works too) starting with a frontmatter:<pre><code>---\nstatus: accepted\ndate: 2026-01-15\nspec: 001-login-flow\nsupersedes: 001-use-sessions\n---</code></pre>On a spec, list its decisions with <code>decisions: [002-use-jwt]</code>; links work both ways. A large spec can be a folder with a <code>spec.md</code> and a <code>tasks.md</code>, whose checklist shows as a progress bar. Records about the whole project go in <code>docs/specs/</code>, <code>docs/decisions/</code> or <code>docs/adr/</code>. Decisions follow <a href="https://adr.github.io/madr/" rel="noopener">MADR</a>; classic MADR files with a <code>## Status</code> section work too.',
+  },
+  {
+    id: 'are-github-spec-kit-and-kiro-specs-supported',
+    question: 'Are GitHub Spec Kit and Kiro specs supported?',
+    text: 'Yes. Spec Kit specs in specs/NNN-name/ and Kiro specs in .kiro/specs/name/ at the root of the scanned folder are read with their plan, design, tasks and other files. Each one is attached to a feature by a feature: front matter key, else by its folder name without the NNN- prefix matching a feature name or folder. The others are project-level records.',
+    answer:
+      'Yes. <a href="https://github.com/github/spec-kit" rel="noopener">GitHub Spec Kit</a> specs in <code>specs/NNN-name/</code> and <a href="https://kiro.dev/docs/specs/" rel="noopener">Kiro</a> specs in <code>.kiro/specs/name/</code> at the root of the scanned folder are read with their plan, design, tasks and other files, and get a Spec Kit or Kiro badge. Each one is attached to a feature by a <code>feature:</code> front matter key, else by its folder name without the <code>NNN-</code> prefix matching a feature name or folder (<code>specs/003-checkout/</code> goes to the <code>checkout</code> feature). The others are project-level records.',
   },
   {
     id: 'how-can-i-add-a-test-coverage-report',

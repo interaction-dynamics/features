@@ -12,7 +12,7 @@ The dashboard screenshots on the website still showed the old blue "F" logo and 
 ## Requirements
 
 - All `public/screenshots/*.webp` re-captured from a dashboard built from this branch: new `{F}` logo, "Specs & Decisions" tab.
-- `scripts/capture-screenshots.mjs` clicks the "Specs & Decisions" tab (its name carries a count) and the decisions view is 560px high.
+- `scripts/capture-screenshots.mjs` clicks the "Specs & Decisions" tab (its name carries a count); the view is saved as `specs-decisions` (760px high), as on `master`.
 - A few color tokens in `global.css`: `indigo`, `violet`, `green`, `orange`, `yellow`. Used for small accents only, never for large surfaces:
   - hero: the `auth` coverage bar (indigo → violet with a glow), its coverage ring and row highlight, one trend line of the back chart, a green "Open source" status dot;
   - "How it works": the four output icons;

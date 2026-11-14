@@ -11,3 +11,4 @@
 | **MAY** | Add [MADR files](https://adr.github.io/madr/) into the feature's decisions folder | `features/feature-1/__docs__/decisions/001-use-jwt-tokens.md` |
 | **MAY** | Add specs (a file, or a folder with a `spec.md`) into the feature's specs folder, linked to their decisions with frontmatter | `features/feature-1/__docs__/specs/001-login-flow.md` with `decisions: [001-use-jwt-tokens]` |
 | **MAY** | Add project-level specs and decisions at the root, in `docs/specs`, `docs/decisions` or `docs/adr`; add `feature: <name>` to their frontmatter to show them in a feature | `docs/decisions/001-use-a-monorepo.md` |
+| **MAY** | Keep the specs written by GitHub Spec Kit (`specs/NNN-name/`) or Kiro (`.kiro/specs/<name>/`) at the root; name their folder after the feature, or add `feature: <name>` to their frontmatter, to show them in it | `specs/003-checkout/spec.md` |

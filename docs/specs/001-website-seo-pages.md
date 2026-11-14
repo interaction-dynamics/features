@@ -24,7 +24,7 @@ The concept of feature-based architecture and the `features-cli` tool are only e
 - Real screenshots of the dashboard demo, hosted with the site (no hotlinking):
   - home: Insights table, dependency graph, ownership table;
   - concept: a feature page with nested features;
-  - guidelines: a feature page showing README metadata, the Decisions tab, the Flag tab.
+  - guidelines: a feature page showing README metadata, the Specs & Decisions tab, the Flag tab.
   - Screenshots never show commit author emails or names (no Changes tab, no feature Insights tab).
   - Served as WebP at 1x and 2x with `srcset`, explicit size and lazy loading; each links to its full-size version.
   - Regenerated with `scripts/capture-screenshots.mjs`.

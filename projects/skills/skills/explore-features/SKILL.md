@@ -61,7 +61,7 @@ Each feature has:
 | `description` | README content after the first heading |
 | `meta` | Other frontmatter keys (`status`, `deprecated`, `creation_date`…) and feature metadata annotations (`--feature-<key>` comments) |
 | `decisions` | Raw content of each file in `__docs__/decisions/` or `.docs/decisions/` (kept for compatibility) |
-| `records` | Specs and decision records of the feature (from `__docs__/` and `.docs/`, plus root `docs/` records with `feature: <name>`): `kind` (`spec` or `decision`), `id`, `title`, `status`, `date`, `path`, `content`, `files` (other files of a folder spec), `links` (`decisions`, `specs`, `supersedes`, `superseded_by`, by id) and `tasks` (`done`, `total`) |
+| `records` | Specs and decision records of the feature (from `__docs__/` and `.docs/`, plus root `docs/` records with `feature: <name>` and GitHub Spec Kit `specs/NNN-name/` or Kiro `.kiro/specs/<name>/` folders named after the feature): `kind` (`spec` or `decision`), `id`, `title`, `status`, `date`, `path`, `content`, `files` (other files of a folder spec), `source` (`speckit` or `kiro`, absent for native records), `links` (`decisions`, `specs`, `supersedes`, `superseded_by`, by id) and `tasks` (`done`, `total`) |
 | `features` | Nested features (same fields) |
 | `dependencies` | Imports from this feature into other features: `sourceFilename`, `targetFilename`, `line`, `featurePath` and `type` (`parent`, `child` or `sibling`) |
 | `stats` | `files_count`, `lines_count`, `todos_count`, `coverage` when a coverage report is found, and `commits` |

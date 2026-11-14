@@ -44,6 +44,7 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--include-skipped-dirs` | all | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
 | `--coverage-dir <path>` | all | Specify a custom coverage directory (overrides automatic search) |
 | `--strip-emails` | all | Remove commit author emails from the output (JSON, `serve` and `build`). Useful before publishing a static build. Author names are kept |
+| `--data <file>` | `scan`, `serve`, `build`, `check`, `aggregate` | Merge data from external tools (analytics, errors, issues, ...) into the features, matched by feature key. Can be repeated; later files override earlier ones. See [Import data from external tools](#import-data-from-external-tools) |
 
 > **Legacy flags.** Before commands existed, actions were flags: `features PATH --serve`, `--build`, `--check`, `--list-owners`, `--find-owner <TARGET>` and `--generate-codeowners`. They still work but are deprecated. Combining two actions (e.g. `--serve --build`) is now an error instead of silently running one of them; `--generate-codeowners` can still be combined with `--serve`, `--build`, `--check` and `--list-owners`. `features PATH --since <ref>` also still works, as an alias of `features diff PATH --since <ref>`.
 
@@ -92,7 +93,7 @@ Each feature of the JSON report has a `records` array (the `decisions` array of 
 }
 ```
 
-`status`, `date`, `tasks`, `files` (the other files of a folder spec) and `feature` are only present when known. The top level of `features scan --json` stays an array of features: project-level records (root `docs/specs`, `docs/decisions` and `docs/adr` files without a `feature:` frontmatter) are printed by `features records --json`, served at `/records.json` by `features serve` and written to `records.json` by `features build`, as `{ "records": [...] }`. See the [FAQ](../FAQ.md#how-can-i-add-a-spec-or-a-decision) for the file format.
+`status`, `date`, `tasks`, `files` (the other files of a folder spec) and `feature` are only present when known. `source` is `speckit` or `kiro` for specs read from a [GitHub Spec Kit or Kiro folder](../FAQ.md#are-github-spec-kit-and-kiro-specs-supported), and absent otherwise. The top level of `features scan --json` stays an array of features: project-level records (root `docs/specs`, `docs/decisions` and `docs/adr` files without a `feature:` frontmatter) are printed by `features records --json`, served at `/records.json` by `features serve` and written to `records.json` by `features build`, as `{ "records": [...] }`. See the [FAQ](../FAQ.md#how-can-i-add-a-spec-or-a-decision) for the file format.
 
 ### List the features and owners touched by a change
 
@@ -115,6 +116,23 @@ features build ./src --build-dir ./dashboard --strip-emails
 ```
 
 The `dashboard` folder can be deployed to any static host. See the [GitHub Pages example](../README.md#publish-the-dashboard-to-github-pages).
+
+### Import data from external tools
+
+Give every feature data from PostHog, Sentry, Linear or any other tool. Export it with a script to a JSON file that maps [feature keys](readme-format.md#key-and-links) to metrics:
+
+```json
+{
+  "checkout": { "weekly_users": 12840, "open_errors": 3 },
+  "search": { "weekly_users": 310, "status": "healthy" }
+}
+```
+
+```bash
+features build ./src --data usage.json --data errors.json
+```
+
+The metrics are added to the `external` field of every feature with a matching key, shown on the feature page and as sortable columns of the insights table. Metric values must be strings, numbers or booleans. Keys that match no feature are reported as a warning. `serve` reads the files again on every rescan. Run `features scan ./src --json` to see the key of each feature, and `features check` to find keys shared by several features.
 
 ### Aggregate several repositories
 

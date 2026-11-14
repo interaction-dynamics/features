@@ -3,7 +3,9 @@ import type { FeatureRecord } from '@/models/feature'
 import {
   contentWithoutTitle,
   featureRecords,
+  fileMarkdown,
   filterRecords,
+  isToolRecord,
   findLinkTarget,
   recordLinks,
   sortRecords,
@@ -126,5 +128,22 @@ describe('contentWithoutTitle', () => {
     expect(contentWithoutTitle(record({ id: 'a', title: 'A', content }))).toBe(
       content,
     )
+  })
+})
+
+describe('Spec Kit and Kiro records', () => {
+  it('only flags records read from a tool layout', () => {
+    expect(isToolRecord(record({ id: '001-a' }))).toBe(false)
+    expect(isToolRecord(record({ id: '001-a', source: 'native' }))).toBe(false)
+    expect(isToolRecord(record({ id: '003-auth', source: 'speckit' }))).toBe(
+      true,
+    )
+  })
+
+  it('shows contracts as code and drops the title of markdown files', () => {
+    expect(fileMarkdown('contracts/login.yaml', 'openapi: 3.0.0\n')).toBe(
+      '```yaml\nopenapi: 3.0.0\n```',
+    )
+    expect(fileMarkdown('plan.md', '# Plan\n\nSteps')).not.toContain('# Plan')
   })
 })

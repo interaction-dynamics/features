@@ -28,6 +28,10 @@ pub struct Stats {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Feature {
     pub name: String,
+    /// Stable identifier used by external tools to refer to the feature
+    /// (folder basename slugified, or `key` from the README front matter)
+    #[serde(default)]
+    pub key: String,
     pub description: String,
     pub owner: String,
     #[serde(rename = "is_owner_inherited")]
@@ -35,6 +39,9 @@ pub struct Feature {
     pub path: String,
     pub features: Vec<Feature>,
     pub meta: BTreeMap<String, serde_json::Value>,
+    /// Links to external tools (`links` in the README front matter), by name
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub links: BTreeMap<String, String>,
     pub changes: Vec<Change>,
     pub decisions: Vec<String>,
     /// Specs and decision records of the feature, see [`Record`]
@@ -43,6 +50,9 @@ pub struct Feature {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats: Option<Stats>,
     pub dependencies: Vec<Dependency>,
+    /// Data imported from external tools with `--data`, by metric name
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub external: BTreeMap<String, serde_json::Value>,
 }
 
 /// What a [`Record`] documents
@@ -76,6 +86,27 @@ impl RecordKind {
     }
 }
 
+/// Layout a record was read from
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename_all = "lowercase")]
+pub enum RecordSource {
+    /// `__docs__/{specs,decisions}`, `.docs/...` or root `docs/...` and `specs/*.md`
+    #[default]
+    Native,
+    /// GitHub Spec Kit: root `specs/NNN-name/spec.md`
+    Speckit,
+    /// Kiro: `.kiro/specs/<name>/requirements.md`
+    Kiro,
+}
+
+impl RecordSource {
+    pub fn is_native(&self) -> bool {
+        *self == RecordSource::Native
+    }
+}
+
 /// Links between records, by record id. Filled in both directions when scanning.
 #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -99,7 +130,7 @@ impl RecordLinks {
     }
 }
 
-/// A secondary file of a folder record (`plan.md`, `tasks.md`...)
+/// A secondary file of a folder record (`plan.md`, `tasks.md`, `contracts/api.yaml`...)
 #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct RecordFile {
@@ -135,6 +166,9 @@ pub struct Record {
     /// Other markdown files of a folder record
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<RecordFile>,
+    /// Layout the record was read from, omitted for native records
+    #[serde(skip_serializing_if = "RecordSource::is_native")]
+    pub source: RecordSource,
     pub links: RecordLinks,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tasks: Option<TaskProgress>,
@@ -193,17 +227,20 @@ mod tests {
     fn feature(name: &str, changes: Vec<Change>, features: Vec<Feature>) -> Feature {
         Feature {
             name: String::from(name),
+            key: String::from(name),
             description: String::new(),
             owner: String::new(),
             is_owner_inherited: false,
             path: String::from(name),
             features,
             meta: BTreeMap::new(),
+            links: BTreeMap::new(),
             changes,
             decisions: Vec::new(),
             records: Vec::new(),
             stats: None,
             dependencies: Vec::new(),
+            external: BTreeMap::new(),
         }
     }
 
