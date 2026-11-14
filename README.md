@@ -22,6 +22,7 @@ You can:
 - check [the technical debt by feature](./FAQ.md#what-is-the-technical-debt-of-a-feature)
 - see statistics about the features like the repartition of feature, fix and refactor commits, lines of code, and files
 - generate CODEOWNERS file
+- list the features (and owners) touched by a change, to ping the right teams on a pull request
 - list the feature flags and other feature dependencies
 
 > If you see an other use case, feel free to contribute to this repository.
@@ -69,7 +70,80 @@ Commands and their descriptions are listed below:
 | `--generate-codeowners` | Generate or update a CODEOWNERS file with feature ownership information |
 | `--project-dir <path>` | Project directory for CODEOWNERS generation and additional coverage search locations |
 | `--codeowners-path <path>` | Custom path and filename for CODEOWNERS file (default: `CODEOWNERS` in project directory) |
-| `--codeowners-prefix <prefix>` | Custom prefix for owner names in CODEOWNERS file (default: `@`) |
+| `--codeowners-prefix <prefix>` | Custom prefix for owner names in CODEOWNERS file and in `--since` markdown / `--owners-only` output (default: `@`) |
+| `--since <ref>` | Diff mode: list the features touched since the merge base of `<ref>` and `HEAD`, including uncommitted changes. See [Features touched by a change](#features-touched-by-a-change) |
+| `--committed-only` | With `--since`: ignore uncommitted and untracked files |
+| `--format <format>` | With `--since`: `text` (default), `json` or `markdown` (a table for pull request comments). `--json` is the same as `--format json` |
+| `--owners-only` | With `--since`: print only the unique owners of the touched features, one per line |
+
+## Features touched by a change
+
+`--since <ref>` lists the features a change touches, with their owners. It compares the merge base of `<ref>` and `HEAD` with your working tree, so uncommitted and untracked files are included (add `--committed-only` to compare with `HEAD` only). The path defaults to the current directory.
+
+```bash
+features src --since origin/master
+```
+
+```text
+Features touched since origin/master (merge base 1a2b3c4, including uncommitted changes):
+
+  Auth (features/auth) - owner: team-auth
+    M src/features/auth/login.ts
+    R src/features/auth/old.ts -> src/features/billing/moved.ts
+
+  Billing (features/billing) - owner: team-billing
+    R src/features/auth/old.ts -> src/features/billing/moved.ts
+    D src/features/billing/legacy.ts
+
+Files outside any feature:
+    M README.md
+```
+
+Each changed file is mapped to its closest feature, like `--find-owner`. A renamed file touches the features of both its old and new path, and deleted files are mapped by path. File paths are relative to the repository root; feature paths are relative to the scanned folder, as in the other outputs.
+
+- `--json` (or `--format json`) gives a report with `features` (name, path, owner, `is_owner_inherited`, changed files) and `files_outside_features`.
+- `--format markdown` gives a table ready to post as a pull request comment.
+- `--owners-only` prints the unique owners, one per line, with `--codeowners-prefix` added. Features without an owner are left out.
+
+The command exits with `0` even when no feature is touched.
+
+### Comment on pull requests with GitHub Actions
+
+```yaml
+name: Features touched
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the merge base with the target branch is needed
+
+      - name: List touched features
+        run: npx features-cli@latest src --since origin/${{ github.base_ref }} --committed-only --format markdown > features.md
+
+      - name: Comment on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Updates the bot's last comment on each push. If other workflows comment as the same bot,
+        # use a sticky-comment action instead so they don't overwrite each other.
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file features.md --edit-last --create-if-none
+```
+
+To also request reviews from the owning teams, feed `--owners-only` to `gh`. Reviewers must be GitHub users or `org/team` slugs, so set the prefix accordingly, e.g. `--codeowners-prefix my-org/` when owners are team names:
+
+```bash
+features src --since origin/master --committed-only --owners-only --codeowners-prefix my-org/ \
+  | xargs -r -n1 gh pr edit "$PR_NUMBER" --add-reviewer
+```
+
+Pull requests from forks get a read-only token, so commenting from those needs a `pull_request_target` workflow; read GitHub's security guidance before using it.
 
 ## Guidelines
 
