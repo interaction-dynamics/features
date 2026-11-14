@@ -16,31 +16,46 @@ interface Props {
   caption?: string
   /** Load immediately instead of lazily (for images above the fold). */
   eager?: boolean
+  /** Hero treatment: tilted back until it scrolls into view, with a light behind it. */
+  featured?: boolean
   class?: string
 }
 
-const { name, alt, caption, eager = false, class: className = '' } = Astro.props
+const {
+  name,
+  alt,
+  caption,
+  eager = false,
+  featured = false,
+  class: className = '',
+} = Astro.props
 const src = `/screenshots/${name}.webp`
 ---
 
-<figure class:list={['card overflow-hidden', className]}>
-  <div class="flex items-center gap-1.5 border-b border-line bg-surface-2 px-3 py-2" aria-hidden="true">
-    <span class="size-2.5 rounded-full bg-line"></span>
-    <span class="size-2.5 rounded-full bg-line"></span>
-    <span class="size-2.5 rounded-full bg-line"></span>
+<figure class:list={['relative', className]}>
+  {
+    featured && (
+      <div class="spotlight pointer-events-none absolute inset-x-[10%] -top-16 h-56" aria-hidden="true" />
+    )
+  }
+  <div class:list={['card overflow-hidden p-1.5 shadow-2xl shadow-black/60', { tilt: featured }]}>
+    <a
+      href={`/screenshots/${name}@2x.webp`}
+      class="block overflow-hidden rounded-[0.6rem] border border-line/70"
+      title="Open the full-size screenshot"
+    >
+      <img
+        src={src}
+        srcset={`${src} 1280w, /screenshots/${name}@2x.webp 2560w`}
+        sizes="(min-width: 1152px) 1104px, 100vw"
+        alt={alt}
+        width="1280"
+        height={heights[name]}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        class="block h-auto w-full"
+      />
+    </a>
   </div>
-  <a href={`/screenshots/${name}@2x.webp`} class="block" title="Open the full-size screenshot">
-    <img
-      src={src}
-      srcset={`${src} 1280w, /screenshots/${name}@2x.webp 2560w`}
-      sizes="(min-width: 1152px) 1104px, 100vw"
-      alt={alt}
-      width="1280"
-      height={heights[name]}
-      loading={eager ? 'eager' : 'lazy'}
-      decoding="async"
-      class="block h-auto w-full"
-    />
-  </a>
-  {caption && <figcaption class="border-t border-line px-4 py-3 text-sm text-muted">{caption}</figcaption>}
+  {caption && <figcaption class="mt-3 px-1 text-sm text-muted">{caption}</figcaption>}
 </figure>
