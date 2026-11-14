@@ -165,22 +165,17 @@ const markup = (node: Rendered): string => {
     }
   }
 
-  /* Loop: a row picked one after the other (delays 2.5s apart), hidden when still. */
-  .anim-iso-select {
-    opacity: 0;
-    animation: iso-select 7.5s ease-in-out var(--delay, 0ms) infinite both;
+  /* Loop: floating up and down, like a map pin over a place. */
+  .anim-iso-bob {
+    animation: iso-bob 2.4s ease-in-out var(--delay, 0ms) infinite both;
   }
-  @keyframes iso-select {
+  @keyframes iso-bob {
     0%,
     100% {
-      opacity: 0;
+      transform: translateY(0);
     }
-    6%,
-    30% {
-      opacity: 1;
-    }
-    36% {
-      opacity: 0;
+    50% {
+      transform: translateY(-0.7px);
     }
   }
 
