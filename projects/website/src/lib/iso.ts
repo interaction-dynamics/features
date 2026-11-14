@@ -191,6 +191,82 @@ export const disc = (
   ]
 }
 
+/**
+ * Outline of a rectangle with rounded corners on the plane z, corner by
+ * corner from the back right one, `steps` points per corner.
+ */
+const roundedOutline = (
+  [x, y]: Point3,
+  [w, d]: [number, number],
+  radius: number,
+  steps = 4,
+): [number, number][] =>
+  (
+    [
+      [x + w - radius, y + radius, -90],
+      [x + w - radius, y + d - radius, 0],
+      [x + radius, y + d - radius, 90],
+      [x + radius, y + radius, 180],
+    ] as const
+  ).flatMap(([cx, cy, from]) =>
+    Array.from({ length: steps + 1 }, (_, index): [number, number] => {
+      const angle = ((from + (90 * index) / steps) * Math.PI) / 180
+      return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]
+    }),
+  )
+
+/**
+ * A slab with rounded corners standing on the plane z: its visible side (the
+ * front half of its outline, from the right of the screen to the left, up to
+ * its top), its top, and the soft edge of its front corner. With `pins`, a
+ * dotted band runs along the bottom of its side, like the legs of a chip.
+ */
+export const slab = (
+  [x, y, z]: Point3,
+  [w, d, h]: Point3,
+  {
+    radius = 0.5,
+    pins = false,
+    ...options
+  }: ShapeOptions & { top?: Stroke; radius?: number; pins?: boolean } = {},
+): Shape[] => {
+  const { top = options.stroke ?? 'base', ...rest } = options
+  const stroke = rest.stroke ?? 'base'
+  const outline = roundedOutline([x, y, z], [w, d], radius)
+  // From the middle of the back right corner (-45deg) to the middle of the
+  // left one (135deg): the part of the outline facing the viewer.
+  const front = outline.slice(2, 13)
+  const at =
+    (level: number) =>
+    ([px, py]: [number, number]): Point3 => [px, py, level]
+  const corner = outline[7]
+  return [
+    {
+      ...rest,
+      kind: 'polygon',
+      fill: 'side',
+      stroke,
+      points: [...front.map(at(z)), ...[...front].reverse().map(at(z + h))],
+    },
+    {
+      ...rest,
+      kind: 'polygon',
+      fill: 'top',
+      stroke: top,
+      points: outline.map(at(z + h)),
+    },
+    line([at(z)(corner), at(z + h)(corner)], { stroke: 'faint' }),
+    ...(pins
+      ? [
+          line(front.map(at(z + Math.min(0.15, h / 3))), {
+            stroke,
+            dashed: true,
+          }),
+        ]
+      : []),
+  ]
+}
+
 /** A round marker of `radius` screen units, optionally travelling to `travel`. */
 export const dot = (
   center: Point3,
