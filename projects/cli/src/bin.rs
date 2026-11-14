@@ -23,7 +23,7 @@ mod skip_dirs;
 use build::{BuildConfig, create_build};
 use checker::run_checks;
 use codeowners::generate_codeowners;
-use http_server::serve_features_with_watching;
+use http_server::{ServerConfig, parse_allowed_origin, serve_features_with_watching};
 use models::Feature;
 use printer::print_features;
 use scan::{ScanConfig, scan_features};
@@ -71,6 +71,11 @@ struct Cli {
     /// Port for the HTTP server (default: 3000)
     #[arg(long, default_value = "3000")]
     port: u16,
+
+    /// Allow another origin (e.g. http://localhost:5173) to read the HTTP server's
+    /// responses via CORS. Can be repeated. Use '*' to allow any origin.
+    #[arg(long, value_name = "ORIGIN", value_parser = parse_allowed_origin)]
+    allow_origin: Vec<String>,
 
     /// Create a static build with embedded files and features.json
     #[arg(long)]
@@ -434,12 +439,13 @@ async fn main() -> Result<()> {
 
     // Handle main actions - these can be combined with generate-codeowners
     if args.serve {
+        let server_config = ServerConfig::new(args.port).with_allowed_origins(args.allow_origin);
         if let Some(pb) = spinner {
             pb.set_message("Server is starting...");
             let pb_clone = pb.clone();
             serve_features_with_watching(
                 &features,
-                args.port,
+                server_config,
                 path.clone(),
                 Some(Box::new(move || {
                     pb_clone.finish_and_clear();
@@ -452,7 +458,7 @@ async fn main() -> Result<()> {
         } else {
             serve_features_with_watching(
                 &features,
-                args.port,
+                server_config,
                 path.clone(),
                 None,
                 args.skip_changes,

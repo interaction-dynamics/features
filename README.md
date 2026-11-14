@@ -63,6 +63,7 @@ Commands and their descriptions are listed below:
 | `--include-skipped-dirs` | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
 | `--serve` | Start an HTTP server to serve features and the web dashboard UI |
 | `--port <port>` | Change the port (default: 3000). Should be used with `--serve` |
+| `--allow-origin <origin>` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]`. Should be used with `--serve` |
 | `--build` | Build a static version of the web dashboard UI |
 | `--build-dir <path>` | Output directory for the static build (default: `build`) |
 | `--coverage-dir <path>` | Specify a custom coverage directory (overrides automatic search) |
