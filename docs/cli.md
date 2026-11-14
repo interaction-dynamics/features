@@ -153,6 +153,6 @@ Reconciliation rules:
 - Features with the same name are the same feature and are merged. Each aggregated feature lists, in `repositories`, every repository where it was found and its path there.
 - A merged feature takes the parent it has in the repositories where it is nested, and gets the children it has in every repository.
 - Features found in a single repository keep their place: unmatched root features stay at the root.
-- Features are **not** merged when merging them would create a loop (e.g. `B > C` in one repository and `C > B` in another) or when they have different parents in different repositories. They are kept once per repository, and the issue is listed in the `errors` section of `features.json` and on the *Reconciliation issues* page of the dashboard.
+- Features are **not** merged when merging them would create a loop (e.g. `B > C` in one repository and `C > B` in another) or when they have different parents in different repositories. They are kept once per repository, and the issue is listed in the `errors` section of `features.json` and in the *Not merged across repositories* section of the *Outside features* page of the dashboard.
 
 The aggregated `features.json` is an object: `{ "repositories": [...], "features": [...], "errors": [...] }`, where `features` has the same structure as the output of `features scan --json`.

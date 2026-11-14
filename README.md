@@ -123,7 +123,7 @@ features scan ./api/src --json > reports/api.json
 features aggregate ./reports --build-dir ./dashboard
 ```
 
-Features with the same name become one feature that combines the metrics and history of every repository and lists the repositories it lives in. If two repositories disagree on how features are nested, `features-cli` keeps them apart and shows the conflict on a *Reconciliation issues* page instead of guessing.
+Features with the same name become one feature that combines the metrics and history of every repository and lists the repositories it lives in. If two repositories disagree on how features are nested, `features-cli` keeps them apart and shows the conflict on the *Outside features* page instead of guessing.
 
 See how features are merged in the [CLI reference](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md#aggregate-several-repositories).
 

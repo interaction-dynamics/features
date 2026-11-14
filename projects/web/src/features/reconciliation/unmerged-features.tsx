@@ -1,7 +1,6 @@
-import { CircleCheck, Repeat, Split, TriangleAlert } from 'lucide-react'
+import { CircleCheck, Repeat, Split } from 'lucide-react'
 import { useContext } from 'react'
 import { useNavigate } from 'react-router'
-import { Header } from '@/components/header'
 import { StatsCard } from '@/components/stats-card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -32,9 +31,9 @@ function ReconciliationErrorCard({ error }: { error: ReconciliationError }) {
     >
       <div className="flex flex-wrap items-center gap-2">
         <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        <h2 className="font-semibold">
+        <h3 className="font-semibold">
           {error.features.map(formatFeatureName).join(', ')}
-        </h2>
+        </h3>
         <Badge variant="outline">
           {ERROR_LABELS[error.type] ?? error.type}
         </Badge>
@@ -83,47 +82,40 @@ function ReconciliationErrorCard({ error }: { error: ReconciliationError }) {
   )
 }
 
-export default function Reconciliation() {
+/** Features of an aggregated report that could not be merged across repositories */
+export function UnmergedFeatures() {
   const { reconciliationErrors, repositories } = useContext(FeaturesContext)
 
   const cycles = reconciliationErrors.filter((e) => e.type === 'cycle').length
 
   return (
-    <div className="absolute inset-0 overflow-auto">
-      <Header>
-        <div className="flex items-center gap-2 font-medium">
-          <TriangleAlert className="h-4 w-4" />
-          Reconciliation issues
-        </div>
-      </Header>
-      <div className="flex flex-col gap-4 p-4">
-        <p className="text-sm text-muted-foreground">
-          Features with the same name are merged across repositories. These
-          features could not be merged and are kept separately, once per
-          repository.
-        </p>
-        <div className="grid gap-4 md:grid-cols-3">
-          <StatsCard title="Repositories" value={repositories.length} />
-          <StatsCard title="Loops" value={cycles} />
-          <StatsCard
-            title="Conflicting parents"
-            value={reconciliationErrors.length - cycles}
-          />
-        </div>
-        {reconciliationErrors.length === 0 ? (
-          <div className="flex items-center gap-2 py-8 text-muted-foreground">
-            <CircleCheck className="h-5 w-5 text-green-600" />
-            All features were merged without issues.
-          </div>
-        ) : (
-          reconciliationErrors.map((error) => (
-            <ReconciliationErrorCard
-              key={`${error.type}:${error.features.join(',')}`}
-              error={error}
-            />
-          ))
-        )}
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        Features with the same name are merged across repositories. These
+        features could not be merged and are kept separately, once per
+        repository.
+      </p>
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatsCard title="Repositories" value={repositories.length} />
+        <StatsCard title="Loops" value={cycles} />
+        <StatsCard
+          title="Conflicting parents"
+          value={reconciliationErrors.length - cycles}
+        />
       </div>
+      {reconciliationErrors.length === 0 ? (
+        <div className="flex items-center gap-2 py-8 text-muted-foreground">
+          <CircleCheck className="h-5 w-5 text-green-600" />
+          All features were merged without issues.
+        </div>
+      ) : (
+        reconciliationErrors.map((error) => (
+          <ReconciliationErrorCard
+            key={`${error.type}:${error.features.join(',')}`}
+            error={error}
+          />
+        ))
+      )}
     </div>
   )
 }
