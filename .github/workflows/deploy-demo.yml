@@ -102,6 +102,17 @@ jobs:
           fi
           echo "Generated features.json with $(wc -l < ../web/public/features.json) lines"
 
+      # Generate project-level records (root docs/specs and docs/decisions) for the Project records page
+      - name: Generate records data 📝
+        working-directory: ./projects/cli
+        run: |
+          cargo run --release -- records ../../examples/demo --skip-changes --json > ../web/public/records.json
+          if [ ! -s "../web/public/records.json" ]; then
+            echo "Error: records.json was not generated or is empty"
+            exit 1
+          fi
+          echo "Generated records.json with $(grep -c '"id"' ../web/public/records.json) records"
+
       # Generate metadata.json with version from Cargo.toml
       - name: Generate metadata.json 📋
         working-directory: ./projects/cli
@@ -124,6 +135,10 @@ jobs:
           fi
           if [ ! -f "dist/features.json" ]; then
             echo "Error: features.json not found in dist directory"
+            exit 1
+          fi
+          if [ ! -f "dist/records.json" ]; then
+            echo "Error: records.json not found in dist directory"
             exit 1
           fi
           echo "Build completed successfully. Contents:"
