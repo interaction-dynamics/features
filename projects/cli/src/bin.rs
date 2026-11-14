@@ -17,6 +17,7 @@ use features_cli::http_server::{ServerConfig, serve_features_with_watching};
 use features_cli::models::{Feature, Record};
 use features_cli::ownership::find_owner_for_path;
 use features_cli::printer::print_features;
+use features_cli::project_name::resolve_project_name;
 use features_cli::records::{create_record, project_records};
 use features_cli::scan::{ScanConfig, scan_features_with};
 
@@ -198,7 +199,11 @@ async fn run(invocation: Invocation) -> Result<()> {
             spinner.set_message("Server is starting...");
             let server_config = ServerConfig::new(args.port)
                 .with_allowed_origins(args.allow_origin)
-                .with_experimental(args.experimental);
+                .with_experimental(args.experimental)
+                .with_project_name(resolve_project_name(
+                    &args.path,
+                    args.project_name.as_deref(),
+                ));
             serve_features_with_watching(
                 &features,
                 server_config,
@@ -215,7 +220,12 @@ async fn run(invocation: Invocation) -> Result<()> {
             let records = project_records(&features, &args.path);
             create_build(
                 &features,
-                BuildConfig::new(args.build_dir.clone()).with_experimental(args.experimental),
+                BuildConfig::new(args.build_dir.clone())
+                    .with_experimental(args.experimental)
+                    .with_project_name(resolve_project_name(
+                        &args.path,
+                        args.project_name.as_deref(),
+                    )),
                 scan.skip_changes,
             )
             .await?;

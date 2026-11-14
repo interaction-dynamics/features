@@ -18,6 +18,7 @@ pub mod import_detector;
 pub mod models;
 pub mod ownership;
 pub mod printer;
+pub mod project_name;
 pub mod readme_parser;
 pub mod records;
 pub mod scan;
