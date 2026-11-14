@@ -1,25 +1,34 @@
 /*
- * Isometric figures of the home page. Each one builds itself when it scrolls
- * into view (plates rise, blocks drop, lines draw), then loops a small story.
+ * Isometric figures of the home page, each one a view of the dashboard drawn
+ * as a plate: the Insights page, the dependency graph and the Specs &
+ * Decisions tab of a feature. Each figure builds itself when it scrolls into
+ * view (plates rise, cards drop, lines draw), then loops a small story.
+ *
+ * Plates are laid out like pages: x runs to the right of the page, y down it.
  * Times are in milliseconds; the animation classes live in IsoFigure.astro.
  */
 import {
   box,
   circle,
+  disc,
   dot,
   group,
   line,
   rect,
+  shape,
   type Node,
   type Point3,
   type Shape,
+  type Stroke,
 } from './iso'
+
+type LineOptions = Parameters<typeof line>[1]
 
 /** A short horizontal stroke standing for a line of text, on the plane z. */
 const textLine = (
   [x, y, z]: Point3,
   length: number,
-  options: Parameters<typeof line>[1] = {},
+  options: LineOptions = {},
 ): Shape =>
   line(
     [
@@ -29,427 +38,541 @@ const textLine = (
     { stroke: 'faint', ...options },
   )
 
-/** Every feature of a folder as a block on a plate, its height standing for its size. */
-const map = (): Node[] => {
-  const base = 0.6
-  const blocks: {
-    at: [number, number]
-    size: Point3
-    strong?: boolean
-    /** Time this block starts lifting, in the loop that picks features one by one. */
-    lift?: number
-    details?: (top: number) => Node[]
-  }[] = [
-    {
-      at: [0.6, 0.6],
-      size: [5, 6.4, 3.4],
-      strong: true,
-      lift: 2600,
-      // Hatching, as if the feature were selected.
-      details: (top) =>
-        [1.6, 2.6, 3.6, 4.6].map((offset, index) =>
-          line(
-            [
-              [0.6 + offset, 1.4, top],
-              [0.6 + offset, 6.2, top],
-            ],
-            {
-              stroke: 'faint',
-              draw: true,
-              anim: 'anim-iso-draw',
-              delay: 1300 + index * 90,
-            },
-          ),
-        ),
-    },
-    {
-      at: [6.2, 0.6],
-      size: [5.2, 3, 1.8],
-      // Files of the feature.
-      details: (top) =>
-        [7.1, 8, 8.9, 9.8].map((x, index) =>
-          circle([x, 2.1, top], 0.22, {
-            stroke: 'faint',
-            anim: 'anim-iso-pop',
-            delay: 1350 + index * 70,
-          }),
-        ),
-    },
-    {
-      at: [0.6, 7.6],
-      size: [3.4, 3.8, 1.4],
-      details: (top) => [
-        textLine([1.2, 8.6, top], 2, {
-          draw: true,
-          anim: 'anim-iso-draw',
-          delay: 1400,
-        }),
-        textLine([1.2, 9.5, top], 1.4, {
-          draw: true,
-          anim: 'anim-iso-draw',
-          delay: 1480,
-        }),
-      ],
-    },
-    {
-      at: [6.2, 4.2],
-      size: [2.4, 2.8, 2.6],
-      lift: 5100,
-      // A nested feature on top of its parent.
-      details: (top) => [
-        group(box([6.6, 4.6, top], [1.2, 1.3, 0.8]), {
-          anim: 'anim-iso-drop',
-          delay: 1450,
-        }),
-      ],
-    },
-    {
-      at: [4.6, 7.6],
-      size: [3, 3.8, 2.2],
-      lift: 7600,
-      details: (top) => [
-        rect([5.1, 8.2, top], [0.9, 0.9], {
-          stroke: 'faint',
-          anim: 'anim-iso-pop',
-          delay: 1500,
-        }),
-        textLine([6.3, 8.65, top], 0.9, {
-          draw: true,
-          anim: 'anim-iso-draw',
-          delay: 1550,
-        }),
-        textLine([5.1, 9.8, top], 2, {
-          draw: true,
-          anim: 'anim-iso-draw',
-          delay: 1600,
-        }),
-      ],
-    },
-    {
-      at: [9, 4.2],
-      size: [2.4, 2.8, 1.2],
-      details: (top) => [
-        circle([10.2, 5.6, top], 0.3, {
-          stroke: 'faint',
-          anim: 'anim-iso-pop',
-          delay: 1550,
-        }),
-      ],
-    },
-    {
-      at: [8.2, 7.6],
-      size: [3.2, 3.8, 0.7],
-      details: (top) =>
-        [0, 1, 2].map((index) =>
-          rect([8.7 + index * 0.85, 8.3, top], [0.6, 2.4], {
-            stroke: 'faint',
-            anim: 'anim-iso-pop',
-            delay: 1600 + index * 60,
-          }),
-        ),
-    },
-  ]
+/** A line of text that writes itself at `delay`. */
+const write = (
+  at: Point3,
+  length: number,
+  delay: number,
+  stroke: Stroke = 'faint',
+): Shape =>
+  textLine(at, length, { stroke, draw: true, anim: 'anim-iso-draw', delay })
 
-  // Ruler ticks on the front faces of the plate.
-  const ticks = Array.from({ length: 11 }, (_, index) => index + 1).flatMap(
-    (n) => {
-      const depth = n % 3 === 0 ? 0.36 : 0.18
-      return [
-        line([
-          [n, 12, base],
-          [n, 12, base - depth],
-        ]),
-        line([
-          [12, n, base],
-          [12, n, base - depth],
-        ]),
-      ]
-    },
+/** A folder icon, its tab at the back, on the plane z. */
+const folder = (at: Point3, options: LineOptions = {}): Shape =>
+  shape(
+    at,
+    [
+      [0, 0],
+      [0.22, 0],
+      [0.3, 0.1],
+      [0.6, 0.1],
+      [0.6, 0.48],
+      [0, 0.48],
+    ],
+    { stroke: 'faint', ...options },
   )
 
-  return [
-    group(box([0, 0, 0], [12, 12, base], { stroke: 'faint' }), {
-      anim: 'anim-iso-rise',
-    }),
+/** A chevron pointing right, at the end of a clickable row. */
+const chevron = ([x, y, z]: Point3): Shape =>
+  line(
+    [
+      [x - 0.15, y - 0.3, z],
+      [x + 0.15, y, z],
+      [x - 0.15, y + 0.3, z],
+    ],
+    { stroke: 'faint' },
+  )
+
+/** The page every figure is drawn on, rising first. */
+const plate = (width: number, depth: number, height: number): Node =>
+  group(box([0, 0, 0], [width, depth, height], { stroke: 'faint' }), {
+    anim: 'anim-iso-rise',
+  })
+
+/**
+ * The Insights page: the feature tree built from the folders in the sidebar,
+ * totals on cards, and every feature in a table. In a loop, features are
+ * picked one by one in the sidebar and highlighted in the table.
+ */
+const insights = (): Node[] => {
+  const z = 0.4
+  const nodes: Node[] = [plate(14, 10.6, z)]
+
+  // Sidebar: logo, search, then folders and the features found in them.
+  const tree: { v: number; folder?: boolean; length: number; pick?: number }[] =
+    [
+      { v: 3.2, folder: true, length: 0.9 },
+      { v: 4.0, length: 1.3, pick: 2600 },
+      { v: 4.8, length: 1.0, pick: 5100 },
+      { v: 5.6, length: 1.5 },
+      { v: 6.7, folder: true, length: 1.1 },
+      { v: 7.5, length: 1.1, pick: 7600 },
+      { v: 8.3, length: 0.9 },
+    ]
+  nodes.push(
     group(
       [
-        rect([0.25, 0.25, base], [11.5, 11.5], {
-          stroke: 'faint',
-          dashed: true,
-        }),
-        ...ticks.map((tick) => ({ ...tick, stroke: 'faint' as const })),
+        rect([0.6, 0.55, z], [0.7, 0.7], { stroke: 'base' }),
+        textLine([1.6, 0.9, z], 1.4, { stroke: 'base' }),
+        rect([0.5, 1.65, z], [2.8, 0.7], { stroke: 'faint' }),
+        textLine([0.9, 2.0, z], 1.2),
+        line(
+          [
+            [3.8, 0.3, z],
+            [3.8, 10.3, z],
+          ],
+          { stroke: 'faint' },
+        ),
       ],
       { anim: 'anim-iso-fade', delay: 250 },
     ),
-    ...blocks.map(({ at: [x, y], size, strong, lift, details }, index) => {
-      const children = [
-        ...box([x, y, base], size, { top: strong ? 'strong' : 'base' }),
-        ...(details?.(base + size[2]) ?? []),
-      ]
-      return group(
-        lift === undefined
-          ? children
-          : [group(children, { anim: 'anim-iso-lift', delay: lift })],
-        {
-          anim: 'anim-iso-drop',
-          delay: 350 + index * 110,
-        },
+    group(
+      [
+        line(
+          [
+            [0.9, 3.6, z],
+            [0.9, 6.0, z],
+          ],
+          { stroke: 'faint' },
+        ),
+        line(
+          [
+            [0.9, 7.1, z],
+            [0.9, 8.7, z],
+          ],
+          { stroke: 'faint' },
+        ),
+      ],
+      { anim: 'anim-iso-fade', delay: 600 },
+    ),
+  )
+  tree.forEach(({ v, folder: isFolder, length }, index) => {
+    const delay = 400 + index * 70
+    if (isFolder) {
+      nodes.push(
+        group([folder([0.5, v - 0.25, z], { stroke: 'base' })], {
+          anim: 'anim-iso-pop',
+          delay,
+        }),
+        write([1.3, v, z], length, delay + 40, 'base'),
       )
-    }),
-  ]
+      return
+    }
+    nodes.push(
+      write([1.3, v, z], length, delay + 40),
+      group([circle([3.2, v, z], 0.16, { stroke: 'base' })], {
+        anim: 'anim-iso-pop',
+        delay,
+      }),
+    )
+  })
+
+  // Totals: features, owners, the largest feature, features without owners.
+  const values = [0.5, 0.3, 0.9, 0.2]
+  values.forEach((value, index) => {
+    const u = 4.4 + index * 2.35
+    const top = z + 0.55
+    nodes.push(
+      group(
+        [
+          ...box([u, 0.6, z], [2.05, 2.0, 0.55]),
+          textLine([u + 0.35, 1.1, top], 1.2),
+          textLine([u + 0.35, 1.9, top], value + 0.3, { stroke: 'strong' }),
+        ],
+        { anim: 'anim-iso-drop', delay: 550 + index * 110 },
+      ),
+    )
+  })
+
+  // Tabs: Features (open), Ownership, Dependencies.
+  nodes.push(
+    group(
+      [
+        rect([4.4, 3.2, z], [5.4, 0.75], { stroke: 'faint' }),
+        rect([4.5, 3.3, z], [1.5, 0.55], { stroke: 'base' }),
+        textLine([4.75, 3.58, z], 1.0, { stroke: 'base' }),
+        textLine([6.35, 3.58, z], 1.2),
+        textLine([7.9, 3.58, z], 1.6),
+      ],
+      { anim: 'anim-iso-fade', delay: 950 },
+    ),
+  )
+
+  // Table: a feature per row, with its owner and a bar for its lines.
+  const rows: { name: number; owner: Stroke; lines: number; pick?: number }[] =
+    [
+      { name: 1.5, owner: 'strong', lines: 1.2, pick: 2600 },
+      { name: 1.1, owner: 'base', lines: 2.6, pick: 5100 },
+      { name: 1.8, owner: 'strong', lines: 0.6 },
+      { name: 1.3, owner: 'faint', lines: 1.7, pick: 7600 },
+      { name: 0.9, owner: 'base', lines: 0.9 },
+    ]
+  nodes.push(
+    group(
+      [
+        rect([4.4, 4.4, z], [9.2, 5.9], { stroke: 'faint' }),
+        textLine([4.75, 4.85, z], 1.4),
+        textLine([7.6, 4.85, z], 0.9),
+        textLine([10.4, 4.85, z], 0.8),
+        line(
+          [
+            [4.4, 5.25, z],
+            [13.6, 5.25, z],
+          ],
+          { stroke: 'faint' },
+        ),
+      ],
+      { anim: 'anim-iso-fade', delay: 1050 },
+    ),
+  )
+  rows.forEach(({ name, owner, lines, pick }, index) => {
+    const v = 5.75 + index * 0.95
+    const delay = 1150 + index * 90
+    if (pick !== undefined)
+      nodes.push(
+        rect([4.5, v - 0.37, z], [9.0, 0.74], {
+          stroke: 'base',
+          anim: 'anim-iso-select',
+          delay: pick,
+        }),
+      )
+    nodes.push(
+      write([4.75, v, z], name, delay, 'base'),
+      group([circle([7.75, v, z], 0.17, { stroke: owner })], {
+        anim: 'anim-iso-pop',
+        delay: delay + 60,
+      }),
+      write([8.1, v, z], 0.9, delay + 80),
+      write([10.4, v, z], lines, delay + 120, 'strong'),
+    )
+  })
+
+  // Picking a feature in the sidebar.
+  tree.forEach(({ v, pick }) => {
+    if (pick === undefined) return
+    nodes.push(
+      rect([1.05, v - 0.35, z], [2.55, 0.7], {
+        stroke: 'strong',
+        anim: 'anim-iso-select',
+        delay: pick,
+      }),
+    )
+  })
+  return nodes
 }
 
-/** Features grouped on one plate per team, with the imports between them. */
-const owners = (): Node[] => {
-  const plate = 0.4
-  const top = (
-    x: number,
-    y: number,
-    w: number,
-    d: number,
-    h: number,
-  ): Point3 => [x + w / 2, y + d / 2, plate + h]
-  const a = top(0.9, 0.9, 2.4, 2.4, 2.6)
-  const b = top(3.8, 3, 1.8, 1.8, 1.4)
-  const c = top(9.4, 1.4, 2.6, 2.6, 3.2)
-  const d = top(3.2, 9.4, 2.2, 2.2, 1.8)
-  const e = top(5.9, 10.6, 1.1, 1.4, 1)
-
-  // The loop: c changes, the change travels up its imports to the features
-  // that use it, then the teams that own them light up.
+/**
+ * The dependency graph: features as nodes marked by owner, imports as dashed
+ * links. In a loop, a pull request changes one feature: the change flows to
+ * the features importing it, then the owners it touches light up in the
+ * legend.
+ */
+const dependencies = (): Node[] => {
+  const z = 0.3
+  const height = 0.5
+  const radius = 1.05
+  const top = z + height
   const loop = 2400
-  const owner = (center: Point3, at: number, notified?: number) => [
-    circle(center, 0.4, { stroke: 'strong', anim: 'anim-iso-pop', delay: at }),
-    ...(notified === undefined
-      ? []
-      : [
-          circle(center, 0.4, {
-            fill: 'none',
-            stroke: 'strong',
-            anim: 'anim-iso-ping',
-            delay: notified,
-          }),
-        ]),
-  ]
-  const feature = (
-    at: Point3,
-    size: Point3,
-    delay: number,
-    options: Parameters<typeof box>[2] = {},
-    extra: Node[] = [],
-  ) =>
-    group([...box(at, size, options), ...extra], {
-      anim: 'anim-iso-drop',
-      delay,
-    })
+  type Owner = 'a' | 'b' | 'c'
 
-  return [
-    // Team plates, back to front, each with its owner and a name.
-    group(
-      [
-        ...box([0, 0, 0], [6.4, 5.8, plate]),
-        textLine([0.6, 5.25, plate], 1.8, { stroke: 'base' }),
-        textLine([2.7, 5.25, plate], 0.8),
-      ],
-      { anim: 'anim-iso-rise' },
-    ),
-    ...owner([5.4, 0.9, plate], 450, loop + 1700),
-    group(
-      [
-        ...box([8.4, 0.4, 0], [4.6, 4.6, plate]),
-        textLine([9, 4.5, plate], 1.4, { stroke: 'base' }),
-      ],
-      {
-        anim: 'anim-iso-rise',
-        delay: 120,
-      },
-    ),
-    ...owner([12.1, 1.2, plate], 550),
-    group(
-      [
-        ...box([2.4, 8.6, 0], [5, 4, plate]),
-        textLine([2.9, 12.1, plate], 1.6, { stroke: 'base' }),
-        textLine([4.7, 12.1, plate], 0.6),
-      ],
-      { anim: 'anim-iso-rise', delay: 240 },
-    ),
-    ...owner([6.6, 9.4, plate], 650, loop + 1900),
+  const at = (u: number, v: number): Point3 => [u, v, top]
+  const changed = at(6.5, 5.8)
+  const graph = {
+    left: at(2.9, 3.6),
+    below: at(3.0, 8.6),
+    right: at(10.0, 3.2),
+    front: at(9.8, 8.8),
+  }
 
-    // Features.
-    feature([0.9, 0.9, plate], [2.4, 2.4, 2.6], 700, {}, [
-      ...box([1.25, 1.25, a[2]], [0.8, 0.8, 0.45]),
-      textLine([2.35, 1.5, a[2]], 0.6),
-    ]),
-    feature([3.8, 3, plate], [1.8, 1.8, 1.4], 800),
-    feature([9.4, 1.4, plate], [2.6, 2.6, 3.2], 900, { top: 'strong' }, [
-      textLine([9.9, 1.9, c[2]], 1.2),
-      textLine([9.9, 2.5, c[2]], 0.7),
-    ]),
-    circle(c, 0.35, {
+  /** What tells owners apart on a node or in the legend. */
+  const mark = (center: Point3, owner: Owner, size: number): Node[] => {
+    if (owner === 'a') return []
+    if (owner === 'b')
+      return [circle(center, size * 0.45, { fill: 'none', stroke: 'base' })]
+    const half = size * 0.3
+    return [
+      rect(
+        [center[0] - half, center[1] - half, center[2]],
+        [half * 2, half * 2],
+        {
+          stroke: 'base',
+        },
+      ),
+    ]
+  }
+
+  const node = (center: Point3, owner: Owner, delay: number) =>
+    group(
+      [
+        ...disc([center[0], center[1], z], radius, height, {
+          top: owner === 'a' ? 'strong' : 'base',
+        }),
+        ...mark(center, owner, radius),
+      ],
+      { anim: 'anim-iso-drop', delay },
+    )
+
+  const ping = (center: Point3, size: number, delay: number) =>
+    circle(center, size, {
       fill: 'none',
       stroke: 'strong',
       anim: 'anim-iso-ping',
-      delay: loop,
-    }),
-    feature([3.2, 9.4, plate], [2.2, 2.2, 1.8], 1000),
-    feature([5.9, 10.6, plate], [1.1, 1.4, 1], 1080),
+      delay,
+    })
 
-    // Imports between features, drawn over everything like a wire. The ones
-    // reaching c flow from it, toward the features that import it.
-    group([line([a, d], { dashed: true })], {
-      anim: 'anim-iso-fade',
-      delay: 1400,
-    }),
-    ...[a, b, e].map((target, index) =>
-      group([line([c, target], { dashed: true, anim: 'anim-iso-flow' })], {
+  // Legend: the counts, then one entry per owner.
+  const legend = (
+    [
+      ['a', 5.6],
+      ['b', 8.0],
+      ['c', 10.4],
+    ] as const
+  ).map(([owner, u]) => ({ owner, center: [u, 0.95, z] as Point3 }))
+
+  const link = (from: Point3, to: Point3, delay: number, flow = false) =>
+    group(
+      [
+        line([from, to], {
+          dashed: true,
+          anim: flow ? 'anim-iso-flow' : undefined,
+        }),
+      ],
+      {
         anim: 'anim-iso-fade',
-        delay: 1400 + index * 120,
-      }),
+        delay,
+      },
+    )
+
+  return [
+    plate(13, 11, z),
+    group(
+      [
+        textLine([0.8, 0.95, z], 1.3, { stroke: 'base' }),
+        textLine([2.5, 0.95, z], 1.6),
+        line(
+          [
+            [0.4, 1.6, z],
+            [12.6, 1.6, z],
+          ],
+          { stroke: 'faint' },
+        ),
+        // Zoom controls in the corner of the canvas.
+        ...[8.9, 9.6].map((v) =>
+          rect([11.9, v, z], [0.6, 0.6], { stroke: 'faint' }),
+        ),
+      ],
+      { anim: 'anim-iso-fade', delay: 250 },
     ),
-    circle(c, 0.35, { stroke: 'strong', anim: 'anim-iso-pop', delay: 1300 }),
-    ...[a, b, e].map((target) =>
-      dot(c, 0.32, {
+    ...legend.map(({ owner, center }, index) =>
+      group(
+        [
+          circle(center, 0.3, { stroke: owner === 'a' ? 'strong' : 'base' }),
+          ...mark(center, owner, 0.3),
+          textLine([center[0] + 0.55, 0.95, z], 1.2),
+        ],
+        { anim: 'anim-iso-pop', delay: 400 + index * 90 },
+      ),
+    ),
+
+    // Imports, under the nodes. The change flows from the changed feature
+    // to the ones importing it; the others stay still.
+    link(changed, graph.right, 1300),
+    link(graph.below, graph.left, 1380),
+    link(changed, graph.left, 1460, true),
+    link(changed, graph.front, 1540, true),
+
+    // Nodes, back to front.
+    node(graph.left, 'b', 600),
+    node(graph.below, 'b', 700),
+    node(changed, 'a', 800),
+    node(graph.right, 'c', 900),
+    node(graph.front, 'a', 1000),
+
+    // The pull request, pinned on the feature it changes.
+    group(
+      [
+        line([changed, [changed[0], changed[1], 3.9]], { stroke: 'base' }),
+        {
+          kind: 'polygon',
+          fill: 'side',
+          stroke: 'strong',
+          points: [
+            [changed[0], changed[1], 3.9],
+            [changed[0] + 2.6, changed[1], 3.9],
+            [changed[0] + 2.6, changed[1], 2.7],
+            [changed[0], changed[1], 2.7],
+          ],
+        } satisfies Shape,
+        // Branch glyph and title of the pull request.
+        dot([changed[0] + 0.45, changed[1], 3.5], 0.14, { stroke: 'base' }),
+        dot([changed[0] + 0.45, changed[1], 3.0], 0.14, { stroke: 'base' }),
+        line(
+          [
+            [changed[0] + 0.45, changed[1], 3.5],
+            [changed[0] + 0.45, changed[1], 3.0],
+          ],
+          { stroke: 'base' },
+        ),
+        textLine([changed[0] + 0.9, changed[1], 3.5], 1.4, { stroke: 'base' }),
+        textLine([changed[0] + 0.9, changed[1], 3.05], 0.9),
+      ],
+      { anim: 'anim-iso-drop', delay: 1700 },
+    ),
+
+    // The loop: the change, its path to the importers, the owners touched.
+    ping(changed, radius, loop),
+    ...[graph.left, graph.front].flatMap((target) => [
+      dot(changed, 0.32, {
         travel: target,
         anim: 'anim-iso-travel',
         delay: loop + 250,
       }),
-    ),
+      ping(target, radius, loop + 1700),
+    ]),
+    ...legend
+      .filter(({ owner }) => owner !== 'c')
+      .map(({ center }) => ping(center, 0.3, loop + 1950)),
   ]
 }
 
-/** A spec on top of older records: text, then a task list half done. */
+/**
+ * The Specs & Decisions tab of a feature: a decision record, the spec it
+ * implements with its task progress, and the record it superseded, linked
+ * together. In a loop, the next task of the spec gets done.
+ */
 const specs = (): Node[] => {
-  const size: Point3 = [7, 9, 0.25]
-  const sheets = [0, 1, 2].map((index): Point3 => [index * 0.9, 0, index * 1.9])
-  const nodes: Node[] = []
-  sheets.forEach((at, index) => {
-    const next = sheets[index + 1]
-    const last = !next
-    nodes.push(
-      group(
-        [
-          ...box(at, size, { top: last ? 'strong' : 'base' }),
-          // Index tabs on the older records, like a binder.
-          ...(last
-            ? []
-            : box(
-                [at[0] + size[0], at[1] + 1.2 + index * 1.8, at[2]],
-                [0.5, 1.2, size[2]],
-                { stroke: 'faint' },
-              )),
-        ],
-        { anim: 'anim-iso-drop', delay: index * 160 },
-      ),
-    )
-    if (!next) return
-    // Dotted guides between the front corners of two sheets.
-    nodes.push(
-      group(
-        (
-          [
-            [size[0], 0],
-            [size[0], size[1]],
-            [0, size[1]],
-          ] as const
-        ).map(([dx, dy]) =>
-          line(
-            [
-              [at[0] + dx, at[1] + dy, at[2] + size[2]],
-              [next[0] + dx, next[1] + dy, next[2]],
-            ],
-            { dashed: true, stroke: 'faint' },
-          ),
-        ),
-        { anim: 'anim-iso-fade', delay: 600 + index * 120 },
-      ),
-    )
-  })
+  const z = 0.3
+  const card = 0.35
+  const nodes: Node[] = [plate(10, 12.6, z)]
 
-  const [x, y, z0] = sheets[sheets.length - 1]
-  const z = z0 + size[2]
-  const write = (
-    row: number,
-    from: number,
-    length: number,
-    delay: number,
-    stroke: Shape['stroke'] = 'faint',
-  ) =>
-    textLine([x + from, y + row, z], length, {
-      stroke,
-      draw: true,
-      anim: 'anim-iso-draw',
-      delay,
-    })
-  const check = (row: number, options: { anim: string; delay: number }) =>
-    line(
-      [
-        [x + 1.15, y + row - 0.05, z],
-        [x + 1.45, y + row + 0.25, z],
-        [x + 1.75, y + row - 0.55, z],
-      ],
-      { stroke: 'strong', draw: true, ...options },
-    )
-
-  // Title, status badge and summary, above the front matter rule.
+  // Header of the feature: name, path, owner.
   nodes.push(
-    write(1.3, 1, 3.4, 800, 'strong'),
-    group(
-      [
-        rect([x + 4.9, y + 0.85, z], [1.3, 0.9], { stroke: 'base' }),
-        circle([x + 5.3, y + 1.3, z], 0.16, { stroke: 'strong' }),
-      ],
-      { anim: 'anim-iso-pop', delay: 1000 },
-    ),
-    write(2.4, 1, 5, 950),
-    write(3.2, 1, 4.2, 1050),
-    group([textLine([x + 1, y + 3.95, z], 5, { dashed: true })], {
-      anim: 'anim-iso-fade',
-      delay: 1150,
+    write([0.8, 0.9, z], 3.4, 300, 'strong'),
+    group([folder([0.75, 1.45, z])], { anim: 'anim-iso-pop', delay: 400 }),
+    write([1.6, 1.7, z], 2.8, 450),
+    group([circle([1.05, 2.45, z], 0.2, { stroke: 'faint' })], {
+      anim: 'anim-iso-pop',
+      delay: 500,
     }),
+    write([1.6, 2.45, z], 1.2, 550),
   )
 
-  // Tasks: two done, the third one ticked off in a loop.
-  const tasks = [
-    { row: 4.8, length: 3.3, done: true },
-    { row: 6.1, length: 2.5, done: true },
-    { row: 7.4, length: 2.9, done: false },
-  ]
-  tasks.forEach(({ row, length, done }, index) => {
-    const delay = 1250 + index * 160
-    nodes.push(
-      rect([x + 1, y + row - 0.4, z], [0.8, 0.8], {
-        stroke: done ? 'strong' : 'base',
-        anim: 'anim-iso-pop',
-        delay,
-      }),
-      write(row, 2.3, length, delay + 60, done ? 'base' : 'faint'),
-      done
-        ? check(row, { anim: 'anim-iso-draw', delay: 1800 + index * 200 })
-        : check(row, { anim: 'anim-iso-tick', delay: 2800 }),
-    )
-  })
-
-  // Progress of the tasks, the last third filling with the loop.
+  // Tabs, Specs & Decisions open.
   nodes.push(
-    group([textLine([x + 1, y + 8.4, z], 5)], {
-      anim: 'anim-iso-fade',
-      delay: 1600,
-    }),
-    textLine([x + 1, y + 8.4, z], 3.33, {
+    group(
+      [
+        rect([0.6, 3.05, z], [8.8, 0.8], { stroke: 'faint' }),
+        textLine([0.95, 3.45, z], 1.0),
+        textLine([2.3, 3.45, z], 0.9),
+        rect([3.6, 3.15, z], [2.9, 0.6], { stroke: 'strong' }),
+        textLine([3.9, 3.45, z], 1.7, { stroke: 'base' }),
+        textLine([5.9, 3.45, z], 0.2, { stroke: 'base' }),
+        textLine([6.9, 3.45, z], 1.0),
+        textLine([8.2, 3.45, z], 0.8),
+      ],
+      { anim: 'anim-iso-fade', delay: 650 },
+    ),
+  )
+
+  /** A record: its kind and status badges, its date and its title. */
+  const record = (
+    v: number,
+    depth: number,
+    delay: number,
+    stroke: Stroke,
+    extra: (top: number) => Node[] = () => [],
+  ) => {
+    const top = z + card
+    const dashed = stroke === 'faint'
+    return group(
+      [
+        ...box([0.6, v, z], [8.8, depth, card], { stroke, dashed }),
+        rect([1.0, v + 0.35, top], [1.4, 0.6], {
+          stroke: dashed ? 'faint' : 'strong',
+        }),
+        circle([1.35, v + 0.65, top], 0.12, {
+          stroke: dashed ? 'faint' : 'base',
+        }),
+        textLine([1.6, v + 0.65, top], 0.55, {
+          stroke: dashed ? 'faint' : 'base',
+        }),
+        rect([2.6, v + 0.35, top], [1.7, 0.6], { stroke: 'faint', dashed }),
+        textLine([2.9, v + 0.65, top], 1.1, {
+          stroke: dashed ? 'faint' : 'base',
+        }),
+        textLine([4.6, v + 0.65, top], 1.3),
+        chevron([8.8, v + depth / 2, top]),
+        ...extra(top),
+      ],
+      { anim: 'anim-iso-drop', delay },
+    )
+  }
+
+  // The decision record, with links to its spec and to the record it supersedes.
+  nodes.push(
+    record(4.3, 2.6, 800, 'base', (top) => [
+      textLine([1.0, 5.6, top], 4.4, { stroke: 'base' }),
+      rect([1.0, 6.1, top], [2.7, 0.5], { stroke: 'faint' }),
+      textLine([1.3, 6.35, top], 2.0),
+      rect([3.9, 6.1, top], [3.3, 0.5], { stroke: 'faint' }),
+      textLine([4.2, 6.35, top], 2.6),
+    ]),
+  )
+
+  // The spec, its tasks half done.
+  const progress = 9.25
+  nodes.push(
+    record(7.3, 2.75, 950, 'strong', (top) => [
+      textLine([1.0, 8.6, top], 3.2, { stroke: 'base' }),
+      textLine([1.0, progress, top], 3, { stroke: 'faint' }),
+      textLine([4.4, progress, top], 0.5),
+    ]),
+    textLine([1.0, progress, z + card], 1.5, {
       stroke: 'strong',
       draw: true,
       anim: 'anim-iso-draw',
-      delay: 1900,
+      delay: 1500,
     }),
-    textLine([x + 4.33, y + 8.4, z], 1.67, {
+    textLine([2.5, progress, z + card], 0.75, {
       stroke: 'strong',
       draw: true,
       anim: 'anim-iso-tick',
-      delay: 2900,
+      delay: 2600,
     }),
+  )
+
+  // The superseded record, struck through.
+  nodes.push(
+    record(10.45, 1.85, 1100, 'faint', (top) => [
+      textLine([1.0, 11.75, top], 3.8),
+      line(
+        [
+          [2.75, 11.1, top],
+          [4.15, 11.1, top],
+        ],
+        { stroke: 'faint' },
+      ),
+    ]),
+  )
+
+  // Links between the records, along the margin.
+  nodes.push(
+    group(
+      [
+        line(
+          [
+            [0.6, 5.6, z],
+            [0.25, 5.6, z],
+            [0.25, 8.6, z],
+            [0.6, 8.6, z],
+          ],
+          { dashed: true, anim: 'anim-iso-flow' },
+        ),
+        line(
+          [
+            [0.6, 6.35, z],
+            [0.4, 6.35, z],
+            [0.4, 11.4, z],
+            [0.6, 11.4, z],
+          ],
+          { dashed: true, stroke: 'faint' },
+        ),
+      ],
+      { anim: 'anim-iso-fade', delay: 1350 },
+    ),
   )
   return nodes
 }
 
-export const figures = { map, owners, specs }
+export const figures = { insights, dependencies, specs }
 export type FigureName = keyof typeof figures

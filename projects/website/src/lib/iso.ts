@@ -145,6 +145,52 @@ export const circle = (
   stroke: options.stroke ?? 'base',
 })
 
+/** A flat polygon on the plane z, from points given relative to (x, y). */
+export const shape = (
+  [x, y, z]: Point3,
+  points: [number, number][],
+  options: ShapeOptions & { fill?: Fill } = {},
+): Shape => ({
+  ...options,
+  kind: 'polygon',
+  fill: options.fill ?? 'none',
+  stroke: options.stroke ?? 'base',
+  points: points.map(([dx, dy]): Point3 => [x + dx, y + dy, z]),
+})
+
+/**
+ * A short cylinder standing on the plane z, like a node of a graph: its
+ * visible side (the front half of the bottom circle up to the top circle),
+ * then its top.
+ */
+export const disc = (
+  [x, y, z]: Point3,
+  radius: number,
+  height: number,
+  options: ShapeOptions & { top?: Stroke } = {},
+): Shape[] => {
+  const { top = options.stroke ?? 'base', ...rest } = options
+  const steps = 16
+  // From the right edge of the screen ellipse (-45deg) to its left (135deg).
+  const arc = Array.from({ length: steps + 1 }, (_, index) => {
+    const angle = -Math.PI / 4 + (Math.PI * index) / steps
+    return [x + radius * Math.cos(angle), y + radius * Math.sin(angle)]
+  })
+  return [
+    {
+      ...rest,
+      kind: 'polygon',
+      fill: 'side',
+      stroke: rest.stroke ?? 'base',
+      points: [
+        ...arc.map(([px, py]): Point3 => [px, py, z]),
+        ...[...arc].reverse().map(([px, py]): Point3 => [px, py, z + height]),
+      ],
+    },
+    circle([x, y, z + height], radius, { ...rest, stroke: top }),
+  ]
+}
+
 /** A round marker of `radius` screen units, optionally travelling to `travel`. */
 export const dot = (
   center: Point3,
