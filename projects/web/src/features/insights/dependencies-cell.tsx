@@ -1,11 +1,11 @@
 import { AlertTriangle } from 'lucide-react'
 import { useContext } from 'react'
-import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { AlertBadge } from '@/features/dependencies/features/alerts/alert-badge'
 import {
   buildDependencyMap,
   buildNameToPathMap,
