@@ -155,6 +155,28 @@ const dashboardFeatures = [
   },
 ]
 
+// Deterministic scatter of commits per week for the background chart of the hero.
+const weeks = ['Aug', 'Sep', 'Oct', 'Nov']
+const commitDots = weeks.flatMap((_, week) => {
+  let seed = week * 7919 + 17
+  const random = () => {
+    seed = (seed * 16807) % 2147483647
+    return seed / 2147483647
+  }
+  const center = 70 - week * 9
+  return Array.from({ length: 34 }, () => ({
+    x: 46 + week * 78 + (random() - 0.5) * 18,
+    y: center + (random() + random() + random() - 1.5) * 26,
+    r: 1.6 + random() * 0.8,
+    level: random(),
+  }))
+})
+
+const ring = (coverage: number) => {
+  const circumference = 2 * Math.PI * 6
+  return `${(coverage / 100) * circumference} ${circumference}`
+}
+
 const softwareApplication = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -211,52 +233,91 @@ const softwareApplication = {
         </code>
       </div>
 
-      <!-- Dashboard illustration -->
-      <figure class="card relative p-5 shadow-2xl shadow-black/50" aria-label="Illustration of the Features dashboard">
-        <div class="bg-gradient-brand pointer-events-none absolute -inset-px -z-10 rounded-2xl opacity-30 blur-2xl" aria-hidden="true"></div>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2 text-sm font-semibold">
-            <LayoutDashboard size={18} class="text-accent" aria-hidden="true" /> src/features
+      <!-- Dashboard illustration: two layered panels, Linear-style -->
+      <div class="relative sm:pt-32" role="img" aria-label="Illustration of the Features dashboard: a list of features with their owner, coverage and commit mix, over a chart of commits per week">
+        <div class="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true"></div>
+
+        <!-- Back panel: commits per week -->
+        <div class="card fade-b absolute top-0 right-0 hidden w-[74%] p-4 opacity-80 shadow-2xl shadow-black/60 sm:block" aria-hidden="true">
+          <div class="flex items-center justify-between text-[0.7rem] text-muted">
+            <span>Commits per week</span>
+            <span class="font-mono">by feature</span>
           </div>
-          <span class="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-xs text-muted">4 features</span>
+          <svg viewBox="0 0 300 150" class="mt-2 w-full" fill="none">
+            {[40, 75, 110].map((y) => <line x1="20" x2="300" y1={y} y2={y} stroke="var(--color-line)" stroke-dasharray="2 4" />)}
+            <path d="M20 66 C 70 66, 80 58, 124 58 S 180 50, 202 50 S 260 40, 300 38" stroke="var(--color-accent-3)" stroke-opacity="0.6" />
+            <path d="M20 96 C 70 96, 80 88, 124 86 S 180 84, 202 80 S 260 70, 300 72" stroke="var(--color-accent-3)" stroke-opacity="0.35" />
+            {
+              commitDots.map((dot) => (
+                <circle
+                  cx={dot.x.toFixed(1)}
+                  cy={dot.y.toFixed(1)}
+                  r={dot.r.toFixed(1)}
+                  fill={dot.level > 0.7 ? 'var(--color-accent)' : dot.level > 0.35 ? 'var(--color-accent-2)' : 'var(--color-accent-3)'}
+                  fill-opacity={(0.45 + dot.level * 0.55).toFixed(2)}
+                />
+              ))
+            }
+            {weeks.map((week, index) => <text x={46 + index * 78} y="146" text-anchor="middle" fill="var(--color-muted)" font-size="8">{week}</text>)}
+          </svg>
         </div>
-        <ul class="mt-5 space-y-3">
-          {
-            dashboardFeatures.map((feature) => (
-              <li class="rounded-xl border border-line bg-ink/50 p-3.5">
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span class="font-mono text-sm font-semibold text-accent">{feature.name}</span>
-                  <span class="rounded-full border border-line px-2 text-[0.7rem] leading-5 text-muted">
-                    {feature.owner}
-                  </span>
-                  <span class="ml-auto text-xs text-muted">
-                    {feature.todos} TODO{feature.todos === 1 ? '' : 's'}
-                  </span>
-                </div>
-                <div class="mt-3 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2 text-[0.7rem] text-muted">
-                  <span>coverage</span>
-                  <span class="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                    <span class="bg-gradient-brand block h-full rounded-full" style={`width:${feature.coverage}%`} />
-                  </span>
-                  <span class="font-mono text-text">{feature.coverage}%</span>
-                  <span>commits</span>
-                  <span class="flex h-1.5 overflow-hidden rounded-full">
-                    <span class="bg-accent" style={`width:${feature.mix[0]}%`} />
-                    <span class="bg-accent-2" style={`width:${feature.mix[1]}%`} />
-                    <span class="bg-accent-3" style={`width:${feature.mix[2]}%`} />
-                  </span>
-                  <span class="font-mono text-text">{feature.mix[0]}%</span>
-                </div>
-              </li>
-            ))
-          }
-        </ul>
-        <figcaption class="mt-4 flex flex-wrap gap-4 text-[0.7rem] text-muted">
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent" aria-hidden="true"></span>feature</span>
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent-2" aria-hidden="true"></span>fix</span>
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent-3" aria-hidden="true"></span>refactor</span>
-        </figcaption>
-      </figure>
+
+        <!-- Front panel: features -->
+        <figure class="card relative p-4 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.9)] sm:mr-20 sm:p-5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-sm font-semibold">
+              <span class="icon-tile inline-flex size-6 items-center justify-center rounded-md text-accent">
+                <LayoutDashboard size={13} aria-hidden="true" />
+              </span>
+              src/features
+            </div>
+            <span class="rounded-full border border-line bg-surface-2 px-2.5 py-0.5 font-mono text-[0.7rem] text-muted">4 features</span>
+          </div>
+          <ul class="mt-4 divide-y divide-line/70 overflow-hidden rounded-xl border border-line bg-ink/60">
+            {
+              dashboardFeatures.map((feature, index) => (
+                <li class:list={['p-3', index === 0 && 'bg-gradient-to-r from-accent/[0.07] to-transparent']}>
+                  <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                    <svg viewBox="0 0 16 16" class="size-3.5 -rotate-90" aria-hidden="true">
+                      <circle cx="8" cy="8" r="6" fill="none" stroke="var(--color-line)" stroke-width="2" />
+                      <circle cx="8" cy="8" r="6" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray={ring(feature.coverage)} />
+                    </svg>
+                    <span class="font-mono text-sm font-semibold text-accent">{feature.name}</span>
+                    <span class="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 py-px pr-2 pl-px text-[0.65rem] leading-4 text-muted">
+                      <span class="bg-gradient-brand inline-flex size-3.5 items-center justify-center rounded-full text-[0.45rem] font-bold text-ink">
+                        {feature.owner.replace('team-', '').slice(0, 2).toUpperCase()}
+                      </span>
+                      {feature.owner}
+                    </span>
+                    <span class="ml-auto text-[0.7rem] text-muted">
+                      {feature.todos} TODO{feature.todos === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <div class="mt-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1.5 text-[0.65rem] text-muted">
+                    <span>coverage</span>
+                    <span class="h-1 overflow-hidden rounded-full bg-surface-2">
+                      <span class="block h-full rounded-full bg-gradient-to-r from-accent-3/40 to-accent" style={`width:${feature.coverage}%`} />
+                    </span>
+                    <span class="font-mono text-text">{feature.coverage}%</span>
+                    <span>commits</span>
+                    <span class="flex h-1 gap-px overflow-hidden rounded-full">
+                      <span class="rounded-full bg-accent" style={`width:${feature.mix[0]}%`} />
+                      <span class="rounded-full bg-accent-2/70" style={`width:${feature.mix[1]}%`} />
+                      <span class="rounded-full bg-accent-3/50" style={`width:${feature.mix[2]}%`} />
+                    </span>
+                    <span class="font-mono text-text">{feature.mix[0]}%</span>
+                  </div>
+                </li>
+              ))
+            }
+          </ul>
+          <figcaption class="mt-3.5 flex flex-wrap gap-4 text-[0.7rem] text-muted">
+            <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent" aria-hidden="true"></span>feature</span>
+            <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent-2/70" aria-hidden="true"></span>fix</span>
+            <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent-3/50" aria-hidden="true"></span>refactor</span>
+          </figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
@@ -271,7 +332,7 @@ const softwareApplication = {
       {
         aiEraReasons.map(({ icon: Icon, title, text }) => (
           <li class="card p-5">
-            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-accent-2">
+            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent-2">
               <Icon size={20} aria-hidden="true" />
             </span>
             <h3 class="mt-4 font-semibold">{title}</h3>
@@ -281,7 +342,8 @@ const softwareApplication = {
       }
     </ul>
     <div class="card relative mt-6 overflow-hidden p-6 sm:p-8">
-      <div class="bg-gradient-brand pointer-events-none absolute inset-0 opacity-10" aria-hidden="true"></div>
+      <div class="spotlight pointer-events-none absolute -top-24 -left-24 h-72 w-[36rem]" aria-hidden="true"></div>
+      <div class="dot-grid pointer-events-none absolute inset-0 opacity-40" aria-hidden="true"></div>
       <div class="relative grid items-center gap-6 md:grid-cols-[1fr_auto]">
         <p class="text-lg text-pretty">
           You need <strong class="text-gradient font-semibold">one place to overview all your features</strong>: what
@@ -304,7 +366,7 @@ const softwareApplication = {
   >
     <ol class="grid gap-5 md:grid-cols-3">
       <li class="card relative p-6">
-        <span class="font-mono text-5xl font-bold text-line" aria-hidden="true">01</span>
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">01</span>
         <h3 class="mt-2 text-lg font-semibold">Organize by feature</h3>
         <p class="mt-2 text-sm text-muted">
           Put each business feature in its own folder inside a <code>features</code> folder, or flag any folder with
@@ -316,7 +378,7 @@ const softwareApplication = {
 └── <span class="text-accent">search/</span></pre>
       </li>
       <li class="card relative p-6">
-        <span class="font-mono text-5xl font-bold text-line" aria-hidden="true">02</span>
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">02</span>
         <h3 class="mt-2 text-lg font-semibold">Run the CLI</h3>
         <p class="mt-2 text-sm text-muted">
           One binary, written in Rust. Install it with npm or cargo, or run it on the fly with <code>npx</code>.
@@ -326,7 +388,7 @@ const softwareApplication = {
 <span class="select-none">$ </span><span class="text-text">features codeowners ./src</span></pre>
       </li>
       <li class="card relative p-6">
-        <span class="font-mono text-5xl font-bold text-line" aria-hidden="true">03</span>
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">03</span>
         <h3 class="mt-2 text-lg font-semibold">Explore and share</h3>
         <p class="mt-2 text-sm text-muted">
           Browse the dashboard, publish a static build, export JSON or comment on pull requests.
@@ -352,7 +414,7 @@ const softwareApplication = {
       {
         capabilities.map(({ icon: Icon, title, text }) => (
           <li class="card group p-5 transition hover:border-muted/60">
-            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-accent transition group-hover:text-accent-3">
+            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent transition group-hover:text-accent-3">
               <Icon size={20} aria-hidden="true" />
             </span>
             <h3 class="mt-4 font-semibold">{title}</h3>
@@ -374,7 +436,7 @@ const softwareApplication = {
       name="insights"
       alt="Insights page of the Features dashboard: totals of features and owners, and a table of every feature with its owner, dates, files, lines, TODOs and changes"
       caption="Insights: every feature with its owner, size, TODOs and commit history, filterable with queries like owner:john AND lines:>1000."
-      class="shadow-2xl shadow-black/50"
+      featured
     />
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
       <Screenshot

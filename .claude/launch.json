@@ -3,8 +3,15 @@
   "configurations": [
     {
       "name": "website",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--dir", "projects/website", "dev", "--port", "4321"],
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "--cwd=projects/website",
+        "dev",
+        "--",
+        "--port",
+        "4321"
+      ],
       "port": 4321
     }
   ]
