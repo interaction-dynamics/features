@@ -106,7 +106,7 @@ jobs:
           fi
           echo "Generated features.json with $(wc -l < ../web/public/features.json) lines"
 
-      # Generate project-level records (root docs/specs and docs/decisions) for the Project records page
+      # Generate project-level records (root docs/specs and docs/decisions) for the Outside features page
       - name: Generate records data 📝
         working-directory: ./projects/cli
         run: |

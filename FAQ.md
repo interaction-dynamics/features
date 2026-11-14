@@ -80,7 +80,7 @@ Or create the files yourself:
 
 A large spec can be a folder: `__docs__/specs/003-sso/` with `spec.md` as its main file and other files such as `plan.md` or `tasks.md` next to it.
 
-Records that concern the whole project go in `docs/specs/`, `docs/decisions/` or `docs/adr/` at the root of the scanned folder. They show on the **Project records** page of the web interface, and `features records --json` prints them (`{ "records": [...] }`, also served as `records.json`). A root record with `feature: <name or path>` in its frontmatter is shown in that feature instead.
+Records that concern the whole project go in `docs/specs/`, `docs/decisions/` or `docs/adr/` at the root of the scanned folder. They show in the *Not attached to a feature* section of the **Outside features** page of the web interface, and `features records --json` prints them (`{ "records": [...] }`, also served as `records.json`). A root record with `feature: <name or path>` in its frontmatter is shown in that feature instead.
 
 `features check` warns about links to records that don't exist, records without a status, superseded records that nothing replaces, and implemented specs with open tasks.
 

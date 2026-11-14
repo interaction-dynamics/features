@@ -6,7 +6,7 @@ decisions: [001-feature-based-architecture]
 
 # Feature folders
 
-Project-level specs live in `docs/specs`. Unlike the specs in a feature's `__docs__/specs`, they cover the whole project or several features at once, so they show on the **Project records** page.
+Project-level specs live in `docs/specs`. Unlike the specs in a feature's `__docs__/specs`, they cover the whole project or several features at once, so they show on the **Outside features** page.
 
 ## Context
 
