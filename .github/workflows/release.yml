@@ -602,20 +602,49 @@ jobs:
       - publish-npm
       - check
     steps:
+      - name: Download all rust artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: cli-*
+          merge-multiple: true
+          path: ./dist
+
+      - name: Generate checksums
+        working-directory: dist
+        run: |
+          shopt -s nullglob
+          assets=(features-*)
+          if [ ${#assets[@]} -eq 0 ]; then
+            echo "::error::No release binaries found in dist/"
+            exit 1
+          fi
+          sha256sum "${assets[@]}" > checksums.txt
+          for asset in "${assets[@]}"; do
+            sha256sum "$asset" > "$asset.sha256"
+          done
+          cat checksums.txt
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           name: CLI v${{ needs.check.outputs.version }}
           draft: false
           tag_name: v${{ needs.check.outputs.version }}
+          fail_on_unmatched_files: true
           files: |
             dist/features-*
+            dist/checksums.txt
           body: |
             ## Installation
 
             ### Via Cargo (Rust)
             ```bash
             cargo install features-cli
+            ```
+
+            ### Via Homebrew (macOS, Linux)
+            ```bash
+            brew install interaction-dynamics/tap/features
             ```
 
             ### Via npm
@@ -626,7 +655,70 @@ jobs:
             ```
 
             ### Download Binary
-            Download the appropriate binary for your platform from the attachments below.
+            Download the appropriate binary for your platform from the attachments below,
+            and verify it against `checksums.txt` (`sha256sum -c checksums.txt --ignore-missing`).
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  homebrew-tap:
+    name: Update Homebrew tap
+    runs-on: ubuntu-latest
+    needs:
+      - github-release
+      - check
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - name: Check for tap token
+        id: token
+        run: |
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "::notice::HOMEBREW_TAP_TOKEN is not set, skipping the Homebrew tap update"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Download release checksums
+        if: steps.token.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "v$VERSION" --pattern checksums.txt --dir "$RUNNER_TEMP"
+
+      - name: Render formula
+        if: steps.token.outputs.present == 'true'
+        run: packaging/homebrew/render.sh "$VERSION" "$RUNNER_TEMP/checksums.txt" "$RUNNER_TEMP/features.rb"
+
+      - name: Checkout tap repository
+        if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          repository: interaction-dynamics/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Commit and push formula
+        if: steps.token.outputs.present == 'true'
+        working-directory: homebrew-tap
+        run: |
+          mkdir -p Formula
+          cp "$RUNNER_TEMP/features.rb" Formula/features.rb
+          if git diff --quiet --exit-code -- Formula/features.rb && git ls-files --error-unmatch Formula/features.rb >/dev/null 2>&1; then
+            echo "Formula already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/features.rb
+          git commit -m "features $VERSION"
+          git push
