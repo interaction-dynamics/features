@@ -44,7 +44,9 @@ Then open [http://localhost:3000](http://localhost:3000). That's it.
 Prefer a global install?
 
 ```bash
-npm install -g features-cli   # or: cargo binstall features-cli
+npm install -g features-cli
+# or: brew install interaction-dynamics/tap/features
+# or: cargo binstall features-cli
 features serve ./src
 ```
 
