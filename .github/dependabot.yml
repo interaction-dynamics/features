@@ -3,7 +3,9 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm"
+  # projects/web uses bun (bun.lock), so the "npm" ecosystem would not
+  # update its lockfile and CI's `bun install --frozen-lockfile` would fail
+  - package-ecosystem: "bun"
     directory: "/projects/web"
     schedule:
       interval: "weekly"
