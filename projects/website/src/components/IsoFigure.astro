@@ -1,30 +1,52 @@
 ---
 import { figures, type FigureName } from '../lib/figures'
-import { render } from '../lib/iso'
+import { render, type Rendered } from '../lib/iso'
 
 interface Props {
   name: FigureName
+  /** Added to the start of every animation, to stagger figures shown side by side (ms). */
+  delay?: number
   class?: string
 }
 
-const { name, class: className = '' } = Astro.props
+const { name, delay = 0, class: className = '' } = Astro.props
 const { items, viewBox } = render(figures[name](), 1.5)
+
+const n = (value: number) => value.toFixed(2)
+
+/** Class and style attributes of a node, from its look and its motion. */
+const attributes = (node: Rendered) => {
+  const classes = node.kind === 'group' ? [] : [`fill-${node.fill ?? 'none'}`, `stroke-${node.stroke ?? 'base'}`]
+  if (node.kind !== 'group' && node.dashed) classes.push('dashed')
+  if (node.anim) classes.push(node.anim)
+  const styles = []
+  if (node.anim) styles.push(`--delay:${(node.delay ?? 0) + delay}ms`)
+  if (node.kind !== 'group' && node.dx !== undefined && node.dy !== undefined) {
+    styles.push(`--dx:${n(node.dx)}`, `--dy:${n(node.dy)}`)
+  }
+  return `${classes.length ? ` class="${classes.join(' ')}"` : ''}${styles.length ? ` style="${styles.join(';')}"` : ''}`
+}
+
+// Built as a string so groups can nest at any depth.
+const markup = (node: Rendered): string => {
+  const attrs = attributes(node)
+  switch (node.kind) {
+    case 'group':
+      return `<g${attrs}>${node.children.map(markup).join('')}</g>`
+    case 'ellipse':
+      return `<ellipse cx="${n(node.cx)}" cy="${n(node.cy)}" rx="${n(node.rx)}" ry="${n(node.ry)}"${attrs}/>`
+    case 'dot':
+      return `<circle cx="${n(node.cx)}" cy="${n(node.cy)}" r="${n(node.rx)}"${attrs}/>`
+    default:
+      return `<${node.kind} points="${node.d}"${node.draw ? ' pathLength="1"' : ''}${attrs}/>`
+  }
+}
 ---
 
-<svg viewBox={viewBox} class:list={['iso-figure', className]} fill="none" aria-hidden="true">
-  {
-    items.map((item) => {
-      const classes = [`fill-${item.fill ?? 'none'}`, `stroke-${item.stroke ?? 'base'}`, item.dashed && 'dashed']
-      if (item.kind === 'ellipse') {
-        return <ellipse cx={item.cx.toFixed(2)} cy={item.cy.toFixed(2)} rx={item.rx.toFixed(2)} ry={item.ry.toFixed(2)} class:list={classes} />
-      }
-      if (item.kind === 'polyline') return <polyline points={item.d} class:list={classes} />
-      return <polygon points={item.d} class:list={classes} />
-    })
-  }
-</svg>
+<svg viewBox={viewBox} class:list={['iso-figure', className]} fill="none" aria-hidden="true" set:html={items.map(markup).join('')} />
 
-<style>
+<style is:global>
+  /* Global: the shapes are injected as markup, so scoped styles would miss them. */
   .iso-figure {
     display: block;
     width: 100%;
@@ -37,25 +59,188 @@ const { items, viewBox } = render(figures[name](), 1.5)
     stroke-linecap: round;
     vector-effect: non-scaling-stroke;
   }
-  .fill-none {
+  .iso-figure .fill-none {
     fill: none;
   }
-  .fill-side {
+  .iso-figure .fill-side {
     fill: var(--color-ink);
   }
-  .fill-top {
+  .iso-figure .fill-top {
     fill: color-mix(in oklab, var(--color-text) 3%, var(--color-ink));
   }
-  .stroke-base {
+  .iso-figure .fill-solid {
+    fill: var(--color-text);
+  }
+  .iso-figure .stroke-base {
     stroke: color-mix(in oklab, var(--color-text) 42%, transparent);
   }
-  .stroke-strong {
+  .iso-figure .stroke-strong {
     stroke: color-mix(in oklab, var(--color-text) 80%, transparent);
   }
-  .stroke-faint {
+  .iso-figure .stroke-faint {
     stroke: color-mix(in oklab, var(--color-text) 22%, transparent);
   }
-  .dashed {
+  .iso-figure .dashed {
     stroke-dasharray: 1.5 3;
+  }
+
+  /*
+   * Motion of the figures, on top of the illustration animations of
+   * global.css: same `--delay`, same pause until in view inside `.reveal`,
+   * same final state when animations are off. Lengths are in SVG units.
+   */
+  .anim-iso-rise {
+    animation: iso-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both;
+  }
+  @keyframes iso-rise {
+    from {
+      opacity: 0;
+      transform: translateY(1.5px);
+    }
+  }
+
+  .anim-iso-fade {
+    animation: iso-fade 0.7s ease-out var(--delay, 0ms) both;
+  }
+  @keyframes iso-fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  /* Blocks falling into place with a light bounce. */
+  .anim-iso-drop {
+    animation: iso-drop 0.75s cubic-bezier(0.25, 0.9, 0.35, 1.2) var(--delay, 0ms) both;
+  }
+  @keyframes iso-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-3.5px);
+    }
+    40% {
+      opacity: 1;
+    }
+  }
+
+  .anim-iso-pop {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: iso-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) var(--delay, 0ms) both;
+  }
+  @keyframes iso-pop {
+    from {
+      opacity: 0;
+      transform: scale(0);
+    }
+  }
+
+  /* Lines drawing themselves; the shape needs pathLength="1". */
+  .anim-iso-draw {
+    stroke-dasharray: 1;
+    animation: iso-draw 0.8s ease-in-out var(--delay, 0ms) both;
+  }
+  @keyframes iso-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Loop: features picked one after the other (delays 2.5s apart). */
+  .anim-iso-lift {
+    animation: iso-lift 7.5s ease-in-out var(--delay, 0ms) infinite both;
+  }
+  @keyframes iso-lift {
+    0%,
+    6%,
+    36%,
+    100% {
+      transform: translateY(0);
+    }
+    14%,
+    28% {
+      transform: translateY(-0.8px);
+    }
+  }
+
+  /* Loop: dashes flowing from the first point of a line to the last. */
+  .anim-iso-flow {
+    animation: iso-flow 0.9s linear infinite;
+  }
+  @keyframes iso-flow {
+    to {
+      stroke-dashoffset: -4.5;
+    }
+  }
+
+  /* Loop: a ring spreading out of a flat circle, hidden when still. */
+  .anim-iso-ping {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: iso-ping 6s ease-out var(--delay, 0ms) infinite both;
+  }
+  @keyframes iso-ping {
+    0% {
+      opacity: 0;
+      transform: scale(1);
+    }
+    2% {
+      opacity: 0.9;
+      transform: scale(1);
+    }
+    28%,
+    100% {
+      opacity: 0;
+      transform: scale(3.4);
+    }
+  }
+
+  /* Loop: a dot travelling by (--dx, --dy), hidden when still. */
+  .anim-iso-travel {
+    opacity: 0;
+    animation: iso-travel 6s var(--delay, 0ms) infinite both;
+  }
+  @keyframes iso-travel {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0);
+      animation-timing-function: ease-in-out;
+    }
+    4% {
+      opacity: 1;
+    }
+    24% {
+      opacity: 1;
+      transform: translate(calc(var(--dx) * 1px), calc(var(--dy) * 1px));
+    }
+    30%,
+    100% {
+      opacity: 0;
+      transform: translate(calc(var(--dx) * 1px), calc(var(--dy) * 1px));
+    }
+  }
+
+  /* Loop: a stroke drawn in, held, then erased; not drawn when still. */
+  .anim-iso-tick {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: iso-tick 6s ease-in-out var(--delay, 0ms) infinite both;
+  }
+  @keyframes iso-tick {
+    0%,
+    8% {
+      stroke-dashoffset: 1;
+    }
+    18%,
+    74% {
+      stroke-dashoffset: 0;
+    }
+    84%,
+    100% {
+      stroke-dashoffset: 1;
+    }
   }
 </style>

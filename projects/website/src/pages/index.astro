@@ -196,8 +196,8 @@ const softwareApplication = {
         pillars.map((pillar, index) => (
           <li class="flex flex-col py-6 md:px-8 md:first:pl-0 md:last:pr-0">
             <p class="font-mono text-[0.7rem] tracking-wider text-muted/70">FIG 0.{index + 1}</p>
-            <div class="mx-auto my-8 flex h-44 w-full max-w-56 items-center justify-center">
-              <IsoFigure name={pillar.figure} class="max-h-full" />
+            <div class="reveal mx-auto my-8 flex h-44 w-full max-w-56 items-center justify-center">
+              <IsoFigure name={pillar.figure} delay={index * 150} class="max-h-full" />
             </div>
             <h3 class="font-medium">{pillar.title}</h3>
             <p class="mt-2 text-sm text-pretty text-muted">{pillar.text}</p>
