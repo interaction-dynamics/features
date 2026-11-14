@@ -78,6 +78,11 @@ Most codebases are organized by technical layer (`components/`, `services/`, `ut
 **For product and QA**
 - List feature flags, experiments and other feature metadata across the codebase
 
+**For AI coding agents**
+- Give Claude Code, Cursor, Copilot and other agents a [map of the codebase by feature](#give-your-ai-coding-agent-a-map-of-the-codebase), so they find the right files without grepping the whole repository
+- Let them read each feature's description, docs and decision records before changing it
+- Check which features and owners their change touches before opening a pull request
+
 > Have another use case? [Open an issue](https://github.com/interaction-dynamics/features/issues). We'd love to hear about it.
 
 ## Share a dashboard with your team
@@ -103,6 +108,30 @@ features diff ./src --since origin/main                  # which features (and o
 ```
 
 All options are listed in the [CLI reference](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md).
+
+## Give your AI coding agent a map of the codebase
+
+AI coding agents work best when they know where things live. Without a map, they search the repository file by file, spend context on unrelated code and miss the decisions behind it. `features-cli` gives them that map in one command:
+
+- **Find the right code faster.** The JSON report lists every feature with its path, description and owner, so the agent goes straight to the folder it needs.
+- **Respect past decisions.** Each feature comes with its docs and decision records, so the agent understands why the code is built that way before changing it.
+- **Know the blast radius.** `features diff` shows which features and owners a change touches, so the agent can flag cross-team changes and suggest reviewers.
+- **Stay within the conventions.** `features check` catches invalid features (e.g. duplicate names) the agent may have introduced.
+- **Works with any agent.** It's a plain CLI with JSON output: no plugin, server or API key needed.
+
+Add a few lines to your `AGENTS.md`, `CLAUDE.md` or `.cursor/rules` file:
+
+```markdown
+## Finding your way around
+
+This codebase is organized by feature. Before exploring the code:
+
+- Run `npx features-cli@latest scan ./src --json --skip-changes` to list the features with their path, description, owner and decision records.
+- Run `npx features-cli@latest find-owner <file>` to find who owns a file.
+- Before opening a pull request, run `npx features-cli@latest diff ./src --since origin/main` and mention the features and owners touched.
+```
+
+`--skip-changes` leaves out the git history, which keeps the report small and fast on large repositories.
 
 ## Ping the right teams on every pull request
 
