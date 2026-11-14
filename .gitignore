@@ -54,6 +54,7 @@ dist-ssr
 *.sw?
 
 projects/web/public/features.json
+projects/web/public/records.json
 projects/web/public/metadata.json
 coverage
 projects/web/playwright-report/

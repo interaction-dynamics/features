@@ -35,10 +35,20 @@ const pathname = Astro.url.pathname
   .replace(/\/$/, '')
 const canonical = new URL(pathname || '/', siteUrl).href
 const ogImage = new URL('/og.png', siteUrl).href
+// Markdown twin of the page, generated after the build by integrations/llms.ts.
+const markdownPath = `/${pathname.replace(/^\//, '') || 'index'}.md`
 const fullTitle =
   title === site.name
     ? `${site.name} — ${site.tagline}`
     : `${title} | ${site.name}`
+
+const organization = {
+  '@type': 'Organization',
+  '@id': `${site.organizationUrl}/#organization`,
+  name: site.organization,
+  url: site.organizationUrl,
+  sameAs: [site.repository.replace(/\/[^/]+$/, '')],
+}
 
 const structuredData: Record<string, unknown>[] = [
   {
@@ -47,11 +57,8 @@ const structuredData: Record<string, unknown>[] = [
     name: site.name,
     url: new URL('/', siteUrl).href,
     description: site.description,
-    publisher: {
-      '@type': 'Organization',
-      name: site.organization,
-      url: site.organizationUrl,
-    },
+    inLanguage: 'en',
+    publisher: organization,
   },
   ...(breadcrumbs.length > 0
     ? [
@@ -81,10 +88,16 @@ const structuredData: Record<string, unknown>[] = [
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
-    <meta name="theme-color" content="#0b0f17" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#08090a" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    {!noindex && <link rel="alternate" type="text/markdown" href={markdownPath} title="Markdown version" />}
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="Site summary for LLMs" />
     <meta name="generator" content={Astro.generator} />
+    <!-- Lets illustrations in a `.reveal` container wait until they scroll into view. -->
+    <script is:inline>document.documentElement.classList.add('js')</script>
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />
@@ -119,5 +132,24 @@ const structuredData: Record<string, unknown>[] = [
       <slot />
     </main>
     <Footer />
+    <script>
+      // Start the animations of each `.reveal` illustration once it scrolls into view.
+      const reveals = document.querySelectorAll('.reveal')
+      if (!('IntersectionObserver' in window)) {
+        reveals.forEach((element) => element.classList.add('in-view'))
+      } else {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue
+              entry.target.classList.add('in-view')
+              observer.unobserve(entry.target)
+            }
+          },
+          { threshold: 0.25 },
+        )
+        reveals.forEach((element) => observer.observe(element))
+      }
+    </script>
   </body>
 </html>

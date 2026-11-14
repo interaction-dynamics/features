@@ -10,7 +10,7 @@ export interface FeaturesContextValue {
   isAggregated: boolean
   /** Repositories of an aggregated report */
   repositories: string[]
-  /** Reconciliation issues of an aggregated report */
+  /** Features of an aggregated report that could not be merged across repositories */
   reconciliationErrors: ReconciliationError[]
 }
 

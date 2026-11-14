@@ -1,6 +1,7 @@
 [
   {
     "name": "feature-0",
+    "key": "feature-0",
     "description": "",
     "owner": "",
     "is_owner_inherited": false,
@@ -8,6 +9,7 @@
     "features": [
       {
         "name": "Feature 1",
+        "key": "feature-1",
         "description": "",
         "owner": "John Doe",
         "is_owner_inherited": false,
@@ -15,6 +17,7 @@
         "features": [
           {
             "name": "Feature 2",
+            "key": "feature-2",
             "description": "",
             "owner": "John Doe",
             "is_owner_inherited": true,
@@ -23,6 +26,7 @@
             "meta": {},
             "changes": [],
             "decisions": [],
+            "records": [],
             "stats": {
               "files_count": 2,
               "lines_count": 6,
@@ -44,6 +48,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 4,
           "lines_count": 20,
@@ -56,6 +61,7 @@
     "meta": {},
     "changes": [],
     "decisions": [],
+    "records": [],
     "stats": {
       "files_count": 5,
       "lines_count": 23,
@@ -75,6 +81,7 @@
   },
   {
     "name": "Feature 1",
+    "key": "feature-1",
     "description": "This is a Feature that does something useful.",
     "owner": "team1",
     "is_owner_inherited": false,
@@ -82,6 +89,7 @@
     "features": [
       {
         "name": "Feature 2 Duplicated",
+        "key": "feature-2",
         "description": "This is a very long description of the feature 2 duplicated.\n\n## Reason of the feature\n\nThis Feature is duplicated because it is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Implementation Details\n\nThis feature is implemented using the following technologies:\n\n- JavaScript\n- HTML\n- CSS\n\n## Conclusion\n\nThis feature is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Future Improvements\n\n- Add more features to the feature\n- Improve the user interface",
         "owner": "team1",
         "is_owner_inherited": true,
@@ -90,6 +98,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 1,
           "lines_count": 24,
@@ -100,6 +109,7 @@
       },
       {
         "name": "feature-3",
+        "key": "feature-3",
         "description": "",
         "owner": "team1",
         "is_owner_inherited": true,
@@ -108,6 +118,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 1,
           "lines_count": 0,
@@ -118,6 +129,7 @@
       },
       {
         "name": "Feature 4",
+        "key": "feature-4",
         "description": "",
         "owner": "team2",
         "is_owner_inherited": false,
@@ -129,6 +141,7 @@
         },
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 1,
           "lines_count": 7,
@@ -139,6 +152,7 @@
       },
       {
         "name": "Feature 2",
+        "key": "feature-2",
         "description": "",
         "owner": "team1",
         "is_owner_inherited": true,
@@ -147,6 +161,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 2,
           "lines_count": 6,
@@ -170,6 +185,21 @@
     "decisions": [
       "# Use Technology 1\n\n## Decision\n\n### Reasoning\n\nThis decision was made to use technology 1 because it provides the best performance and reliability for our application.\n\n### Implementation\n"
     ],
+    "records": [
+      {
+        "kind": "decision",
+        "id": "001-use-technology-1",
+        "title": "Use Technology 1",
+        "path": "features/feature-1/__docs__/decisions/001-use-technology-1.md",
+        "content": "# Use Technology 1\n\n## Decision\n\n### Reasoning\n\nThis decision was made to use technology 1 because it provides the best performance and reliability for our application.\n\n### Implementation\n",
+        "links": {
+          "decisions": [],
+          "specs": [],
+          "supersedes": [],
+          "superseded_by": []
+        }
+      }
+    ],
     "stats": {
       "files_count": 10,
       "lines_count": 60,
@@ -180,6 +210,7 @@
   },
   {
     "name": "Feature 2",
+    "key": "feature-2",
     "description": "This is a feature that does something very interesting.",
     "owner": "",
     "is_owner_inherited": false,
@@ -190,6 +221,36 @@
     "decisions": [
       "# Architecture Choice for Feature 2\n\n## Context\n\nWe need to decide on the architectural pattern for implementing feature 2 in our JavaScript application.\n\n## Decision\n\nWe will use the Model-View-Controller (MVC) pattern for feature 2.\n\n## Status\n\nAccepted\n\n## Consequences\n\n### Positive\n- Clear separation of concerns\n- Easier to test individual components\n- Better maintainability\n- Familiar pattern to most developers\n\n### Negative\n- Additional abstraction layer\n- Slightly more complex initial setup\n- Potential for over-engineering simple features\n\n## Implementation Notes\n\n- Controllers will handle user input and coordinate between models and views\n- Models will manage data and business logic\n- Views will be responsible for rendering the user interface\n- Event-driven communication between components",
       "# Database Choice for Feature 2\n\n## Context\n\nFeature 2 requires persistent data storage for user preferences and application state. We need to choose an appropriate database solution that fits our JavaScript application architecture.\n\n## Decision\n\nWe will use IndexedDB as the primary client-side storage solution, with localStorage as a fallback for critical settings.\n\n## Status\n\nAccepted\n\n## Rationale\n\n### Why IndexedDB?\n- Native browser support without external dependencies\n- Asynchronous operations that don't block the UI\n- Supports complex data types and large storage capacity\n- Transaction support for data consistency\n- Better performance for complex queries compared to localStorage\n\n### Why localStorage as fallback?\n- Synchronous API for critical settings that need immediate access\n- Broader browser compatibility\n- Simpler API for basic key-value operations\n- Persistent across browser sessions\n\n## Consequences\n\n### Positive\n- No external database dependencies\n- Works offline by default\n- Fast local access to data\n- No network latency issues\n- Privacy-friendly (data stays on user's device)\n\n### Negative\n- Data is tied to specific browser/device\n- No server-side data synchronization\n- Storage limits imposed by browser\n- Requires data migration strategies for schema changes\n\n## Implementation Guidelines\n\n### IndexedDB Usage\n- Store user preferences and settings\n- Cache application data for offline use\n- Maintain transaction history\n- Store complex objects and relationships\n\n### localStorage Usage\n- Theme preferences\n- Language settings\n- Critical user preferences that need synchronous access\n- Temporary session data\n\n## Migration Strategy\n\nIf we need server-side storage in the future:\n1. Export data from IndexedDB to JSON format\n2. Implement sync mechanism with server\n3. Maintain hybrid approach for offline functionality\n4. Gradual migration of data to server storage"
+    ],
+    "records": [
+      {
+        "kind": "decision",
+        "id": "001-architecture-choice",
+        "title": "Architecture Choice for Feature 2",
+        "status": "accepted",
+        "path": "features/feature-2/__docs__/decisions/001-architecture-choice.md",
+        "content": "# Architecture Choice for Feature 2\n\n## Context\n\nWe need to decide on the architectural pattern for implementing feature 2 in our JavaScript application.\n\n## Decision\n\nWe will use the Model-View-Controller (MVC) pattern for feature 2.\n\n## Status\n\nAccepted\n\n## Consequences\n\n### Positive\n- Clear separation of concerns\n- Easier to test individual components\n- Better maintainability\n- Familiar pattern to most developers\n\n### Negative\n- Additional abstraction layer\n- Slightly more complex initial setup\n- Potential for over-engineering simple features\n\n## Implementation Notes\n\n- Controllers will handle user input and coordinate between models and views\n- Models will manage data and business logic\n- Views will be responsible for rendering the user interface\n- Event-driven communication between components",
+        "links": {
+          "decisions": [],
+          "specs": [],
+          "supersedes": [],
+          "superseded_by": []
+        }
+      },
+      {
+        "kind": "decision",
+        "id": "002-database-choice",
+        "title": "Database Choice for Feature 2",
+        "status": "accepted",
+        "path": "features/feature-2/__docs__/decisions/002-database-choice.md",
+        "content": "# Database Choice for Feature 2\n\n## Context\n\nFeature 2 requires persistent data storage for user preferences and application state. We need to choose an appropriate database solution that fits our JavaScript application architecture.\n\n## Decision\n\nWe will use IndexedDB as the primary client-side storage solution, with localStorage as a fallback for critical settings.\n\n## Status\n\nAccepted\n\n## Rationale\n\n### Why IndexedDB?\n- Native browser support without external dependencies\n- Asynchronous operations that don't block the UI\n- Supports complex data types and large storage capacity\n- Transaction support for data consistency\n- Better performance for complex queries compared to localStorage\n\n### Why localStorage as fallback?\n- Synchronous API for critical settings that need immediate access\n- Broader browser compatibility\n- Simpler API for basic key-value operations\n- Persistent across browser sessions\n\n## Consequences\n\n### Positive\n- No external database dependencies\n- Works offline by default\n- Fast local access to data\n- No network latency issues\n- Privacy-friendly (data stays on user's device)\n\n### Negative\n- Data is tied to specific browser/device\n- No server-side data synchronization\n- Storage limits imposed by browser\n- Requires data migration strategies for schema changes\n\n## Implementation Guidelines\n\n### IndexedDB Usage\n- Store user preferences and settings\n- Cache application data for offline use\n- Maintain transaction history\n- Store complex objects and relationships\n\n### localStorage Usage\n- Theme preferences\n- Language settings\n- Critical user preferences that need synchronous access\n- Temporary session data\n\n## Migration Strategy\n\nIf we need server-side storage in the future:\n1. Export data from IndexedDB to JSON format\n2. Implement sync mechanism with server\n3. Maintain hybrid approach for offline functionality\n4. Gradual migration of data to server storage",
+        "links": {
+          "decisions": [],
+          "specs": [],
+          "supersedes": [],
+          "superseded_by": []
+        }
+      }
     ],
     "stats": {
       "files_count": 4,
@@ -210,6 +271,7 @@
   },
   {
     "name": "Feature 0",
+    "key": "feature-0",
     "description": "This is the description added in the README.md file.\n\nIt accepts _markdown_ __formatting__: [link](https://example.com).",
     "owner": "team1",
     "is_owner_inherited": false,
@@ -231,6 +293,21 @@
     "changes": [],
     "decisions": [
       "# Decision 1 (open to get more details)\n\nYou can add decision files in `__docs__/decisions` folder.\n\nIt is very useful for documenting important decisions made during the development process like [Markdown Architectural Decision Records (MADR)](https://adr.github.io/).\n\n# Context and Problem Statement\n\nHow to write readable test assertions?\nHow to write readable test assertions for advanced tests?\n\n## Considered Options\n\n* Plain JUnit5\n* Hamcrest\n* AssertJ\n\n## Decision Outcome\n\nChosen option: \"Plain JUnit5\", because it is a standard framework and the features of the other frameworks do not outweigh the drawbrack of adding a new dependency.\n"
+    ],
+    "records": [
+      {
+        "kind": "decision",
+        "id": "001-use-technology-1",
+        "title": "Decision 1 (open to get more details)",
+        "path": "libs/features/feature-0/__docs__/decisions/001-use-technology-1.md",
+        "content": "# Decision 1 (open to get more details)\n\nYou can add decision files in `__docs__/decisions` folder.\n\nIt is very useful for documenting important decisions made during the development process like [Markdown Architectural Decision Records (MADR)](https://adr.github.io/).\n\n# Context and Problem Statement\n\nHow to write readable test assertions?\nHow to write readable test assertions for advanced tests?\n\n## Considered Options\n\n* Plain JUnit5\n* Hamcrest\n* AssertJ\n\n## Decision Outcome\n\nChosen option: \"Plain JUnit5\", because it is a standard framework and the features of the other frameworks do not outweigh the drawbrack of adding a new dependency.\n",
+        "links": {
+          "decisions": [],
+          "specs": [],
+          "supersedes": [],
+          "superseded_by": []
+        }
+      }
     ],
     "stats": {
       "files_count": 3,
@@ -273,6 +350,7 @@
   },
   {
     "name": "Feature 1",
+    "key": "feature-1",
     "description": "This is a Feature that does something useful.",
     "owner": "team1",
     "is_owner_inherited": false,
@@ -280,6 +358,7 @@
     "features": [
       {
         "name": "Feature 2 Duplicated",
+        "key": "feature-2",
         "description": "This is a very long description of the feature 2 duplicated.\n\n## Reason of the feature\n\nThis Feature is duplicated because it is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Implementation Details\n\nThis feature is implemented using the following technologies:\n\n- JavaScript\n- HTML\n- CSS\n\n## Conclusion\n\nThis feature is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Future Improvements\n\n- Add more features to the feature\n- Improve the user interface",
         "owner": "team1",
         "is_owner_inherited": true,
@@ -288,6 +367,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 1,
           "lines_count": 24,
@@ -298,6 +378,7 @@
       },
       {
         "name": "feature-3",
+        "key": "feature-3",
         "description": "",
         "owner": "team1",
         "is_owner_inherited": true,
@@ -306,6 +387,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 3,
           "lines_count": 27,
@@ -336,6 +418,7 @@
       },
       {
         "name": "Feature 4",
+        "key": "feature-4",
         "description": "",
         "owner": "team2",
         "is_owner_inherited": false,
@@ -347,6 +430,7 @@
         },
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 3,
           "lines_count": 38,
@@ -431,6 +515,21 @@
     "decisions": [
       "# Use Technology 1\n\n## Decision\n\n### Reasoning\n\nThis decision was made to use technology 1 because it provides the best performance and reliability for our application.\n\n### Implementation\n"
     ],
+    "records": [
+      {
+        "kind": "decision",
+        "id": "001-use-technology-1",
+        "title": "Use Technology 1",
+        "path": "libs/features/feature-1/__docs__/decisions/001-use-technology-1.md",
+        "content": "# Use Technology 1\n\n## Decision\n\n### Reasoning\n\nThis decision was made to use technology 1 because it provides the best performance and reliability for our application.\n\n### Implementation\n",
+        "links": {
+          "decisions": [],
+          "specs": [],
+          "supersedes": [],
+          "superseded_by": []
+        }
+      }
+    ],
     "stats": {
       "files_count": 17,
       "lines_count": 167,
@@ -472,6 +571,7 @@
   },
   {
     "name": "The best Feature 2",
+    "key": "feature-2",
     "description": "This is a feature that does something very interesting.",
     "owner": "",
     "is_owner_inherited": false,
@@ -504,6 +604,36 @@
     "decisions": [
       "# Architecture Choice for Feature 2\n\n## Context\n\nWe need to decide on the architectural pattern for implementing feature 2 in our JavaScript application.\n\n## Decision\n\nWe will use the Model-View-Controller (MVC) pattern for feature 2.\n\n## Status\n\nAccepted\n\n## Consequences\n\n### Positive\n- Clear separation of concerns\n- Easier to test individual components\n- Better maintainability\n- Familiar pattern to most developers\n\n### Negative\n- Additional abstraction layer\n- Slightly more complex initial setup\n- Potential for over-engineering simple features\n\n## Implementation Notes\n\n- Controllers will handle user input and coordinate between models and views\n- Models will manage data and business logic\n- Views will be responsible for rendering the user interface\n- Event-driven communication between components",
       "# Database Choice for Feature 2\n\n## Context\n\nFeature 2 requires persistent data storage for user preferences and application state. We need to choose an appropriate database solution that fits our JavaScript application architecture.\n\n## Decision\n\nWe will use IndexedDB as the primary client-side storage solution, with localStorage as a fallback for critical settings.\n\n## Status\n\nAccepted\n\n## Rationale\n\n### Why IndexedDB?\n- Native browser support without external dependencies\n- Asynchronous operations that don't block the UI\n- Supports complex data types and large storage capacity\n- Transaction support for data consistency\n- Better performance for complex queries compared to localStorage\n\n### Why localStorage as fallback?\n- Synchronous API for critical settings that need immediate access\n- Broader browser compatibility\n- Simpler API for basic key-value operations\n- Persistent across browser sessions\n\n## Consequences\n\n### Positive\n- No external database dependencies\n- Works offline by default\n- Fast local access to data\n- No network latency issues\n- Privacy-friendly (data stays on user's device)\n\n### Negative\n- Data is tied to specific browser/device\n- No server-side data synchronization\n- Storage limits imposed by browser\n- Requires data migration strategies for schema changes\n\n## Implementation Guidelines\n\n### IndexedDB Usage\n- Store user preferences and settings\n- Cache application data for offline use\n- Maintain transaction history\n- Store complex objects and relationships\n\n### localStorage Usage\n- Theme preferences\n- Language settings\n- Critical user preferences that need synchronous access\n- Temporary session data\n\n## Migration Strategy\n\nIf we need server-side storage in the future:\n1. Export data from IndexedDB to JSON format\n2. Implement sync mechanism with server\n3. Maintain hybrid approach for offline functionality\n4. Gradual migration of data to server storage"
+    ],
+    "records": [
+      {
+        "kind": "decision",
+        "id": "001-architecture-choice",
+        "title": "Architecture Choice for Feature 2",
+        "status": "accepted",
+        "path": "libs/features/feature-2/__docs__/decisions/001-architecture-choice.md",
+        "content": "# Architecture Choice for Feature 2\n\n## Context\n\nWe need to decide on the architectural pattern for implementing feature 2 in our JavaScript application.\n\n## Decision\n\nWe will use the Model-View-Controller (MVC) pattern for feature 2.\n\n## Status\n\nAccepted\n\n## Consequences\n\n### Positive\n- Clear separation of concerns\n- Easier to test individual components\n- Better maintainability\n- Familiar pattern to most developers\n\n### Negative\n- Additional abstraction layer\n- Slightly more complex initial setup\n- Potential for over-engineering simple features\n\n## Implementation Notes\n\n- Controllers will handle user input and coordinate between models and views\n- Models will manage data and business logic\n- Views will be responsible for rendering the user interface\n- Event-driven communication between components",
+        "links": {
+          "decisions": [],
+          "specs": [],
+          "supersedes": [],
+          "superseded_by": []
+        }
+      },
+      {
+        "kind": "decision",
+        "id": "002-database-choice",
+        "title": "Database Choice for Feature 2",
+        "status": "accepted",
+        "path": "libs/features/feature-2/__docs__/decisions/002-database-choice.md",
+        "content": "# Database Choice for Feature 2\n\n## Context\n\nFeature 2 requires persistent data storage for user preferences and application state. We need to choose an appropriate database solution that fits our JavaScript application architecture.\n\n## Decision\n\nWe will use IndexedDB as the primary client-side storage solution, with localStorage as a fallback for critical settings.\n\n## Status\n\nAccepted\n\n## Rationale\n\n### Why IndexedDB?\n- Native browser support without external dependencies\n- Asynchronous operations that don't block the UI\n- Supports complex data types and large storage capacity\n- Transaction support for data consistency\n- Better performance for complex queries compared to localStorage\n\n### Why localStorage as fallback?\n- Synchronous API for critical settings that need immediate access\n- Broader browser compatibility\n- Simpler API for basic key-value operations\n- Persistent across browser sessions\n\n## Consequences\n\n### Positive\n- No external database dependencies\n- Works offline by default\n- Fast local access to data\n- No network latency issues\n- Privacy-friendly (data stays on user's device)\n\n### Negative\n- Data is tied to specific browser/device\n- No server-side data synchronization\n- Storage limits imposed by browser\n- Requires data migration strategies for schema changes\n\n## Implementation Guidelines\n\n### IndexedDB Usage\n- Store user preferences and settings\n- Cache application data for offline use\n- Maintain transaction history\n- Store complex objects and relationships\n\n### localStorage Usage\n- Theme preferences\n- Language settings\n- Critical user preferences that need synchronous access\n- Temporary session data\n\n## Migration Strategy\n\nIf we need server-side storage in the future:\n1. Export data from IndexedDB to JSON format\n2. Implement sync mechanism with server\n3. Maintain hybrid approach for offline functionality\n4. Gradual migration of data to server storage",
+        "links": {
+          "decisions": [],
+          "specs": [],
+          "supersedes": [],
+          "superseded_by": []
+        }
+      }
     ],
     "stats": {
       "files_count": 7,
@@ -572,6 +702,7 @@
   },
   {
     "name": "Route 1",
+    "key": "route-1",
     "description": "This is the first route.",
     "owner": "John Doe",
     "is_owner_inherited": false,
@@ -579,6 +710,7 @@
     "features": [
       {
         "name": "Feature 0 (Routes)",
+        "key": "feature-0",
         "description": "This is a different Feature 0 located in the routes/route-1/features directory.\nIt should be identified separately from the Feature 0 in libs/features.\n\n## Owner\n\nroute-team",
         "owner": "John Doe",
         "is_owner_inherited": true,
@@ -587,6 +719,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 3,
           "lines_count": 40,
@@ -628,6 +761,7 @@
       },
       {
         "name": "Feature 10",
+        "key": "feature-10",
         "description": "Short description of feature 10",
         "owner": "John Doe",
         "is_owner_inherited": true,
@@ -636,6 +770,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 2,
           "lines_count": 7,
@@ -646,6 +781,7 @@
       },
       {
         "name": "Feature 11",
+        "key": "feature-11",
         "description": "Short description of feature 11",
         "owner": "John Doe",
         "is_owner_inherited": true,
@@ -654,6 +790,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 2,
           "lines_count": 4,
@@ -664,6 +801,7 @@
       },
       {
         "name": "feature-12-with-a-very-long-name-that-is-longer-than-sidebar",
+        "key": "feature-12-with-a-very-long-name-that-is-longer-than-sidebar",
         "description": "",
         "owner": "John Doe",
         "is_owner_inherited": true,
@@ -672,6 +810,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 2,
           "lines_count": 28,
@@ -704,6 +843,7 @@
     "meta": {},
     "changes": [],
     "decisions": [],
+    "records": [],
     "stats": {
       "files_count": 10,
       "lines_count": 87,
@@ -714,6 +854,7 @@
   },
   {
     "name": "Route 2",
+    "key": "route-2",
     "description": "This is the second route.",
     "owner": "John Doe",
     "is_owner_inherited": false,
@@ -721,6 +862,7 @@
     "features": [
       {
         "name": "Feature 20",
+        "key": "feature-20",
         "description": "Short description of feature 20",
         "owner": "John Doe",
         "is_owner_inherited": true,
@@ -729,6 +871,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 2,
           "lines_count": 5,
@@ -741,6 +884,7 @@
     "meta": {},
     "changes": [],
     "decisions": [],
+    "records": [],
     "stats": {
       "files_count": 3,
       "lines_count": 13,
@@ -751,6 +895,7 @@
   },
   {
     "name": "Route 3",
+    "key": "route-3",
     "description": "This is the third route.",
     "owner": "John Doe",
     "is_owner_inherited": false,
@@ -758,6 +903,7 @@
     "features": [
       {
         "name": "feature-1",
+        "key": "feature-1",
         "description": "",
         "owner": "John Doe",
         "is_owner_inherited": true,
@@ -766,6 +912,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 1,
           "lines_count": 3,
@@ -785,6 +932,7 @@
       },
       {
         "name": "Feature 4",
+        "key": "feature-4",
         "description": "",
         "owner": "team2",
         "is_owner_inherited": false,
@@ -796,6 +944,7 @@
         },
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 3,
           "lines_count": 34,
@@ -826,6 +975,7 @@
       },
       {
         "name": "feature-5",
+        "key": "feature-5",
         "description": "",
         "owner": "John Doe",
         "is_owner_inherited": true,
@@ -834,6 +984,7 @@
         "meta": {},
         "changes": [],
         "decisions": [],
+        "records": [],
         "stats": {
           "files_count": 1,
           "lines_count": 3,
@@ -855,6 +1006,7 @@
     "meta": {},
     "changes": [],
     "decisions": [],
+    "records": [],
     "stats": {
       "files_count": 6,
       "lines_count": 48,
@@ -865,6 +1017,7 @@
   },
   {
     "name": "Feature 1",
+    "key": "feature-1",
     "description": "Feature 1 in services - independent from libs Feature 1",
     "owner": "services-team",
     "is_owner_inherited": false,
@@ -873,6 +1026,7 @@
     "meta": {},
     "changes": [],
     "decisions": [],
+    "records": [],
     "stats": {
       "files_count": 2,
       "lines_count": 7,

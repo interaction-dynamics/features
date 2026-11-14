@@ -30,7 +30,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
 
 use crate::coverage_parser::CoverageStats;
-use crate::models::{Change, Dependency, Stats};
+use crate::feature_key::slugify_key;
+use crate::models::{Change, Dependency, Record, Stats};
 
 /// A feature as found in a features JSON report, or as produced by the aggregation.
 ///
@@ -41,17 +42,23 @@ use crate::models::{Change, Dependency, Stats};
 #[serde(default)]
 pub struct AggregatedFeature {
     pub name: String,
+    pub key: String,
     pub description: String,
     pub owner: String,
     pub is_owner_inherited: bool,
     pub path: String,
     pub features: Vec<AggregatedFeature>,
     pub meta: BTreeMap<String, serde_json::Value>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub links: BTreeMap<String, String>,
     pub changes: Vec<Change>,
     pub decisions: Vec<String>,
+    pub records: Vec<Record>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats: Option<Stats>,
     pub dependencies: Vec<Dependency>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub external: BTreeMap<String, serde_json::Value>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub repositories: Vec<FeatureRepository>,
 }
@@ -576,10 +583,30 @@ fn merge_occurrences(key: &NodeKey, ctx: &BuildContext<'_>) -> AggregatedFeature
         .unwrap_or_default()
         .to_string();
 
+    // Reports produced before feature keys existed have none: derive it from the path
+    let feature_key = members
+        .iter()
+        .map(|o| o.feature.key.as_str())
+        .find(|k| !k.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            let folder = first.path.rsplit(['/', '\\']).next().unwrap_or_default();
+            slugify_key(folder)
+        });
+
+    // Merged maps: the first occurrence that has an entry wins
     let mut meta = BTreeMap::new();
+    let mut links = BTreeMap::new();
+    let mut external = BTreeMap::new();
     for occurrence in &members {
         for (k, v) in &occurrence.feature.meta {
             meta.entry(k.clone()).or_insert_with(|| v.clone());
+        }
+        for (k, v) in &occurrence.feature.links {
+            links.entry(k.clone()).or_insert_with(|| v.clone());
+        }
+        for (k, v) in &occurrence.feature.external {
+            external.entry(k.clone()).or_insert_with(|| v.clone());
         }
     }
 
@@ -597,6 +624,19 @@ fn merge_occurrences(key: &NodeKey, ctx: &BuildContext<'_>) -> AggregatedFeature
         for decision in &occurrence.feature.decisions {
             if !decisions.contains(decision) {
                 decisions.push(decision.clone());
+            }
+        }
+    }
+
+    // Records with the same path in several repositories are the same record
+    let mut records: Vec<Record> = Vec::new();
+    for occurrence in &members {
+        for record in &occurrence.feature.records {
+            if !records
+                .iter()
+                .any(|r| r.path == record.path && r.id == record.id)
+            {
+                records.push(record.clone());
             }
         }
     }
@@ -626,16 +666,20 @@ fn merge_occurrences(key: &NodeKey, ctx: &BuildContext<'_>) -> AggregatedFeature
 
     AggregatedFeature {
         name: first.name.clone(),
+        key: feature_key,
         description,
         owner: owner_source.map(|f| f.owner.clone()).unwrap_or_default(),
         is_owner_inherited: owner_source.is_some_and(|f| f.is_owner_inherited),
         path: ctx.node_paths[key].clone(),
         features: Vec::new(),
         meta,
+        links,
         changes,
         decisions,
+        records,
         stats,
         dependencies,
+        external,
         repositories,
     }
 }
@@ -1029,5 +1073,41 @@ mod tests {
         assert_eq!(report.features[0].owner, "team-b");
         assert!(!report.features[0].is_owner_inherited);
         assert_eq!(report.features[0].description, "Authentication");
+    }
+
+    #[test]
+    fn merges_keys_links_and_external_data() {
+        let mut a = feature("Checkout", "web/features/checkout", vec![]);
+        a.key = "checkout".into();
+        a.links
+            .insert("posthog".into(), "https://posthog.example/a".into());
+        a.external.insert("users".into(), 10.into());
+        let mut b = feature("Checkout", "api/features/checkout", vec![]);
+        b.key = "checkout".into();
+        b.links
+            .insert("posthog".into(), "https://posthog.example/b".into());
+        b.links
+            .insert("sentry".into(), "https://sentry.example".into());
+        b.external.insert("users".into(), 20.into());
+        b.external.insert("errors".into(), 2.into());
+
+        let report = aggregate(&[repo("a", vec![a]), repo("b", vec![b])]);
+        let checkout = &report.features[0];
+
+        assert_eq!(checkout.key, "checkout");
+        assert_eq!(checkout.links["posthog"], "https://posthog.example/a");
+        assert_eq!(checkout.links["sentry"], "https://sentry.example");
+        assert_eq!(checkout.external["users"], 10);
+        assert_eq!(checkout.external["errors"], 2);
+    }
+
+    #[test]
+    fn derives_missing_keys_from_the_path() {
+        // Reports from before feature keys existed have no `key` field
+        let report: Vec<AggregatedFeature> =
+            serde_json::from_str(r#"[{ "name": "Search Page", "path": "features/Search Page" }]"#)
+                .unwrap();
+        let report = aggregate(&[repo("a", report)]);
+        assert_eq!(report.features[0].key, "search-page");
     }
 }

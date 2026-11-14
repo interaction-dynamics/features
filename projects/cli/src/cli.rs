@@ -5,10 +5,11 @@
 //! deprecated aliases: both forms are parsed into the same [`Invocation`].
 
 use clap::error::ErrorKind;
-use clap::{ArgGroup, Args, CommandFactory, Parser, Subcommand};
+use clap::{ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 use crate::http_server::parse_allowed_origin;
+use crate::models::RecordKind;
 
 const DEFAULT_PORT: u16 = 3000;
 const DEFAULT_BUILD_DIR: &str = "build";
@@ -123,7 +124,31 @@ pub enum Command {
         aggregate: AggregateArgs,
     },
 
-    /// Run checks on the features (e.g. duplicate names)
+    /// List the specs and decision records of the project and of every feature
+    Records {
+        /// The folder to scan for features
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Output the project-level records as JSON (`{ "records": [...] }`),
+        /// the same as the `records.json` of `serve` and `build`
+        #[arg(long)]
+        json: bool,
+
+        #[command(flatten)]
+        scan: ScanArgs,
+    },
+
+    /// Create the next numbered spec or decision record of a feature
+    New {
+        #[command(flatten)]
+        new: NewArgs,
+        #[command(flatten)]
+        scan: ScanArgs,
+    },
+
+    /// Run checks on the features (e.g. duplicate names) and warn about
+    /// broken specs and decision records
     Check {
         /// The folder to scan for features
         #[arg(default_value = ".")]
@@ -162,6 +187,11 @@ pub struct ScanArgs {
     /// Remove commit author emails from the output (JSON, web dashboard and static build)
     #[arg(long)]
     pub strip_emails: bool,
+
+    /// JSON file with data from external tools, by feature key, e.g.
+    /// { "checkout": { "weekly_users": 1200 } } (can be repeated)
+    #[arg(long, value_name = "FILE")]
+    pub data: Vec<PathBuf>,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -228,6 +258,43 @@ pub struct AggregateArgs {
     /// Print the aggregated JSON instead of creating a static build
     #[arg(long)]
     pub json: bool,
+
+    /// JSON file with data from external tools, by feature key, applied to the
+    /// aggregated features (can be repeated)
+    #[arg(long, value_name = "FILE")]
+    pub data: Vec<PathBuf>,
+}
+
+/// Kind of record created by `features new`
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NewRecordKind {
+    Spec,
+    Decision,
+}
+
+impl From<NewRecordKind> for RecordKind {
+    fn from(kind: NewRecordKind) -> Self {
+        match kind {
+            NewRecordKind::Spec => RecordKind::Spec,
+            NewRecordKind::Decision => RecordKind::Decision,
+        }
+    }
+}
+
+#[derive(Args, Debug, Clone, PartialEq)]
+pub struct NewArgs {
+    /// Kind of record to create
+    pub kind: NewRecordKind,
+
+    /// Name or path of the feature, or `.` for the project-level `docs/` folder
+    pub feature: String,
+
+    /// Title of the record, also used for its file name
+    pub title: String,
+
+    /// The folder to scan for features
+    #[arg(long, default_value = ".")]
+    pub path: PathBuf,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -425,6 +492,10 @@ pub enum Action {
     Diff(DiffArgs),
     /// Run checks on the features
     Check { path: PathBuf },
+    /// List the specs and decision records
+    Records { path: PathBuf, json: bool },
+    /// Create a spec or decision record
+    New(NewArgs),
     /// Aggregate the features reports of several repositories
     Aggregate(AggregateArgs),
 }
@@ -494,6 +565,8 @@ impl Command {
                 codeowners,
                 scan,
             } => (Action::Check { path }, scan, codeowners.requested()),
+            Command::Records { path, json, scan } => (Action::Records { path, json }, scan, None),
+            Command::New { new, scan } => (Action::New(new), scan, None),
         };
 
         Invocation {
@@ -787,6 +860,7 @@ mod tests {
             coverage_dir: Some(path("cov")),
             project_dir: None,
             strip_emails: true,
+            data: vec![path("usage.json"), path("errors.json")],
         };
         let flags = [
             "--skip-changes",
@@ -798,6 +872,10 @@ mod tests {
             "--coverage-dir",
             "cov",
             "--strip-emails",
+            "--data",
+            "usage.json",
+            "--data",
+            "errors.json",
         ];
         for prefix in [vec!["./src", "--serve"], vec!["serve", "./src"]] {
             let args: Vec<&str> = prefix.into_iter().chain(flags).collect();
@@ -894,19 +972,60 @@ mod tests {
                 folder: path("./reports"),
                 build_dir: path(DEFAULT_BUILD_DIR),
                 json: false,
+                data: vec![],
             })
         );
         assert_eq!(
-            action(&["aggregate", "./reports", "--build-dir", "out", "--json"]),
+            action(&[
+                "aggregate",
+                "./reports",
+                "--build-dir",
+                "out",
+                "--json",
+                "--data",
+                "usage.json",
+            ]),
             Action::Aggregate(AggregateArgs {
                 folder: path("./reports"),
                 build_dir: path("out"),
                 json: true,
+                data: vec![path("usage.json")],
             })
         );
 
         // The folder of reports is required
         assert!(parse(&["aggregate"]).is_err());
+    }
+
+    #[test]
+    fn test_records_and_new() {
+        assert_eq!(
+            action(&["records", "./src", "--json"]),
+            Action::Records {
+                path: path("./src"),
+                json: true,
+            }
+        );
+        assert_eq!(
+            action(&["new", "spec", "auth", "Login flow"]),
+            Action::New(NewArgs {
+                kind: NewRecordKind::Spec,
+                feature: "auth".to_string(),
+                title: "Login flow".to_string(),
+                path: path("."),
+            })
+        );
+        assert_eq!(
+            action(&["new", "decision", ".", "Use JWT", "--path", "./src"]),
+            Action::New(NewArgs {
+                kind: NewRecordKind::Decision,
+                feature: ".".to_string(),
+                title: "Use JWT".to_string(),
+                path: path("./src"),
+            })
+        );
+        assert!(parse(&["new", "note", "auth", "x"]).is_err());
+        assert!(parse(&["new", "spec", "auth"]).is_err());
     }
 
     #[test]

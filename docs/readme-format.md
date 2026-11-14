@@ -11,6 +11,10 @@ owner: team_1
 creation_date: 2022-01-01 # to override the first commit date in this feature
 status: active # active, deprecated, archived
 deprecated: true # true, false
+key: checkout # stable identifier for external tools (default: the folder name, slugified)
+links: # links to the feature in external tools, shown on the feature page
+  posthog: https://eu.posthog.com/project/1/dashboard/2
+  sentry: https://sentry.io/organizations/acme/issues/?query=feature:checkout
 ---
 
 # Feature Name (Override the feature folder name if provided)
@@ -25,4 +29,20 @@ Setting `feature: false` explicitly skips a folder from being detected as a feat
 ---
 feature: false
 ---
+```
+
+### Key and links
+
+`key` and `links` are not free-form metadata:
+
+- `key` is the identifier external tools use to refer to the feature. Tag your analytics events, errors and issues with it (e.g. a PostHog event property `feature=checkout`) and import their data with `--data`. It defaults to the folder name, lowercased, with any character other than letters, digits, `_` and `-` replaced by `-` (`Checkout Flow` → `checkout-flow`). Set it explicitly to keep it stable when the folder is renamed.
+- `links` maps a name to a URL. Well-known tools (PostHog, Sentry, Datadog, Grafana, Figma, Linear, Jira, GitHub, Notion, Slack, ...) get a readable label and an icon on the feature page.
+
+Both also work in a `FEATURES.toml` file:
+
+```toml
+key = "checkout"
+
+[links]
+posthog = "https://eu.posthog.com/project/1/dashboard/2"
 ```
