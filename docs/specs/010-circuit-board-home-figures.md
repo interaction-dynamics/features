@@ -7,7 +7,7 @@ date: 2026-11-14
 
 ## Context
 
-The three isometric figures of the "Built for the age of AI" section first drew a city, then flat views of the dashboard. The figures should keep the content of the tools (Insights, dependency graph, Specs & Decisions) but tell it with one metaphor: the codebase as an electronic board, each feature a chip.
+The three isometric figures of the "Built for the age of AI" section were drawn as flat views of the dashboard, then as real-world comparisons (a city map, fenced plots, a building site, #192). The figures should keep the content of the tools (Insights, dependency graph, Specs & Decisions) but tell it with one metaphor: the codebase as an electronic board, each feature a chip.
 
 ## Requirements
 
@@ -19,10 +19,11 @@ The three isometric figures of the "Built for the age of AI" section first drew 
 
 ## Out of scope
 
-- Changes to the iso drawing kit, the animation classes or the pillar texts.
+- Changes to the pillar texts or the figure names (`map`, `owners`, `specs`).
 
 ## Plan
 
-1. Add `chip`, `board` and `trace` helpers to `projects/website/src/lib/figures.ts`.
-2. Redraw `insights`, `dependencies` and `specs` with them, keeping the loops.
-3. Check each figure large and at its real size on the home page.
+1. Restore the `shape` helper of the iso kit and the `anim-iso-select` loop (dropped with the city figures, replacing the unused `anim-iso-bob`).
+2. Add `chip`, `board` and `trace` helpers to `projects/website/src/lib/figures.ts`.
+3. Redraw `map`, `owners` and `specs` with them, keeping the loops.
+4. Check each figure large and at its real size on the home page.

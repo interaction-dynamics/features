@@ -20,6 +20,8 @@ pub struct BuildConfig {
     pub clean: bool,
     /// Whether the experimental pages of the web dashboard are enabled
     pub experimental: bool,
+    /// Project name shown in the web dashboard (see [`crate::project_name`])
+    pub project_name: Option<String>,
 }
 
 impl Default for BuildConfig {
@@ -28,6 +30,7 @@ impl Default for BuildConfig {
             output_dir: PathBuf::from("build"),
             clean: true,
             experimental: false,
+            project_name: None,
         }
     }
 }
@@ -53,6 +56,12 @@ impl BuildConfig {
         self.experimental = experimental;
         self
     }
+
+    /// Set the project name shown in the web dashboard
+    pub fn with_project_name(mut self, project_name: Option<String>) -> Self {
+        self.project_name = project_name;
+        self
+    }
 }
 
 /// Creates a static build by extracting embedded files and generating features.json
@@ -73,8 +82,8 @@ impl BuildConfig {
 /// The build directory will contain:
 /// * All static files from the embedded public directory
 /// * `features.json` - Generated features data
-/// * `metadata.json` - Generated metadata with version, skipChanges and experimental flags
-///   and data build date
+/// * `metadata.json` - Generated metadata with version, skipChanges and experimental flags,
+///   data build date and project name (when known)
 ///
 /// # Example
 ///
@@ -115,7 +124,13 @@ pub async fn create_build<T: serde::Serialize + ?Sized>(
     generate_features_json(features, &config.output_dir).await?;
 
     // Generate metadata.json
-    generate_metadata_json(&config.output_dir, skip_changes, config.experimental).await?;
+    generate_metadata_json(
+        &config.output_dir,
+        skip_changes,
+        config.experimental,
+        config.project_name.as_deref(),
+    )
+    .await?;
 
     println!("Build completed successfully!");
     println!("Output directory: {}", config.output_dir.display());
@@ -214,15 +229,19 @@ async fn generate_metadata_json(
     output_dir: &Path,
     skip_changes: bool,
     experimental: bool,
+    project_name: Option<&str>,
 ) -> Result<()> {
     println!("Generating metadata.json...");
 
-    let metadata = serde_json::json!({
+    let mut metadata = serde_json::json!({
         "version": env!("CARGO_PKG_VERSION"),
         "skipChanges": skip_changes,
         "experimental": experimental,
         "builtAt": current_build_timestamp()
     });
+    if let Some(name) = project_name {
+        metadata["projectName"] = serde_json::json!(name);
+    }
 
     let metadata_json = serde_json::to_string_pretty(&metadata)
         .map_err(|e| anyhow::anyhow!("Failed to serialize metadata to JSON: {}", e))?;
@@ -243,7 +262,7 @@ mod tests {
     async fn metadata_json_contains_data_build_date() {
         let output_dir = tempfile::tempdir().unwrap();
 
-        generate_metadata_json(output_dir.path(), false, false)
+        generate_metadata_json(output_dir.path(), false, false, None)
             .await
             .unwrap();
 
@@ -261,7 +280,7 @@ mod tests {
         for experimental in [false, true] {
             let output_dir = tempfile::tempdir().unwrap();
 
-            generate_metadata_json(output_dir.path(), false, experimental)
+            generate_metadata_json(output_dir.path(), false, experimental, None)
                 .await
                 .unwrap();
 
@@ -271,6 +290,24 @@ mod tests {
             let metadata: serde_json::Value = serde_json::from_str(&content).unwrap();
 
             assert_eq!(metadata["experimental"], experimental);
+        }
+    }
+
+    #[tokio::test]
+    async fn metadata_json_contains_project_name_when_known() {
+        for project_name in [None, Some("Acme")] {
+            let output_dir = tempfile::tempdir().unwrap();
+
+            generate_metadata_json(output_dir.path(), false, false, project_name)
+                .await
+                .unwrap();
+
+            let content = fs::read_to_string(output_dir.path().join("metadata.json"))
+                .await
+                .unwrap();
+            let metadata: serde_json::Value = serde_json::from_str(&content).unwrap();
+
+            assert_eq!(metadata["projectName"].as_str(), project_name);
         }
     }
 }

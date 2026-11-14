@@ -164,7 +164,7 @@ const trace = (
  * The dot in the corner of a chip is its owner. In a loop, features are
  * picked one by one: the chip lifts and its footprint lights up.
  */
-const insights = (): Node[] => {
+const map = (): Node[] => {
   const z = 0.4
   const nodes: Node[] = [board(14, 11.1, z)]
 
@@ -301,7 +301,7 @@ const insights = (): Node[] => {
  * chip: the signal runs along the traces to the chips importing it, then
  * the owners it touches light up in the legend printed on the board.
  */
-const dependencies = (): Node[] => {
+const owners = (): Node[] => {
   const z = 0.3
   const height = 0.45
   const top = z + height
@@ -649,5 +649,5 @@ const specs = (): Node[] => {
   return nodes
 }
 
-export const figures = { insights, dependencies, specs }
+export const figures = { map, owners, specs }
 export type FigureName = keyof typeof figures

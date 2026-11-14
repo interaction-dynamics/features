@@ -42,6 +42,8 @@ pub struct ServerConfig {
     pub allowed_origins: Vec<String>,
     /// Whether the experimental pages of the web dashboard are enabled
     pub experimental: bool,
+    /// Project name shown in the web dashboard (see [`crate::project_name`])
+    pub project_name: Option<String>,
 }
 
 impl Default for ServerConfig {
@@ -51,6 +53,7 @@ impl Default for ServerConfig {
             host: [127, 0, 0, 1],
             allowed_origins: Vec::new(),
             experimental: false,
+            project_name: None,
         }
     }
 }
@@ -80,6 +83,12 @@ impl ServerConfig {
     /// Enable the experimental pages of the web dashboard
     pub fn with_experimental(mut self, experimental: bool) -> Self {
         self.experimental = experimental;
+        self
+    }
+
+    /// Set the project name shown in the web dashboard
+    pub fn with_project_name(mut self, project_name: Option<String>) -> Self {
+        self.project_name = project_name;
         self
     }
 }
@@ -345,6 +354,7 @@ fn build_app(
         });
 
     let experimental = config.experimental;
+    let project_name = config.project_name.clone();
 
     // Route for metadata.json with version info and repository URL
     let metadata_route = warp::path("metadata.json")
@@ -352,6 +362,7 @@ fn build_app(
         .and(warp::get())
         .and_then(move || {
             let repo_url = repository_url.clone();
+            let project_name = project_name.clone();
             let built_at = Arc::clone(&built_at);
             async move {
                 let built_at = built_at.read().await.clone();
@@ -365,6 +376,9 @@ fn build_app(
                 // Add repository URL if available
                 if let Some(url) = repo_url {
                     metadata["repository"] = serde_json::json!(url);
+                }
+                if let Some(name) = project_name {
+                    metadata["projectName"] = serde_json::json!(name);
                 }
 
                 let metadata_json = match serde_json::to_string_pretty(&metadata) {
@@ -775,6 +789,22 @@ mod tests {
             assert_eq!(res.status(), 200);
             let body: serde_json::Value = serde_json::from_slice(res.body()).unwrap();
             assert_eq!(body["experimental"], experimental);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_metadata_project_name() {
+        for project_name in [None, Some("Acme")] {
+            let res = warp::test::request()
+                .path("/metadata.json")
+                .header("host", "localhost:3000")
+                .reply(&app_with_config(
+                    ServerConfig::new(3000).with_project_name(project_name.map(str::to_string)),
+                ))
+                .await;
+            assert_eq!(res.status(), 200);
+            let body: serde_json::Value = serde_json::from_slice(res.body()).unwrap();
+            assert_eq!(body["projectName"].as_str(), project_name);
         }
     }
 
