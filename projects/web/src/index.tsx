@@ -1,7 +1,6 @@
 import { lazy, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HashRouter, Route, Routes } from 'react-router'
-
 import './index.css'
 import { FeaturesProvider } from './components/features-provider'
 import { MainLayout } from './components/main-layout'

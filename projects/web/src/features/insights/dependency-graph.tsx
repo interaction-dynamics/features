@@ -411,7 +411,7 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
 
       {/* Graph canvas */}
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border bg-muted/5">
-        {/** biome-ignore lint/a11y/useKeyWithClickEvents: should allow click */}
+        {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- should allow click */}
         <svg
           ref={svgRef}
           className="h-full w-full cursor-grab active:cursor-grabbing"
@@ -496,7 +496,7 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
               const label = formatFeatureName(n.label)
               const short = label.length > 15 ? `${label.slice(0, 13)}…` : label
               return (
-                // biome-ignore lint/a11y/noStaticElementInteractions: we should allow click
+                // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- we should allow click
                 <g
                   key={n.id}
                   transform={`translate(${n.x},${n.y})`}
