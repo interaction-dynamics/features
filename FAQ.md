@@ -10,6 +10,7 @@
 - [How can I add a test coverage report?](#how-can-i-add-a-test-coverage-report)
 - [What is the technical debt of a feature?](#what-is-the-technical-debt-of-a-feature)
 - [How can I generate codeowners file?](#how-can-i-generate-codeowners-file)
+- [How can I enforce rules on my features in CI?](#how-can-i-enforce-rules-on-my-features-in-ci)
 - [I'm getting "GLIBC_2.38 not found" error on Linux, how do I fix it?](#im-getting-glibc_238-not-found-error-on-linux-how-do-i-fix-it)
 
 ## What is a feature-based architecture?
@@ -107,6 +108,35 @@ The generated CODEOWNERS file will have a managed section between markers:
 ```
 
 Any content outside these markers is preserved when regenerating.
+
+## How can I enforce rules on my features in CI?
+
+Run `features check`. It exits with a non-zero code when a rule with the `error` severity finds something. Rules cover duplicate names, missing owners, large features without a README, low test coverage, stale feature flags and imports between sibling features. See the [Checks](./README.md#checks) section of the README for the full list.
+
+Choose which rules fail the build in the `check` section of a `.features.yml` file at the root of your project (or pass another file with `--config <path>`):
+
+```yaml
+check:
+  rules:
+    missing-owner: error
+    cross-feature-import: error
+    min-coverage:
+      severity: warn
+      threshold: 70
+```
+
+Or from the command line:
+
+```bash
+features check ./src --rule missing-owner=error --disable-rule stale-flag
+```
+
+In GitHub Actions, `--format github` turns the findings into annotations on the pull request:
+
+```yaml
+- name: Check features
+  run: npx features-cli@latest check ./src --skip-changes --format github
+```
 
 ## I'm getting "GLIBC_2.38 not found" error on Linux, how do I fix it?
 
