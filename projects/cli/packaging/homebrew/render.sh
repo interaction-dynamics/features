@@ -2,7 +2,7 @@
 # Render the Homebrew formula for a features-cli release.
 #
 # Usage:
-#   packaging/homebrew/render.sh <version> <checksums.txt> [output]
+#   projects/cli/packaging/homebrew/render.sh <version> <checksums.txt> [output]
 #
 # <version>        Release version without the leading "v" (e.g. 0.14.0).
 # <checksums.txt>  sha256sum output for the release assets, one
@@ -12,7 +12,7 @@
 #
 # Example (render from a published release):
 #   gh release download v0.14.0 -p checksums.txt -D /tmp/features
-#   packaging/homebrew/render.sh 0.14.0 /tmp/features/checksums.txt features.rb
+#   projects/cli/packaging/homebrew/render.sh 0.14.0 /tmp/features/checksums.txt features.rb
 set -euo pipefail
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
