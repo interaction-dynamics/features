@@ -13,16 +13,14 @@
 
 use anyhow::Result;
 use include_dir::{Dir, include_dir};
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::RwLock;
-use tokio::time::sleep;
 use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
 use crate::build::current_build_timestamp;
+use crate::file_watcher::{self, MAX_WAIT, QUIET_PERIOD, WatchFilter};
 use crate::git_helper::get_repository_url;
 use crate::models::Feature;
 use crate::scan::{ScanConfig, scan_features_with};
@@ -384,63 +382,38 @@ fn build_app(
         .boxed()
 }
 
-/// Sets up file system watching for the specified path.
+/// Watches `watch_path` and recomputes the features when a relevant change
+/// happens, once per burst of changes.
 async fn setup_file_watcher(
     features_data: Arc<RwLock<Vec<Feature>>>,
     built_at: Arc<RwLock<String>>,
     watch_path: PathBuf,
     scan_config: ScanConfig,
 ) -> Result<()> {
-    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    let filter = WatchFilter::new(
+        &watch_path,
+        scan_config.ignore_paths.clone(),
+        scan_config.include_skipped_dirs,
+    );
+    // Dropping the watcher would stop it, so keep it for the whole loop
+    let (_watcher, mut changes) = file_watcher::watch(&watch_path, filter)?;
 
-    // Set up the file watcher in a blocking task
-    let watch_path_clone = watch_path.clone();
-    let _watcher = tokio::task::spawn_blocking(move || -> Result<RecommendedWatcher> {
-        let mut watcher = RecommendedWatcher::new(
-            move |res: notify::Result<Event>| {
-                match res {
-                    Ok(event) => {
-                        // Send event through channel
-                        if let Err(e) = tx.blocking_send(event) {
-                            eprintln!("Failed to send file system event: {}", e);
-                        }
-                    }
-                    Err(e) => eprintln!("File watcher error: {:?}", e),
-                }
-            },
-            Config::default(),
-        )?;
+    while file_watcher::next_change(&mut changes, QUIET_PERIOD, MAX_WAIT).await {
+        // Scanning reads the whole project, so keep it off the async workers.
+        // Changes made meanwhile leave one pending signal: one more rescan.
+        let path = watch_path.clone();
+        let config = scan_config.clone();
+        let result = tokio::task::spawn_blocking(move || rescan_features(&path, &config)).await?;
 
-        watcher.watch(&watch_path_clone, RecursiveMode::Recursive)?;
-        Ok(watcher)
-    })
-    .await??;
-
-    // Process file system events
-    while let Some(event) = rx.recv().await {
-        // Check if this is a file we care about (README.md files or directory changes)
-        let should_recompute = event.paths.iter().any(|path| {
-            path.file_name()
-                .map(|name| name == "README.md")
-                .unwrap_or(false)
-                || event.kind.is_create()
-                || event.kind.is_remove()
-        });
-
-        if should_recompute {
-            // Add a small delay to avoid excessive recomputation during rapid changes
-            sleep(Duration::from_millis(500)).await;
-
-            match rescan_features(&watch_path, &scan_config) {
-                Ok(new_features) => {
-                    let mut features = features_data.write().await;
-                    *features = new_features;
-                    *built_at.write().await = current_build_timestamp();
-                    println!("✅ Features updated successfully");
-                }
-                Err(e) => {
-                    eprintln!("❌ Failed to recompute features: {}", e);
-                }
+        match result {
+            Ok(new_features) => {
+                let mut features = features_data.write().await;
+                *features = new_features;
+                *built_at.write().await = current_build_timestamp();
+                println!("✅ Features updated successfully");
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to recompute features: {}", e);
             }
         }
     }

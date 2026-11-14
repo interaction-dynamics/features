@@ -11,6 +11,7 @@ mod dependency_resolver;
 mod feature_metadata_detector;
 mod features_toml_parser;
 mod file_scanner;
+mod file_watcher;
 mod git_helper;
 mod http_server;
 mod import_detector;
