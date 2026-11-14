@@ -25,7 +25,11 @@ features <path> [options]
 | `--generate-codeowners` | Generate or update a `CODEOWNERS` file from feature ownership |
 | `--project-dir <path>` | Project directory used for `CODEOWNERS` generation and additional coverage search locations |
 | `--codeowners-path <path>` | Custom path and filename for the `CODEOWNERS` file (default: `CODEOWNERS` in the project directory) |
-| `--codeowners-prefix <prefix>` | Custom prefix for owner names in the `CODEOWNERS` file (default: `@`) |
+| `--codeowners-prefix <prefix>` | Custom prefix for owner names in the `CODEOWNERS` file and in `--since --markdown` / `--owners-only` output (default: `@`) |
+| `--since <ref>` | Diff mode: list the features touched since the merge base of `<ref>` and `HEAD`, including uncommitted changes. See [Ping the right teams on every pull request](../README.md#ping-the-right-teams-on-every-pull-request) |
+| `--committed-only` | With `--since`: ignore uncommitted and untracked files |
+| `--markdown` | With `--since`: output a markdown table for pull request comments (use `--json` for JSON) |
+| `--owners-only` | With `--since`: print only the unique owners of the touched features, one per line |
 | `--skip-changes` | Skip computing git commit history (faster for large repos) |
 | `--ignore-path <path>` | Ignore a folder and all its subfolders when scanning. Can be repeated |
 | `--include-skipped-dirs` | Also scan folders skipped by default (`node_modules`) for features, stats and imports |
@@ -52,6 +56,14 @@ See the [FAQ](../FAQ.md#how-can-i-generate-codeowners-file) for more options.
 ```bash
 features ./src --check
 ```
+
+### List the features and owners touched by a change
+
+```bash
+features ./src --since origin/master
+```
+
+Add `--markdown` for a pull request comment or `--owners-only` to request reviews. See the [GitHub Actions example](../README.md#comment-on-pull-requests-with-github-actions).
 
 ### Export a JSON report
 

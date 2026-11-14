@@ -8,6 +8,7 @@ mod checker;
 mod codeowners;
 mod coverage_parser;
 mod dependency_resolver;
+mod diff;
 mod feature_metadata_detector;
 mod features_toml_parser;
 mod file_scanner;
@@ -15,6 +16,7 @@ mod git_helper;
 mod http_server;
 mod import_detector;
 mod models;
+mod ownership;
 mod printer;
 mod readme_parser;
 mod scan;
@@ -25,6 +27,7 @@ use checker::run_checks;
 use codeowners::generate_codeowners;
 use http_server::serve_features_with_watching;
 use models::Feature;
+use ownership::find_owner_for_path;
 use printer::print_features;
 use scan::{ScanConfig, scan_features};
 
@@ -119,6 +122,64 @@ struct Cli {
     /// Also scan folders skipped by default (node_modules) for features, stats and imports
     #[arg(long)]
     include_skipped_dirs: bool,
+
+    /// Diff mode: list the features touched since the merge base of this git ref and HEAD,
+    /// including uncommitted changes (e.g. --since origin/master)
+    #[arg(
+        long,
+        value_name = "REF",
+        conflicts_with_all = ["serve", "build", "check", "generate_codeowners", "list_owners", "find_owner"]
+    )]
+    since: Option<String>,
+
+    /// With --since: only compare committed changes, ignoring the working tree
+    #[arg(long, requires = "since")]
+    committed_only: bool,
+
+    /// With --since: output a markdown table suited to a pull request comment
+    #[arg(long, requires = "since", conflicts_with = "json")]
+    markdown: bool,
+
+    /// With --since: print only the unique owners of the touched features, one per line,
+    /// with --codeowners-prefix added
+    #[arg(long, requires = "since", conflicts_with_all = ["json", "markdown"])]
+    owners_only: bool,
+}
+
+/// Run diff mode: print the features touched since `since`.
+fn run_diff(args: &Cli, since: &str) -> Result<()> {
+    let current_dir = std::env::current_dir()?;
+    let base_path = args.path.clone().unwrap_or_else(|| current_dir.clone());
+    let ignore_paths = resolve_ignore_paths(&args.ignore_path, &current_dir);
+    let config = ScanConfig::new(&current_dir)
+        .skip_changes(true)
+        .ignore_paths(ignore_paths)
+        .ownership_only(true)
+        .include_skipped_dirs(args.include_skipped_dirs);
+    let features = scan_features(&base_path, config)?;
+
+    let include_uncommitted = !args.committed_only;
+    let changes = diff::collect_changes(&base_path, since, include_uncommitted)?;
+    let report = diff::build_report(since, include_uncommitted, &changes, &features);
+
+    if args.owners_only {
+        for owner in diff::unique_owners(&report, &args.codeowners_prefix) {
+            println!("{}", owner);
+        }
+        return Ok(());
+    }
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else if args.markdown {
+        print!(
+            "{}",
+            diff::render_markdown(&report, &args.codeowners_prefix)
+        );
+    } else {
+        print!("{}", diff::render_text(&report));
+    }
+    Ok(())
 }
 
 /// Resolve `--ignore-path` values to canonical absolute paths.
@@ -181,79 +242,6 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
     flat_features
 }
 
-#[derive(Debug, serde::Serialize)]
-struct OwnerInfo {
-    owner: String,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    inherited: bool,
-    feature_name: String,
-    feature_path: String,
-}
-
-fn find_owner_for_path(
-    target_path: &std::path::Path,
-    features: &[Feature],
-    base_path: &std::path::Path,
-) -> Option<OwnerInfo> {
-    // Canonicalize the target path
-    let canonical_target = std::fs::canonicalize(target_path).ok()?;
-
-    // Helper function to recursively search for the closest feature
-    fn find_closest_feature(
-        target: &std::path::Path,
-        features: &[Feature],
-        _parent_owner: Option<&str>,
-        base_path: &std::path::Path,
-    ) -> Option<OwnerInfo> {
-        let mut best_match: Option<OwnerInfo> = None;
-        let mut best_match_depth = usize::MAX;
-
-        for feature in features {
-            let feature_path = base_path.join(&feature.path);
-            if let Ok(canonical_feature_path) = std::fs::canonicalize(&feature_path) {
-                // Check if target is within this feature's directory
-                if target.starts_with(&canonical_feature_path) {
-                    // Calculate depth (how many components between feature and target)
-                    let depth = target
-                        .strip_prefix(&canonical_feature_path)
-                        .ok()
-                        .map(|p| p.components().count())
-                        .unwrap_or(usize::MAX);
-
-                    // Check nested features first
-                    if let Some(nested_match) = find_closest_feature(
-                        target,
-                        &feature.features,
-                        Some(&feature.owner),
-                        base_path,
-                    ) {
-                        if best_match.is_none() || depth < best_match_depth {
-                            best_match = Some(nested_match);
-                            best_match_depth = depth;
-                        }
-                    } else {
-                        // This is the closest feature so far
-                        if depth < best_match_depth {
-                            let owner = OwnerInfo {
-                                owner: feature.owner.clone(),
-                                inherited: feature.is_owner_inherited,
-                                feature_name: feature.name.clone(),
-                                feature_path: feature.path.clone(),
-                            };
-                            best_match = Some(owner);
-                            best_match_depth = depth;
-                        }
-                    }
-                }
-            }
-        }
-
-        best_match
-    }
-
-    find_closest_feature(&canonical_target, features, None, base_path)
-}
-
 /// Add coverage data from .coverage and coverage directories to features
 /// Add coverage data to features by searching for coverage reports in multiple locations.
 ///
@@ -305,6 +293,11 @@ async fn main() -> Result<()> {
     if args.version {
         println!("{}", env!("CARGO_PKG_VERSION"));
         return Ok(());
+    }
+
+    // Handle diff mode - the path defaults to the current directory
+    if let Some(since) = &args.since {
+        return run_diff(&args, since);
     }
 
     // Handle find-owner flag - this requires a target path but not the base path
