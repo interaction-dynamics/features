@@ -260,6 +260,15 @@ It works the same in every language:
 
 Annotations are supported in Rust, C/C++, Java, JavaScript/TypeScript, C#, Go, Swift, Kotlin, Scala, CSS/SCSS/Less, Python, Bash/Shell, Ruby, Perl, YAML, TOML, SQL, Lua and HTML/XML/SVG.
 
+## Let Claude reorganize your codebase by feature
+
+Not organized by feature yet? The [Claude skills](https://github.com/interaction-dynamics/features/tree/master/projects/skills) in this repository teach Claude to map the features from the JSON report, plan a feature breakdown, move the code one feature at a time with your tests passing, write each feature's README and decision records, and check the result with `features check`. In Claude Code:
+
+```
+/plugin marketplace add interaction-dynamics/features
+/plugin install features@interaction-dynamics
+```
+
 ## GitHub Actions setup
 
 ### Publish the dashboard to GitHub Pages
