@@ -1,3 +1,4 @@
+import { BarChart3 } from 'lucide-react'
 import { useContext } from 'react'
 import { Header } from '@/components/header'
 import { StatsCard } from '@/components/stats-card'
@@ -58,7 +59,12 @@ export default function Insights() {
 
   return (
     <div className="absolute inset-0 flex flex-col">
-      <Header>Insights</Header>
+      <Header>
+        <div className="flex items-center gap-2 font-medium">
+          <BarChart3 className="h-4 w-4" />
+          Insights
+        </div>
+      </Header>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
         <div className="space-y-4">
           {/* Overview Cards */}
