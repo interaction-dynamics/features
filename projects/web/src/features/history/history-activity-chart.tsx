@@ -55,7 +55,7 @@ export function HistoryActivityChart({
               cursor={false}
               content={
                 <ChartTooltipContent
-                  labelFormatter={(month: string) => formatMonth(month)}
+                  labelFormatter={(month) => formatMonth(String(month))}
                   indicator="dot"
                 />
               }

@@ -248,9 +248,9 @@ export default function FeatureInsights({
                     cursor={false}
                     content={
                       <ChartTooltipContent
-                        labelFormatter={(value) => {
-                          return value.fullName
-                        }}
+                        labelFormatter={(label, payload) =>
+                          payload?.[0]?.payload?.fullName ?? label
+                        }
                         indicator="dot"
                       />
                     }
