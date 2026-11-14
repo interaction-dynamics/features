@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
-use std::path::Path;
+use std::path::{Component, Path, PathBuf};
 
 use crate::models::Feature;
 
@@ -126,30 +126,7 @@ fn collect_entries_with_parent(
         let should_skip = parent_owner.is_some_and(|parent| feature.owner == parent);
 
         if !should_skip {
-            // Calculate the path for CODEOWNERS
-            let feature_path = std::path::PathBuf::from(&feature.path);
-            let full_path = base_path.join(&feature_path);
-
-            // Determine the final path to write
-            let codeowners_path = if let Some(proj_dir) = project_dir {
-                // Remove project_dir from the full_path if present
-                if let Ok(relative) = full_path.strip_prefix(proj_dir) {
-                    relative.to_path_buf()
-                } else {
-                    full_path
-                }
-            } else {
-                full_path
-            };
-
-            // Convert to forward slashes and add leading slash for CODEOWNERS format
-            let path_str = codeowners_path.to_str().unwrap_or("").replace('\\', "/");
-
-            let path_str = if path_str.starts_with('/') {
-                path_str
-            } else {
-                format!("/{}", path_str)
-            };
+            let path_str = codeowners_entry_path(&base_path.join(&feature.path), project_dir);
 
             // Add owner with prefix, but skip if owner is empty
             if feature.owner.is_empty() {
@@ -171,6 +148,36 @@ fn collect_entries_with_parent(
             owner_prefix,
         );
     }
+}
+
+/// Build the CODEOWNERS path of a feature: relative to `project_dir` when the
+/// feature is inside it, with forward slashes and a leading `/`.
+///
+/// `.` components are dropped first, so a scan path like `.` or `./src` gives
+/// `/src/...` and not `/./src/...`, which GitHub would not match.
+fn codeowners_entry_path(full_path: &Path, project_dir: Option<&Path>) -> String {
+    let full_path = without_cur_dir(full_path);
+    let path = match project_dir.map(without_cur_dir) {
+        Some(proj_dir) => full_path
+            .strip_prefix(&proj_dir)
+            .map(Path::to_path_buf)
+            .unwrap_or(full_path),
+        None => full_path,
+    };
+
+    let path_str = path.to_string_lossy().replace('\\', "/");
+    if path_str.starts_with('/') {
+        path_str
+    } else {
+        format!("/{}", path_str)
+    }
+}
+
+/// Remove the `.` components of a path (`./src/./a` → `src/a`)
+fn without_cur_dir(path: &Path) -> PathBuf {
+    path.components()
+        .filter(|component| !matches!(component, Component::CurDir))
+        .collect()
 }
 
 /// Format owner with specified prefix if not already present
@@ -218,4 +225,123 @@ fn write_codeowners_file(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn feature(path: &str, owner: &str, features: Vec<Feature>) -> Feature {
+        serde_json::from_value(serde_json::json!({
+            "name": path,
+            "description": "",
+            "owner": owner,
+            "is_owner_inherited": false,
+            "path": path,
+            "features": features,
+            "meta": {},
+            "changes": [],
+            "decisions": [],
+            "dependencies": [],
+        }))
+        .unwrap()
+    }
+
+    fn entry_path(full_path: &str, project_dir: Option<&str>) -> String {
+        codeowners_entry_path(Path::new(full_path), project_dir.map(Path::new))
+    }
+
+    #[test]
+    fn test_entry_path_without_project_dir() {
+        assert_eq!(entry_path("src/features/a", None), "/src/features/a");
+    }
+
+    #[test]
+    fn test_entry_path_drops_leading_cur_dir() {
+        assert_eq!(entry_path("./src/features/a", None), "/src/features/a");
+        assert_eq!(entry_path("././src/features/a", None), "/src/features/a");
+    }
+
+    #[test]
+    fn test_entry_path_drops_inner_cur_dir() {
+        assert_eq!(entry_path("src/./features/a", None), "/src/features/a");
+    }
+
+    #[test]
+    fn test_entry_path_strips_project_dir() {
+        assert_eq!(entry_path("app/src/a", Some("app")), "/src/a");
+        assert_eq!(entry_path("/repo/src/a", Some("/repo")), "/src/a");
+    }
+
+    #[test]
+    fn test_entry_path_strips_cur_dir_project_dir() {
+        assert_eq!(entry_path("src/a", Some(".")), "/src/a");
+        assert_eq!(entry_path("./src/a", Some(".")), "/src/a");
+        assert_eq!(entry_path("./src/a", Some("./")), "/src/a");
+    }
+
+    #[test]
+    fn test_entry_path_strips_project_dir_written_differently() {
+        assert_eq!(entry_path("./app/src/a", Some("app")), "/src/a");
+        assert_eq!(entry_path("app/src/a", Some("./app")), "/src/a");
+    }
+
+    #[test]
+    fn test_entry_path_outside_project_dir_is_kept() {
+        assert_eq!(entry_path("./other/src/a", Some("app")), "/other/src/a");
+    }
+
+    #[test]
+    fn test_entry_path_keeps_absolute_path() {
+        assert_eq!(entry_path("/repo/src/a", None), "/repo/src/a");
+    }
+
+    #[test]
+    fn test_collect_entries_with_cur_dir_base_path() {
+        let features = vec![
+            feature(
+                "src/features/platform",
+                "platform-team",
+                vec![
+                    feature(
+                        "src/features/platform/features/auth",
+                        "platform-team",
+                        vec![],
+                    ),
+                    feature(
+                        "src/features/platform/features/audit",
+                        "security-team",
+                        vec![],
+                    ),
+                ],
+            ),
+            feature("src/features/legacy", "", vec![]),
+        ];
+        let mut entries = Vec::new();
+        collect_entries(&features, Path::new("."), None, &mut entries, "@");
+        assert_eq!(
+            entries,
+            vec![
+                "/src/features/platform @platform-team",
+                "/src/features/platform/features/audit @security-team",
+                "/src/features/legacy @Unknown",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_collect_entries_with_relative_base_path() {
+        let features = vec![feature("features/growth", "acme/growth", vec![])];
+        let mut entries = Vec::new();
+        collect_entries(&features, Path::new("./src"), None, &mut entries, "@");
+        assert_eq!(entries, vec!["/src/features/growth @acme/growth"]);
+    }
+
+    #[test]
+    fn test_format_owner() {
+        assert_eq!(format_owner("team", "@"), "@team");
+        assert_eq!(format_owner("@team", "@"), "@team");
+        assert_eq!(format_owner("team", ""), "team");
+        assert_eq!(format_owner("team", "team:"), "team:team");
+    }
 }
