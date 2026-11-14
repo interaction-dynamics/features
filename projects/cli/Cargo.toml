@@ -2,16 +2,16 @@
 name = "features-cli"
 version = "0.14.0"
 edition = "2024"
-description = "A CLI tool for discovering the features in a folder"
+description = "Map every feature in your codebase: ownership, test coverage, tech debt and git history, as a CLI and web dashboard. Works with any language."
 license = "MIT"
 homepage = "https://github.com/interaction-dynamics/features"
 repository = "https://github.com/interaction-dynamics/features"
-documentation = "https://github.com/interaction-dynamics/features/blob/master/projects/cli/README.md"
-readme = "README.md"
-keywords = ["features", "cli", "documentation", "analysis", "architecture"]
+documentation = "https://github.com/interaction-dynamics/features/blob/master/docs/cli.md"
+readme = "../../README.md"
+keywords = ["codeowners", "architecture", "technical-debt", "ownership", "feature-based"]
 categories = ["command-line-utilities", "development-tools"]
 authors = ["Interaction Dynamics <thibault.friedrich@interaction-dynamics.io>"]
-include = ["src", "public", "!public/features.json", "README.md"]
+include = ["src", "public", "!public/features.json"]
 
 [lib]
 name = "features_cli"
