@@ -20,7 +20,10 @@ import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Dependency, Feature } from '@/models/feature'
 
-const NODE_RADIUS = 22
+/** Half the side of the square feature tile */
+const NODE_RADIUS = 20
+/** Corner radius of the feature tile (same ratio as the app icon: 16/64) */
+const NODE_CORNER = 10
 const LAYOUT_W = 1000
 const LAYOUT_H = 750
 
@@ -49,6 +52,24 @@ function hashStr(s: string): number {
 function ownerColor(owner: string): string {
   if (!owner) return 'hsl(0 0% 55%)'
   return `hsl(${hashStr(owner) % 360} 55% 55%)`
+}
+
+/** Two-letter monogram shown inside the tile: "user-settings" → "US", "billing" → "BI" */
+function monogram(label: string): string {
+  const words = label
+    .split(/[\s\-_/.]+/)
+    .filter(Boolean)
+    .map((w) => w.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter(Boolean)
+  if (words.length === 0) return '?'
+  const letters =
+    words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2)
+  return letters.toUpperCase()
+}
+
+/** Distance from the tile center to its border along the unit vector (ux, uy) */
+function tileInset(ux: number, uy: number): number {
+  return NODE_RADIUS / Math.max(Math.abs(ux), Math.abs(uy), 1e-6)
 }
 
 function edgeStroke(type: GraphEdge['type']): string {
@@ -347,6 +368,7 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
   )
 
   const arrCycleId = useId()
+  const tileId = useId()
 
   if (!simulating && nodes.length === 0) {
     return (
@@ -446,6 +468,47 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
             >
               <path d="M0,0 L0,6 L8,3 Z" fill={CYCLE_COLOR} />
             </marker>
+            {/* Feature tile: same dark squircle + light gradient as the app icon */}
+            <linearGradient id={`${tileId}-bg`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#26262B" />
+              <stop offset="1" stopColor="#141417" />
+            </linearGradient>
+            <linearGradient id={`${tileId}-glyph`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#F9F9F9" />
+              <stop offset="1" stopColor="#B3B3B3" />
+            </linearGradient>
+            <linearGradient id={`${tileId}-rim`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.22" />
+              <stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.04" />
+              <stop offset="1" stopColor="#FFFFFF" stopOpacity="0.08" />
+            </linearGradient>
+            {owners.map((o, i) => (
+              <radialGradient
+                key={o}
+                id={`${tileId}-owner-${i}`}
+                cx="0.5"
+                cy="0"
+                r="0.75"
+              >
+                <stop offset="0" stopColor={ownerColor(o)} stopOpacity="0.32" />
+                <stop offset="1" stopColor={ownerColor(o)} stopOpacity="0" />
+              </radialGradient>
+            ))}
+            <filter
+              id={`${tileId}-shadow`}
+              x="-50%"
+              y="-50%"
+              width="200%"
+              height="200%"
+            >
+              <feDropShadow
+                dx="0"
+                dy="2"
+                stdDeviation="2.5"
+                floodColor="#000"
+                floodOpacity="0.25"
+              />
+            </filter>
           </defs>
 
           <g
@@ -460,10 +523,13 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                 dy = tgt.y - src.y
               const d = Math.sqrt(dx * dx + dy * dy)
               if (d < 1) return null
-              const sx = src.x + (dx / d) * NODE_RADIUS
-              const sy = src.y + (dy / d) * NODE_RADIUS
-              const tx = tgt.x - (dx / d) * (NODE_RADIUS + 7)
-              const ty = tgt.y - (dy / d) * (NODE_RADIUS + 7)
+              const ux = dx / d,
+                uy = dy / d
+              const inset = tileInset(ux, uy)
+              const sx = src.x + ux * (inset + 2)
+              const sy = src.y + uy * (inset + 2)
+              const tx = tgt.x - ux * (inset + 7)
+              const ty = tgt.y - uy * (inset + 7)
               const hi = selected
                 ? connected.has(e.source) && connected.has(e.target)
                 : true
@@ -495,6 +561,14 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
               const dim = selected ? !connected.has(n.id) : false
               const label = formatFeatureName(n.label)
               const short = label.length > 15 ? `${label.slice(0, 13)}…` : label
+              const ownerIdx = owners.indexOf(n.owner)
+              const tile = {
+                x: -NODE_RADIUS,
+                y: -NODE_RADIUS,
+                width: NODE_RADIUS * 2,
+                height: NODE_RADIUS * 2,
+                rx: NODE_CORNER,
+              }
               return (
                 // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- we should allow click
                 <g
@@ -505,17 +579,72 @@ export function DependencyGraph({ features }: { features: Feature[] }) {
                     ev.stopPropagation()
                     setSelected((prev) => (prev === n.id ? null : n.id))
                   }}
-                  style={{ cursor: 'pointer', opacity: dim ? 0.12 : 1 }}
+                  className="group"
+                  style={{
+                    cursor: 'pointer',
+                    opacity: dim ? 0.12 : 1,
+                    transition: 'opacity 150ms',
+                  }}
                 >
+                  {/* Selection ring */}
+                  {isSel && (
+                    <rect
+                      x={-NODE_RADIUS - 4}
+                      y={-NODE_RADIUS - 4}
+                      width={NODE_RADIUS * 2 + 8}
+                      height={NODE_RADIUS * 2 + 8}
+                      rx={NODE_CORNER + 4}
+                      fill="none"
+                      stroke={ownerColor(n.owner)}
+                      strokeWidth={1.5}
+                    />
+                  )}
+                  {/* Tile body */}
+                  <rect
+                    {...tile}
+                    fill={`url(#${tileId}-bg)`}
+                    filter={`url(#${tileId}-shadow)`}
+                  />
+                  {/* Owner tint glowing from the top edge */}
+                  {ownerIdx >= 0 && (
+                    <rect
+                      {...tile}
+                      fill={`url(#${tileId}-owner-${ownerIdx})`}
+                    />
+                  )}
+                  {/* Hairline rim, brighter on top like a lit edge */}
+                  <rect
+                    x={-NODE_RADIUS + 0.5}
+                    y={-NODE_RADIUS + 0.5}
+                    width={NODE_RADIUS * 2 - 1}
+                    height={NODE_RADIUS * 2 - 1}
+                    rx={NODE_CORNER - 0.5}
+                    fill="none"
+                    stroke={`url(#${tileId}-rim)`}
+                    className="transition-[stroke-width] group-hover:[stroke-width:1.5]"
+                  />
+                  {/* Monogram */}
+                  <text
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={13}
+                    fontWeight={600}
+                    letterSpacing="-0.02em"
+                    fill={`url(#${tileId}-glyph)`}
+                    style={{ pointerEvents: 'none', userSelect: 'none' }}
+                  >
+                    {monogram(label)}
+                  </text>
+                  {/* Owner dot */}
                   <circle
-                    r={NODE_RADIUS}
+                    cx={NODE_RADIUS - 7}
+                    cy={-NODE_RADIUS + 7}
+                    r={2.5}
                     fill={ownerColor(n.owner)}
-                    stroke={isSel ? 'white' : 'rgba(0,0,0,0.15)'}
-                    strokeWidth={isSel ? 2.5 : 1}
                   />
                   <text
                     textAnchor="middle"
-                    y={NODE_RADIUS + 13}
+                    y={NODE_RADIUS + 14}
                     fontSize={10}
                     fill="currentColor"
                     style={{ pointerEvents: 'none', userSelect: 'none' }}
