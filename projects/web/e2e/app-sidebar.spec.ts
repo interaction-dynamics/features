@@ -10,15 +10,32 @@ test.describe('App Sidebar', () => {
     await expect(sidebar).toBeVisible()
   })
 
-  test('should display Features logo and text', async ({ page }) => {
-    const featureIcon = page.getByAltText('Feature Icon')
-    await expect(featureIcon).toBeVisible()
-
-    const featuresLink = page
+  test('should display the project name, "Features" by default', async ({
+    page,
+  }) => {
+    // Without a project name in metadata.json, the dashboard says "Features"
+    const projectLink = page
       .locator('[data-sidebar="header"]')
       .getByRole('link')
       .filter({ hasText: 'Features' })
-    await expect(featuresLink).toBeVisible()
+    await expect(projectLink).toBeVisible()
+  })
+
+  test('should display the project name from metadata.json', async ({
+    page,
+  }) => {
+    await page.route('**/metadata.json', (route) =>
+      route.fulfill({
+        json: { version: '1.2.3', projectName: 'Acme Store' },
+      }),
+    )
+    await page.goto('/')
+
+    const projectLink = page
+      .locator('[data-sidebar="header"]')
+      .getByRole('link', { name: /Acme Store/ })
+    await expect(projectLink).toBeVisible()
+    await expect(projectLink).toHaveAttribute('href', /#\/$/)
   })
 
   test('should contain sidebar trigger button', async ({ page }) => {
@@ -108,7 +125,7 @@ test.describe('App Sidebar', () => {
     })
   }
 
-  test('should display mode toggle in footer', async ({ page }) => {
+  test('should display the app menu in footer', async ({ page }) => {
     const sidebar = page.locator('[data-sidebar="sidebar"]')
     await expect(sidebar).toBeVisible()
 
