@@ -18,7 +18,7 @@ import { site } from '../data/site'
 import Base from '../layouts/Base.astro'
 
 const description =
-  'Install features-cli with npx, npm or cargo. Scan features, serve the dashboard, build a static site, generate CODEOWNERS and list the features touched by a pull request.'
+  'Install features-cli with npx, npm, Homebrew or cargo. Scan features, serve the dashboard, build a static site, generate CODEOWNERS and list the features touched by a pull request.'
 
 const install = [
   {
@@ -26,6 +26,10 @@ const install = [
     command: 'npx features-cli@latest serve ./src',
   },
   { label: 'npm', command: 'npm install -g features-cli' },
+  {
+    label: 'Homebrew',
+    command: 'brew install interaction-dynamics/tap/features',
+  },
   { label: 'cargo', command: 'cargo binstall features-cli' },
 ]
 
