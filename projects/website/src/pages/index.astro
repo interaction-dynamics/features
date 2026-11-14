@@ -23,6 +23,7 @@ import {
   Users,
 } from '@lucide/astro'
 import CallToAction from '../components/CallToAction.astro'
+import HeroIllustration from '../components/HeroIllustration.astro'
 import Screenshot from '../components/Screenshot.astro'
 import Section from '../components/Section.astro'
 import Terminal from '../components/Terminal.astro'
@@ -169,59 +170,6 @@ const languages = [
   'HTML/XML',
 ]
 
-const dashboardFeatures = [
-  {
-    name: 'auth',
-    owner: 'team-auth',
-    coverage: 92,
-    todos: 1,
-    mix: [55, 25, 20],
-  },
-  {
-    name: 'billing',
-    owner: 'team-billing',
-    coverage: 74,
-    todos: 4,
-    mix: [40, 45, 15],
-  },
-  {
-    name: 'search',
-    owner: 'team-discovery',
-    coverage: 61,
-    todos: 7,
-    mix: [35, 30, 35],
-  },
-  {
-    name: 'onboarding',
-    owner: 'team-growth',
-    coverage: 88,
-    todos: 0,
-    mix: [70, 15, 15],
-  },
-]
-
-// Deterministic scatter of commits per week for the background chart of the hero.
-const weeks = ['Aug', 'Sep', 'Oct', 'Nov']
-const commitDots = weeks.flatMap((_, week) => {
-  let seed = week * 7919 + 17
-  const random = () => {
-    seed = (seed * 16807) % 2147483647
-    return seed / 2147483647
-  }
-  const center = 70 - week * 9
-  return Array.from({ length: 34 }, () => ({
-    x: 46 + week * 78 + (random() - 0.5) * 18,
-    y: center + (random() + random() + random() - 1.5) * 26,
-    r: 1.6 + random() * 0.8,
-    level: random(),
-  }))
-})
-
-const ring = (coverage: number) => {
-  const circumference = 2 * Math.PI * 6
-  return `${(coverage / 100) * circumference} ${circumference}`
-}
-
 const softwareApplication = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -291,99 +239,7 @@ const softwareApplication = {
         </code>
       </div>
 
-      <!-- Dashboard illustration: two layered panels, Linear-style -->
-      <div class="relative sm:pt-32" role="img" aria-label="Illustration of the Features dashboard: a list of features with their owner, coverage and commit mix, over a chart of commits per week">
-        <div class="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true"></div>
-
-        <!-- Back panel: commits per week -->
-        <div class="card fade-b absolute top-0 right-0 hidden w-[74%] p-4 opacity-80 shadow-2xl shadow-black/60 sm:block" aria-hidden="true">
-          <div class="flex items-center justify-between text-[0.7rem] text-muted">
-            <span>Commits per week</span>
-            <span class="font-mono">by feature</span>
-          </div>
-          <svg viewBox="0 0 300 150" class="mt-2 w-full" fill="none">
-            {[40, 75, 110].map((y) => <line x1="20" x2="300" y1={y} y2={y} stroke="var(--color-line)" stroke-dasharray="2 4" />)}
-            <path d="M20 66 C 70 66, 80 58, 124 58 S 180 50, 202 50 S 260 40, 300 38" stroke="var(--color-indigo)" stroke-opacity="0.7" />
-            <path d="M20 96 C 70 96, 80 88, 124 86 S 180 84, 202 80 S 260 70, 300 72" stroke="var(--color-accent-3)" stroke-opacity="0.35" />
-            {
-              commitDots.map((dot) => (
-                <circle
-                  cx={dot.x.toFixed(1)}
-                  cy={dot.y.toFixed(1)}
-                  r={dot.r.toFixed(1)}
-                  fill={dot.level > 0.7 ? 'var(--color-accent)' : dot.level > 0.35 ? 'var(--color-accent-2)' : 'var(--color-accent-3)'}
-                  fill-opacity={(0.45 + dot.level * 0.55).toFixed(2)}
-                />
-              ))
-            }
-            {weeks.map((week, index) => <text x={46 + index * 78} y="146" text-anchor="middle" fill="var(--color-muted)" font-size="8">{week}</text>)}
-          </svg>
-        </div>
-
-        <!-- Front panel: features -->
-        <figure class="card relative p-4 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.9)] sm:mr-20 sm:p-5">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-sm font-semibold">
-              <span class="icon-tile inline-flex size-6 items-center justify-center rounded-md text-accent">
-                <LayoutDashboard size={13} aria-hidden="true" />
-              </span>
-              src/features
-            </div>
-            <span class="rounded-full border border-line bg-surface-2 px-2.5 py-0.5 font-mono text-[0.7rem] text-muted">4 features</span>
-          </div>
-          <ul class="mt-4 divide-y divide-line/70 overflow-hidden rounded-xl border border-line bg-ink/60">
-            {
-              dashboardFeatures.map((feature, index) => (
-                <li class:list={['p-3', index === 0 && 'bg-gradient-to-r from-indigo/[0.08] to-transparent']}>
-                  <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                    <svg viewBox="0 0 16 16" class="size-3.5 -rotate-90" aria-hidden="true">
-                      <circle cx="8" cy="8" r="6" fill="none" stroke="var(--color-line)" stroke-width="2" />
-                      <circle cx="8" cy="8" r="6" fill="none" stroke={index === 0 ? 'var(--color-indigo)' : 'var(--color-accent)'} stroke-width="2" stroke-linecap="round" stroke-dasharray={ring(feature.coverage)} />
-                    </svg>
-                    <span class="font-mono text-sm font-semibold text-accent">{feature.name}</span>
-                    <span class="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 py-px pr-2 pl-px text-[0.65rem] leading-4 text-muted">
-                      <span class="bg-gradient-brand inline-flex size-3.5 items-center justify-center rounded-full text-[0.45rem] font-bold text-ink">
-                        {feature.owner.replace('team-', '').slice(0, 2).toUpperCase()}
-                      </span>
-                      {feature.owner}
-                    </span>
-                    <span class="ml-auto text-[0.7rem] text-muted">
-                      {feature.todos} TODO{feature.todos === 1 ? '' : 's'}
-                    </span>
-                  </div>
-                  <div class="mt-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1.5 text-[0.65rem] text-muted">
-                    <span>coverage</span>
-                    <span class="h-1 overflow-hidden rounded-full bg-surface-2">
-                      <span
-                        class:list={[
-                          'block h-full rounded-full bg-gradient-to-r',
-                          index === 0
-                            ? 'from-indigo/50 to-violet shadow-[0_0_10px_var(--color-indigo)]'
-                            : 'from-accent-3/40 to-accent',
-                        ]}
-                        style={`width:${feature.coverage}%`}
-                      />
-                    </span>
-                    <span class="font-mono text-text">{feature.coverage}%</span>
-                    <span>commits</span>
-                    <span class="flex h-1 gap-px overflow-hidden rounded-full">
-                      <span class="rounded-full bg-accent" style={`width:${feature.mix[0]}%`} />
-                      <span class="rounded-full bg-accent-2/70" style={`width:${feature.mix[1]}%`} />
-                      <span class="rounded-full bg-accent-3/50" style={`width:${feature.mix[2]}%`} />
-                    </span>
-                    <span class="font-mono text-text">{feature.mix[0]}%</span>
-                  </div>
-                </li>
-              ))
-            }
-          </ul>
-          <figcaption class="mt-3.5 flex flex-wrap gap-4 text-[0.7rem] text-muted">
-            <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent" aria-hidden="true"></span>feature</span>
-            <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent-2/70" aria-hidden="true"></span>fix</span>
-            <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-accent-3/50" aria-hidden="true"></span>refactor</span>
-          </figcaption>
-        </figure>
-      </div>
+      <HeroIllustration />
     </div>
   </section>
 

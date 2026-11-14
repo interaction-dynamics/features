@@ -231,6 +231,272 @@ body {
   }
 }
 
+/*
+ * Illustration animations.
+ * Each element sets its start with `--delay`. Inside a `.reveal` container the
+ * animations wait until the container scrolls into view (see Base.astro), only
+ * when JavaScript runs (`html.js`), so the final state always shows without it.
+ * The declared styles are the final state: `animation: none` leaves a finished,
+ * static illustration (reduced motion).
+ */
+.anim-rise {
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+    filter: blur(6px);
+  }
+}
+
+/* Rows and blocks sliding in one after the other. */
+.anim-row {
+  animation: row-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* Bars filling from the left. */
+.anim-grow {
+  transform-origin: 0 50%;
+  animation: grow-x 1s cubic-bezier(0.3, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Blocks with text revealed from the left, without stretching the text. */
+.anim-wipe {
+  animation: wipe 0.7s cubic-bezier(0.3, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+@keyframes wipe {
+  from {
+    clip-path: inset(0 100% 0 0 round 0.25rem);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 0.25rem);
+  }
+}
+
+/* Highlighted entries lighting up once, after the rest has appeared. */
+.anim-glow {
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  animation: glow 1.4s ease-out var(--delay, 0ms) both;
+}
+
+@keyframes glow {
+  from {
+    background-size: 0% 100%;
+    box-shadow: inset 0 0 0 transparent;
+  }
+  40% {
+    filter: brightness(1.6);
+  }
+}
+
+/* SVG paths drawing themselves; the path needs pathLength="1". */
+.anim-draw {
+  stroke-dasharray: 1;
+  animation: draw 1.6s ease-in-out var(--delay, 0ms) both;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* SVG dots popping in. */
+.anim-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) var(--delay, 0ms) both;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/* Numbers counting up to `--to`. */
+@property --n {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: false;
+}
+
+.anim-count {
+  --n: var(--to);
+  counter-reset: n var(--n);
+  animation: count 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+.anim-count::after {
+  content: counter(n);
+}
+
+@keyframes count {
+  from {
+    --n: 0;
+  }
+}
+
+/*
+ * Hero filter demo, a 9s loop: the query types itself, the rows that don't
+ * match dim, then the query is erased.
+ */
+.anim-type {
+  width: 0;
+  animation: type 9s 2.6s infinite;
+}
+
+@keyframes type {
+  0%,
+  8% {
+    width: 0;
+    animation-timing-function: steps(15, end);
+  }
+  26%,
+  72% {
+    width: calc(var(--chars) * 1ch);
+    animation-timing-function: steps(15, end);
+  }
+  80%,
+  100% {
+    width: 0;
+  }
+}
+
+.anim-placeholder {
+  animation: placeholder 9s 2.6s infinite;
+}
+
+@keyframes placeholder {
+  0%,
+  7%,
+  81%,
+  100% {
+    opacity: 1;
+  }
+  8%,
+  80% {
+    opacity: 0;
+  }
+}
+
+.anim-caret {
+  opacity: 0;
+  animation: caret 1s 2.6s steps(1) infinite;
+}
+
+@keyframes caret {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.anim-row.anim-miss {
+  animation:
+    row-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both,
+    filter-miss 9s 2.6s ease infinite;
+}
+
+@keyframes filter-miss {
+  0%,
+  30%,
+  76%,
+  100% {
+    opacity: 1;
+  }
+  36%,
+  70% {
+    opacity: 0.22;
+  }
+}
+
+.anim-row.anim-hit {
+  animation:
+    row-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both,
+    filter-hit 9s 2.6s ease infinite;
+}
+
+@keyframes filter-hit {
+  0%,
+  30%,
+  76%,
+  100% {
+    background-color: transparent;
+  }
+  36%,
+  70% {
+    background-color: color-mix(in oklab, var(--color-indigo) 10%, transparent);
+  }
+}
+
+/* Sidebar entry selected while the filter shows its feature. */
+.anim-select {
+  animation: select 9s 2.6s ease infinite;
+}
+
+@keyframes select {
+  0%,
+  30%,
+  76%,
+  100% {
+    background-color: transparent;
+    color: inherit;
+  }
+  36%,
+  70% {
+    background-color: var(--color-surface-2);
+    color: var(--color-text);
+  }
+}
+
+/* A highlight jumping from one band to the next, for the layered diagram. */
+.anim-hop {
+  animation: hop 4s ease-in-out var(--delay, 0ms) infinite;
+}
+
+@keyframes hop {
+  0%,
+  30%,
+  100% {
+    filter: none;
+    opacity: 0.55;
+  }
+  8%,
+  18% {
+    filter: brightness(1.25);
+    opacity: 1;
+  }
+}
+
+html.js .reveal:not(.in-view),
+html.js .reveal:not(.in-view) * {
+  animation-play-state: paused !important;
+}
+
 @utility grid-bg {
   background-image:
     linear-gradient(var(--color-line) 1px, transparent 1px),
@@ -297,7 +563,12 @@ pre.astro-code {
   }
 
   .beam,
-  .tilt {
-    animation: none;
+  .tilt,
+  [class*='anim-'] {
+    animation: none !important;
+  }
+
+  .anim-caret {
+    display: none;
   }
 }

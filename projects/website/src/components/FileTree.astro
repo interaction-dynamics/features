@@ -63,7 +63,7 @@ const initials = (owner: string) =>
     .toUpperCase()
 ---
 
-<figure class:list={['card overflow-hidden', className]} data-markdown-code={plainText}>
+<figure class:list={['card reveal overflow-hidden', className]} data-markdown-code={plainText}>
   {
     title && (
       <figcaption class="flex items-center gap-2 border-b border-line bg-gradient-to-b from-surface-2 to-surface px-4 py-2.5 font-mono text-xs text-muted">
@@ -74,19 +74,22 @@ const initials = (owner: string) =>
   }
   <div class="relative overflow-x-auto p-4 font-mono text-[0.8rem] leading-7 sm:text-sm">
     {
-      rows.map(({ node, prefix }) => {
+      rows.map(({ node, prefix }, index) => {
         const kind: Kind = node.kind ?? (node.children ? 'folder' : 'file')
         const { text, icon: Icon } = styles[kind]
+        // Feature rows light up once the whole tree is in.
+        const glowDelay = rows.length * 45 + 300
         return (
-          <div class="flex items-center whitespace-nowrap">
+          <div class="anim-row flex items-center whitespace-nowrap" style={`--delay:${index * 45}ms`}>
             <span class="whitespace-pre text-line" aria-hidden="true">{prefix}</span>
             <span
               class:list={[
                 'inline-flex items-center gap-1.5 rounded-md px-1.5',
                 text,
                 kind === 'feature' &&
-                  'bg-gradient-to-r from-accent/12 to-transparent shadow-[inset_1px_0_0_var(--color-accent)]',
+                  'anim-glow bg-gradient-to-r from-accent/12 to-transparent shadow-[inset_1px_0_0_var(--color-accent)]',
               ]}
+              style={kind === 'feature' ? `--delay:${glowDelay}ms` : undefined}
             >
               <Icon size={14} class="shrink-0 opacity-70" aria-hidden="true" />
               {`${node.name}${node.children ? '/' : ''}`}
