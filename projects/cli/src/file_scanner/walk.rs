@@ -6,11 +6,12 @@
 
 use anyhow::{Context, Result};
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
+use crate::feature_key::{take_key, take_links};
 use crate::features_toml_parser::{find_features_toml, read_features_toml};
 use crate::models::Feature;
 use crate::readme_parser::{ReadmeInfo, parse_readme_info, read_readme_info};
@@ -222,12 +223,7 @@ impl Walker<'_> {
                         toml_data.meta,
                     )
                 } else {
-                    (
-                        None,
-                        String::new(),
-                        String::new(),
-                        std::collections::BTreeMap::new(),
-                    )
+                    (None, String::new(), String::new(), BTreeMap::new())
                 }
             } else {
                 // Fall back to README file if FEATURES.toml not found
@@ -249,6 +245,10 @@ impl Walker<'_> {
 
         // Remove the 'feature' key from meta if it exists (it's redundant since we know it's a feature)
         meta.remove("feature");
+
+        // `key` and `links` are first-class fields, not free-form metadata
+        let key = take_key(&mut meta, name);
+        let links = take_links(&mut meta);
 
         // Determine the actual owner and whether it's inherited
         let (actual_owner, is_owner_inherited) = if owner.is_empty() {
@@ -315,17 +315,20 @@ impl Walker<'_> {
 
         Ok(Feature {
             name: title.unwrap_or_else(|| name.to_string()),
+            key,
             description,
             owner: actual_owner,
             is_owner_inherited,
             path: relative_path,
             features: nested_features,
             meta,
+            links,
             // Filled in by the enrichment passes
             changes: Vec::new(),
             decisions: Vec::new(),
             stats: None,
             dependencies: Vec::new(),
+            external: BTreeMap::new(),
         })
     }
 }
@@ -336,6 +339,62 @@ mod tests {
 
     fn write_readme(dir: &Path, content: &str) {
         fs::write(dir.join("README.md"), content).unwrap();
+    }
+
+    fn walk(base: &Path) -> Vec<Feature> {
+        let readmes = ReadmeCache::default();
+        let walker = Walker {
+            base_path: base,
+            filter: WalkFilter {
+                ignore_paths: &[],
+                include_skipped_dirs: false,
+            },
+            readmes: &readmes,
+        };
+        walker.list_features(base, None).unwrap()
+    }
+
+    #[test]
+    fn test_feature_key_and_links() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let features_dir = temp_dir.path().join("features");
+
+        let default_key = features_dir.join("Checkout Flow");
+        fs::create_dir_all(&default_key).unwrap();
+
+        let readme_key = features_dir.join("search");
+        fs::create_dir_all(&readme_key).unwrap();
+        write_readme(
+            &readme_key,
+            "---\nkey: search-v2\nstatus: active\nlinks:\n  posthog: https://eu.posthog.com/project/1\n---\n\n# Search\n",
+        );
+
+        let toml_key = features_dir.join("billing");
+        fs::create_dir_all(&toml_key).unwrap();
+        fs::write(
+            toml_key.join("FEATURES.toml"),
+            "key = \"payments\"\n\n[links]\nsentry = \"https://sentry.io/acme\"\n",
+        )
+        .unwrap();
+
+        let features = walk(temp_dir.path());
+        let by_name = |name: &str| features.iter().find(|f| f.name == name).unwrap();
+
+        let checkout = by_name("Checkout Flow");
+        assert_eq!(checkout.key, "checkout-flow");
+        assert!(checkout.links.is_empty());
+
+        let search = by_name("Search");
+        assert_eq!(search.key, "search-v2");
+        assert_eq!(search.links["posthog"], "https://eu.posthog.com/project/1");
+        assert!(!search.meta.contains_key("key"));
+        assert!(!search.meta.contains_key("links"));
+        assert!(search.meta.contains_key("status"));
+
+        let billing = by_name("billing");
+        assert_eq!(billing.key, "payments");
+        assert_eq!(billing.links["sentry"], "https://sentry.io/acme");
+        assert!(billing.meta.is_empty());
     }
 
     #[test]

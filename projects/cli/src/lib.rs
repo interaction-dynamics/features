@@ -6,6 +6,8 @@ pub mod codeowners;
 pub mod coverage_parser;
 pub mod dependency_resolver;
 pub mod diff;
+pub mod external_data;
+pub mod feature_key;
 pub mod feature_metadata_detector;
 pub mod features_toml_parser;
 pub mod file_scanner;

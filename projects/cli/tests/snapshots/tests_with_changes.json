@@ -1,6 +1,7 @@
 [
   {
     "name": "feature-0",
+    "key": "feature-0",
     "description": "",
     "owner": "",
     "is_owner_inherited": false,
@@ -38,6 +39,7 @@
   },
   {
     "name": "Feature 1",
+    "key": "feature-1",
     "description": "This is a Feature that does something useful.",
     "owner": "team1",
     "is_owner_inherited": false,
@@ -45,6 +47,7 @@
     "features": [
       {
         "name": "Feature 2 Duplicated",
+        "key": "feature-2",
         "description": "This is a very long description of the feature 2 duplicated.\n\n## Reason of the feature\n\nThis Feature is duplicated because it is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Implementation Details\n\nThis feature is implemented using the following technologies:\n\n- JavaScript\n- HTML\n- CSS\n\n## Conclusion\n\nThis feature is a good example of a feature that can be duplicated. It also serves as a template for creating new features.\n\n## Future Improvements\n\n- Add more features to the feature\n- Improve the user interface",
         "owner": "team1",
         "is_owner_inherited": true,
@@ -82,6 +85,7 @@
       },
       {
         "name": "feature-3",
+        "key": "feature-3",
         "description": "",
         "owner": "team1",
         "is_owner_inherited": true,
@@ -119,6 +123,7 @@
       },
       {
         "name": "Feature 4",
+        "key": "feature-4",
         "description": "",
         "owner": "team2",
         "is_owner_inherited": false,
@@ -192,6 +197,7 @@
   },
   {
     "name": "Feature 2",
+    "key": "feature-2",
     "description": "This is a feature that does something very interesting.",
     "owner": "",
     "is_owner_inherited": false,
@@ -241,6 +247,7 @@
   },
   {
     "name": "Route 1",
+    "key": "route-1",
     "description": "This is the first route.",
     "owner": "John Doe",
     "is_owner_inherited": false,
@@ -248,6 +255,7 @@
     "features": [
       {
         "name": "feature-5",
+        "key": "feature-5",
         "description": "",
         "owner": "John Doe",
         "is_owner_inherited": true,
@@ -285,6 +293,7 @@
       },
       {
         "name": "Component 1",
+        "key": "component-1",
         "description": "",
         "owner": "John Doe",
         "is_owner_inherited": false,

@@ -60,14 +60,23 @@ export type FeatureRepository = {
   path: string
 }
 
+/** Value of a metric imported from an external tool with `--data` */
+export type ExternalValue = string | number | boolean
+
 export type Feature = {
   name: string
+  /** Stable identifier used by external tools to refer to the feature */
+  key?: string
   path: string
   owner: string
   is_owner_inherited: boolean
   description?: string
   features?: Feature[]
   meta?: Record<string, unknown>
+  /** Links to external tools, by name (`links` in the README front matter) */
+  links?: Record<string, string>
+  /** Data imported from external tools with `--data`, by metric name */
+  external?: Record<string, ExternalValue>
   parent?: Feature
   changes: Change[]
   decisions: string[]
@@ -158,12 +167,17 @@ export const DependencySchema: z.ZodType<Dependency> = z.object({
 export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
   z.object({
     name: z.string(),
+    key: z.string().optional(),
     path: z.string(),
     owner: z.string(),
     is_owner_inherited: z.boolean(),
     description: z.string().optional(),
     features: z.array(FeatureSchema).optional(),
     meta: z.record(z.string(), z.unknown()).optional(),
+    links: z.record(z.string(), z.string()).optional(),
+    external: z
+      .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+      .optional(),
     parent: FeatureSchema.optional(),
     changes: z.array(ChangeSchema),
     decisions: z.array(z.string()),

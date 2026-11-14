@@ -92,6 +92,7 @@ You need one place to overview all your features: what exists, who owns it, how 
 
 **For product and QA**
 - List feature flags, experiments and other feature metadata across the codebase
+- Link each feature to its analytics, error tracking and design, and see their data next to the code
 
 **For AI coding agents**
 - Give Claude Code, Cursor, Copilot and other agents a [map of the codebase by feature](#give-your-ai-coding-agent-a-map-of-the-codebase), so they find the right files without grepping the whole repository
@@ -272,6 +273,26 @@ It works the same in every language:
 ```
 
 Annotations are supported in Rust, C/C++, Java, JavaScript/TypeScript, C#, Go, Swift, Kotlin, Scala, CSS/SCSS/Less, Python, Bash/Shell, Ruby, Perl, YAML, TOML, SQL, Lua and HTML/XML/SVG.
+
+## Connect PostHog, Sentry and your other tools
+
+Every feature has a `key` (its folder name, slugified, or `key` in its README front matter). Use it to tag your analytics events, errors and issues, then bring that data into the dashboard, still without any network call from the CLI:
+
+```yaml
+---
+key: checkout
+links:
+  posthog: https://eu.posthog.com/project/1/dashboard/2
+  sentry: https://sentry.io/organizations/acme/issues/?query=feature:checkout
+---
+```
+
+```bash
+# usage.json: { "checkout": { "weekly_users": 12840, "open_errors": 3 } }
+features build ./src --data usage.json
+```
+
+Links show up on the feature page, and the imported metrics on the feature page and as sortable columns of the insights table. See [Import data from external tools](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md#import-data-from-external-tools).
 
 ## Let Claude reorganize your codebase by feature
 

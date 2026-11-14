@@ -6,6 +6,7 @@ import {
   FlaskConical,
   FolderTree,
   GitCommitVertical,
+  KeyRound,
   Network,
   Settings,
   Table,
@@ -19,6 +20,8 @@ import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
 
+import { FeatureExternalData } from './feature-external-data'
+import { FeatureLinks } from './feature-links'
 import { FeatureMeta } from './feature-meta'
 import { FeatureOwner } from './feature-owner'
 
@@ -88,6 +91,20 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             </div>
           </div>
         )}
+        {feature.key && (
+          <div className="flex items-start gap-3">
+            <KeyRound className="h-4 w-4 text-muted-foreground mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground mb-1">Key</p>
+              <p
+                className="text-xs font-mono text-muted-foreground"
+                title="Tag events, errors and issues with this key to link them to the feature"
+              >
+                {feature.key}
+              </p>
+            </div>
+          </div>
+        )}
         <div className="flex items-start gap-3">
           <User className="h-4 w-4 text-muted-foreground mt-0.5" />
           <div className="flex-1">
@@ -98,6 +115,8 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
           </div>
         </div>
         <FeatureMeta feature={feature} />
+        <FeatureLinks feature={feature} />
+        <FeatureExternalData feature={feature} />
       </div>
 
       <Tabs defaultValue="description" className="mt-4">
