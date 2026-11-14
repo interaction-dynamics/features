@@ -158,10 +158,7 @@ export default function FeatureInsights({
         {stats.coverage ? (
           <StatsCard
             title="Test Coverage"
-            value={
-              `${Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(stats.coverage.line_coverage_percent)}%` ||
-              'N/A'
-            }
+            value={`${Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(stats.coverage.line_coverage_percent)}%`}
             subtitle={`${stats.coverage?.lines_covered} lines out of ${stats.coverage?.lines_total}`}
           />
         ) : (
@@ -251,9 +248,9 @@ export default function FeatureInsights({
                     cursor={false}
                     content={
                       <ChartTooltipContent
-                        labelFormatter={(value) => {
-                          return value.fullName
-                        }}
+                        labelFormatter={(label, payload) =>
+                          payload?.[0]?.payload?.fullName ?? label
+                        }
                         indicator="dot"
                       />
                     }

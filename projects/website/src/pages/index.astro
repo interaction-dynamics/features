@@ -2,7 +2,6 @@
 import {
   ArrowRight,
   BookOpen,
-  Brain,
   Braces,
   ChartPie,
   Construction,
@@ -12,41 +11,34 @@ import {
   FolderTree,
   GitCommitHorizontal,
   GitPullRequest,
-  Layers,
   LayoutDashboard,
-  ScanEye,
-  Sparkles,
   Users,
 } from '@lucide/astro'
 import CallToAction from '../components/CallToAction.astro'
+import HeroIllustration from '../components/HeroIllustration.astro'
+import IsoFigure from '../components/IsoFigure.astro'
 import Screenshot from '../components/Screenshot.astro'
 import Section from '../components/Section.astro'
-import Terminal from '../components/Terminal.astro'
 import { site } from '../data/site'
 import Base from '../layouts/Base.astro'
 
-const aiEraReasons = [
+const pillars = [
   {
-    icon: Sparkles,
-    title: "Lines of code don't mean much",
-    text: 'An agent writes a thousand lines as easily as ten. What matters is what the code does for your users: the features.',
+    figure: 'map',
+    title: 'Every feature, mapped',
+    text: 'One view of what the product does, built from your folders. Not lines of code: features.',
   },
   {
-    icon: Layers,
-    title: 'Features pile up fast',
-    text: 'When people and agents ship every day, nobody holds the whole product in their head. Features get duplicated, forgotten or left half-finished.',
+    figure: 'owners',
+    title: 'Owned and connected',
+    text: 'Who owns each feature, what it imports and which teams a change touches.',
   },
   {
-    icon: ScanEye,
-    title: 'Reviews get shallower',
-    text: 'The more code is generated, the less of it is read closely. A higher-level view shows where each change lands and whose feature it touches.',
+    figure: 'specs',
+    title: 'Intent kept in the repository',
+    text: "Specs and decision records next to the code, so an agent's reasoning outlives its session.",
   },
-  {
-    icon: Brain,
-    title: 'The reasoning gets lost',
-    text: "An agent's reasoning vanishes with its session. Docs and decision records kept next to each feature keep it for the next person, or the next agent.",
-  },
-]
+] as const
 
 const capabilities = [
   {
@@ -67,7 +59,7 @@ const capabilities = [
   {
     icon: BookOpen,
     title: 'Surface the docs',
-    text: 'README descriptions and decision records (ADR) are attached to their feature.',
+    text: 'README descriptions, specs and decision records (ADR) are attached to their feature, Spec Kit and Kiro specs included.',
   },
   {
     icon: FlaskConical,
@@ -101,57 +93,21 @@ const capabilities = [
   },
 ]
 
-const languages = [
-  'Rust',
-  'TypeScript',
-  'JavaScript',
-  'Python',
-  'Go',
-  'Java',
-  'Kotlin',
-  'Swift',
-  'C#',
-  'C/C++',
-  'Scala',
-  'Ruby',
-  'Perl',
-  'Lua',
-  'SQL',
-  'Bash',
-  'CSS/SCSS',
-  'YAML',
-  'TOML',
-  'HTML/XML',
-]
-
-const dashboardFeatures = [
+const specLayouts = [
   {
-    name: 'auth',
-    owner: 'team-auth',
-    coverage: 92,
-    todos: 1,
-    mix: [55, 25, 20],
+    tool: 'Native',
+    path: 'src/features/auth/__docs__/specs/001-login.md',
+    note: 'next to the feature',
   },
   {
-    name: 'billing',
-    owner: 'team-billing',
-    coverage: 74,
-    todos: 4,
-    mix: [40, 45, 15],
+    tool: 'GitHub Spec Kit',
+    path: 'specs/003-auth/spec.md',
+    note: 'plan.md, tasks.md, contracts/ as tabs',
   },
   {
-    name: 'search',
-    owner: 'team-discovery',
-    coverage: 61,
-    todos: 7,
-    mix: [35, 30, 35],
-  },
-  {
-    name: 'onboarding',
-    owner: 'team-growth',
-    coverage: 88,
-    todos: 0,
-    mix: [70, 15, 15],
+    tool: 'Kiro',
+    path: '.kiro/specs/auth/requirements.md',
+    note: 'design.md, tasks.md as tabs',
   },
 ]
 
@@ -166,10 +122,18 @@ const softwareApplication = {
   license: 'https://opensource.org/licenses/MIT',
   url: site.repository,
   downloadUrl: site.npm,
-  softwareHelp: site.demo,
+  installUrl: site.npm,
+  softwareHelp: { '@type': 'CreativeWork', url: site.demo },
+  sameAs: [site.repository, site.npm, site.crate],
+  isAccessibleForFree: true,
+  keywords:
+    'feature-based architecture, codebase map, code ownership, CODEOWNERS, technical debt, test coverage, architecture decision records, AI coding agents',
+  featureList: capabilities.map((capability) => capability.title),
+  screenshot: new URL('/screenshots/insights@2x.webp', Astro.site ?? Astro.url).href,
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   author: {
     '@type': 'Organization',
+    '@id': `${site.organizationUrl}/#organization`,
     name: site.organization,
     url: site.organizationUrl,
   },
@@ -186,10 +150,15 @@ const softwareApplication = {
     <div class="grid-bg pointer-events-none absolute inset-0 opacity-40" aria-hidden="true"></div>
     <div class="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pt-16 pb-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
       <div>
-        <p class="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs text-muted">
-          <span class="size-1.5 rounded-full bg-lime" aria-hidden="true"></span>
-          Open source · Rust · Any language
-        </p>
+        <div class="flex flex-wrap gap-2">
+          <p class="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs text-muted">
+            <span class="size-1.5 rounded-full bg-green shadow-[0_0_8px_var(--color-green)]" aria-hidden="true"></span>
+            Open source · Any language
+          </p>
+          <a href="/specs-decisions" class="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs text-accent transition hover:border-accent">
+            New: specs &amp; decisions, Spec Kit and Kiro <ArrowRight size={12} aria-hidden="true" />
+          </a>
+        </div>
         <h1 class="mt-6 text-4xl font-bold tracking-tight text-balance sm:text-6xl">
           Every feature of your codebase, <span class="text-gradient">mapped.</span>
         </h1>
@@ -211,52 +180,7 @@ const softwareApplication = {
         </code>
       </div>
 
-      <!-- Dashboard illustration -->
-      <figure class="card relative p-5 shadow-2xl shadow-black/50" aria-label="Illustration of the Features dashboard">
-        <div class="bg-gradient-brand pointer-events-none absolute -inset-px -z-10 rounded-2xl opacity-30 blur-2xl" aria-hidden="true"></div>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2 text-sm font-semibold">
-            <LayoutDashboard size={18} class="text-cyan" aria-hidden="true" /> src/features
-          </div>
-          <span class="rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-xs text-muted">4 features</span>
-        </div>
-        <ul class="mt-5 space-y-3">
-          {
-            dashboardFeatures.map((feature) => (
-              <li class="rounded-xl border border-line bg-ink/50 p-3.5">
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span class="font-mono text-sm font-semibold text-cyan">{feature.name}</span>
-                  <span class="rounded-full border border-line px-2 text-[0.7rem] leading-5 text-muted">
-                    {feature.owner}
-                  </span>
-                  <span class="ml-auto text-xs text-muted">
-                    {feature.todos} TODO{feature.todos === 1 ? '' : 's'}
-                  </span>
-                </div>
-                <div class="mt-3 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2 text-[0.7rem] text-muted">
-                  <span>coverage</span>
-                  <span class="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                    <span class="bg-gradient-brand block h-full rounded-full" style={`width:${feature.coverage}%`} />
-                  </span>
-                  <span class="font-mono text-text">{feature.coverage}%</span>
-                  <span>commits</span>
-                  <span class="flex h-1.5 overflow-hidden rounded-full">
-                    <span class="bg-cyan" style={`width:${feature.mix[0]}%`} />
-                    <span class="bg-magenta" style={`width:${feature.mix[1]}%`} />
-                    <span class="bg-lime" style={`width:${feature.mix[2]}%`} />
-                  </span>
-                  <span class="font-mono text-text">{feature.mix[0]}%</span>
-                </div>
-              </li>
-            ))
-          }
-        </ul>
-        <figcaption class="mt-4 flex flex-wrap gap-4 text-[0.7rem] text-muted">
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-cyan" aria-hidden="true"></span>feature</span>
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-magenta" aria-hidden="true"></span>fix</span>
-          <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-lime" aria-hidden="true"></span>refactor</span>
-        </figcaption>
-      </figure>
+      <HeroIllustration />
     </div>
   </section>
 
@@ -265,34 +189,27 @@ const softwareApplication = {
     id="ai-era"
     eyebrow="Built for the age of AI"
     title="Features ship in minutes. Keep track of all of them."
-    lead="With Claude Code, Cursor or Copilot, a new feature takes minutes, not weeks. Writing code is no longer the bottleneck. Knowing what you built is."
+    lead="With Claude Code, Cursor or Copilot, writing code is no longer the bottleneck. Tracking, documenting and maintaining what you built is. Features builds one place to overview it all, from your code, so it stays current however fast you ship."
   >
-    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <ul class="grid border-line/70 md:grid-cols-3 md:divide-x md:divide-line/70">
       {
-        aiEraReasons.map(({ icon: Icon, title, text }) => (
-          <li class="card p-5">
-            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-magenta">
-              <Icon size={20} aria-hidden="true" />
-            </span>
-            <h3 class="mt-4 font-semibold">{title}</h3>
-            <p class="mt-1.5 text-sm text-muted">{text}</p>
+        pillars.map((pillar, index) => (
+          <li class="flex flex-col py-6 md:px-8 md:first:pl-0 md:last:pr-0">
+            <p class="font-mono text-[0.7rem] tracking-wider text-muted/70">FIG 0.{index + 1}</p>
+            <div class="mx-auto my-8 flex h-44 w-full max-w-56 items-center justify-center">
+              <IsoFigure name={pillar.figure} class="max-h-full" />
+            </div>
+            <h3 class="font-medium">{pillar.title}</h3>
+            <p class="mt-2 text-sm text-pretty text-muted">{pillar.text}</p>
           </li>
         ))
       }
     </ul>
-    <div class="card relative mt-6 overflow-hidden p-6 sm:p-8">
-      <div class="bg-gradient-brand pointer-events-none absolute inset-0 opacity-10" aria-hidden="true"></div>
-      <div class="relative grid items-center gap-6 md:grid-cols-[1fr_auto]">
-        <p class="text-lg text-pretty">
-          You need <strong class="text-gradient font-semibold">one place to overview all your features</strong>: what
-          exists, who owns it, how healthy it is and what changed recently. Features builds that place from your code,
-          so it stays current however fast you ship.
-        </p>
-        <a href="#how-it-works" class="inline-flex items-center gap-2 rounded-lg border border-line px-5 py-2.5 font-semibold whitespace-nowrap transition hover:border-muted">
-          See how it works <ArrowRight size={18} aria-hidden="true" />
-        </a>
-      </div>
-    </div>
+    <p class="mt-6">
+      <a href="/ai" class="inline-flex items-center gap-1 text-sm text-accent hover:underline">
+        Why it matters for AI coding agents <ArrowRight size={14} aria-hidden="true" />
+      </a>
+    </p>
   </Section>
 
   <!-- How it works -->
@@ -304,19 +221,19 @@ const softwareApplication = {
   >
     <ol class="grid gap-5 md:grid-cols-3">
       <li class="card relative p-6">
-        <span class="font-mono text-5xl font-bold text-line" aria-hidden="true">01</span>
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">01</span>
         <h3 class="mt-2 text-lg font-semibold">Organize by feature</h3>
         <p class="mt-2 text-sm text-muted">
           Put each business feature in its own folder inside a <code>features</code> folder, or flag any folder with
           <code>feature: true</code> in its README.
         </p>
-        <pre class="mt-5 rounded-lg bg-ink/60 p-3 font-mono text-xs leading-6 text-muted"><span class="text-magenta">features/</span>
-├── <span class="text-cyan">auth/</span>
-├── <span class="text-cyan">billing/</span>
-└── <span class="text-cyan">search/</span></pre>
+        <pre class="mt-5 rounded-lg bg-ink/60 p-3 font-mono text-xs leading-6 text-muted"><span class="text-accent-2">features/</span>
+├── <span class="text-accent">auth/</span>
+├── <span class="text-accent">billing/</span>
+└── <span class="text-accent">search/</span></pre>
       </li>
       <li class="card relative p-6">
-        <span class="font-mono text-5xl font-bold text-line" aria-hidden="true">02</span>
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">02</span>
         <h3 class="mt-2 text-lg font-semibold">Run the CLI</h3>
         <p class="mt-2 text-sm text-muted">
           One binary, written in Rust. Install it with npm or cargo, or run it on the fly with <code>npx</code>.
@@ -326,16 +243,16 @@ const softwareApplication = {
 <span class="select-none">$ </span><span class="text-text">features codeowners ./src</span></pre>
       </li>
       <li class="card relative p-6">
-        <span class="font-mono text-5xl font-bold text-line" aria-hidden="true">03</span>
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">03</span>
         <h3 class="mt-2 text-lg font-semibold">Explore and share</h3>
         <p class="mt-2 text-sm text-muted">
           Browse the dashboard, publish a static build, export JSON or comment on pull requests.
         </p>
         <ul class="mt-5 grid grid-cols-2 gap-2 text-xs md:grid-cols-1 lg:grid-cols-2">
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><LayoutDashboard size={14} class="shrink-0 text-cyan" aria-hidden="true" />Dashboard</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><Braces size={14} class="shrink-0 text-lime" aria-hidden="true" />JSON report</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><FileLock size={14} class="shrink-0 text-magenta" aria-hidden="true" />CODEOWNERS</li>
-          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><GitPullRequest size={14} class="shrink-0 text-cyan" aria-hidden="true" />PR comment</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><LayoutDashboard size={14} class="shrink-0 text-indigo" aria-hidden="true" />Dashboard</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><Braces size={14} class="shrink-0 text-orange" aria-hidden="true" />JSON report</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><FileLock size={14} class="shrink-0 text-green" aria-hidden="true" />CODEOWNERS</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><GitPullRequest size={14} class="shrink-0 text-violet" aria-hidden="true" />PR comment</li>
         </ul>
       </li>
     </ol>
@@ -352,7 +269,7 @@ const softwareApplication = {
       {
         capabilities.map(({ icon: Icon, title, text }) => (
           <li class="card group p-5 transition hover:border-muted/60">
-            <span class="inline-flex size-10 items-center justify-center rounded-lg bg-surface-2 text-cyan transition group-hover:text-lime">
+            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent transition group-hover:text-accent-3">
               <Icon size={20} aria-hidden="true" />
             </span>
             <h3 class="mt-4 font-semibold">{title}</h3>
@@ -374,7 +291,8 @@ const softwareApplication = {
       name="insights"
       alt="Insights page of the Features dashboard: totals of features and owners, and a table of every feature with its owner, dates, files, lines, TODOs and changes"
       caption="Insights: every feature with its owner, size, TODOs and commit history, filterable with queries like owner:john AND lines:>1000."
-      class="shadow-2xl shadow-black/50"
+      featured
+      fade
     />
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
       <Screenshot
@@ -389,77 +307,43 @@ const softwareApplication = {
       />
     </div>
     <p class="mt-8">
-      <a href={site.demo} class="inline-flex items-center gap-1 text-cyan hover:underline">
+      <a href={site.demo} class="inline-flex items-center gap-1 text-accent hover:underline">
         Explore the live demo <ArrowRight size={16} aria-hidden="true" />
       </a>
     </p>
   </Section>
 
-  <!-- Pull request -->
+  <!-- Specs & decisions -->
   <Section
-    id="pull-requests"
-    eyebrow="Code review"
-    title="Know which teams a change touches"
-    lead="features diff maps every changed file to its closest feature and owner. Post it as a pull request comment, or request reviews from the owning teams automatically."
+    id="specs-decisions"
+    eyebrow="Specs & decisions"
+    title="What each feature does, and why it's built that way"
+    lead="Specs and decision records live next to each feature. Features links them, tracks their status and task progress, and shows them on the feature's page, so people and agents read the intent before they change the code."
   >
-    <div class="grid items-start gap-6 lg:grid-cols-2">
-      <Terminal title="features diff src --since origin/master">
-<span class="text-muted">Features touched since origin/master (merge base 1a2b3c4):</span>
-
-  <span class="font-semibold text-cyan">Auth</span> <span class="text-muted">(features/auth) - owner:</span> <span class="text-lime">team-auth</span>
-    <span class="text-lime">M</span> src/features/auth/login.ts
-    <span class="text-magenta">R</span> src/features/auth/old.ts -> src/features/billing/moved.ts
-
-  <span class="font-semibold text-cyan">Billing</span> <span class="text-muted">(features/billing) - owner:</span> <span class="text-lime">team-billing</span>
-    <span class="text-magenta">R</span> src/features/auth/old.ts -> src/features/billing/moved.ts
-    <span class="text-[#ff5f57]">D</span> src/features/billing/legacy.ts
-
-<span class="text-muted">Files outside any feature:</span>
-    <span class="text-lime">M</span> README.md</Terminal>
-      <div class="card p-6">
-        <div class="flex items-center gap-3">
-          <span class="bg-gradient-brand inline-flex size-9 items-center justify-center rounded-full text-ink"><GitPullRequest size={18} aria-hidden="true" /></span>
-          <div>
-            <p class="text-sm font-semibold">github-actions <span class="font-normal text-muted">commented</span></p>
-            <p class="text-xs text-muted">on pull request</p>
-          </div>
-        </div>
-        <p class="mt-5 text-sm font-semibold">Features touched by this pull request</p>
-        <div class="mt-3 overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="text-xs text-muted">
-              <tr class="border-b border-line"><th class="py-2 pr-4 font-medium">Feature</th><th class="py-2 pr-4 font-medium">Owner</th><th class="py-2 font-medium">Files</th></tr>
-            </thead>
-            <tbody>
-              <tr class="border-b border-line/60"><td class="py-2 pr-4 font-mono text-cyan">auth</td><td class="py-2 pr-4">@team-auth</td><td class="py-2">2</td></tr>
-              <tr><td class="py-2 pr-4 font-mono text-cyan">billing</td><td class="py-2 pr-4">@team-billing</td><td class="py-2">2</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="mt-5 flex flex-wrap items-center gap-2 text-xs text-muted">
-          Reviewers requested:
-          <span class="rounded-full border border-line px-2 py-0.5 text-text">my-org/team-auth</span>
-          <span class="rounded-full border border-line px-2 py-0.5 text-text">my-org/team-billing</span>
-        </p>
-        <a href="/cli#pull-requests" class="link mt-6 inline-block text-sm">Set it up with GitHub Actions</a>
+    <div class="grid items-center gap-8 lg:grid-cols-[1fr_1.6fr]">
+      <div>
+        <p class="text-sm text-muted">Already writing specs with an AI workflow? They are read where they are:</p>
+        <ul class="mt-4 space-y-2">
+          {
+            specLayouts.map((layout) => (
+              <li class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-surface/60 px-3.5 py-2.5">
+                <span class="rounded-full border border-accent/40 bg-accent/10 px-2 text-[0.7rem] leading-5 text-accent">
+                  {layout.tool}
+                </span>
+                <span class="text-xs text-muted">{layout.note}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <a href="/specs-decisions" class="mt-6 inline-flex items-center gap-2 rounded-lg border border-line px-5 py-2.5 font-semibold transition hover:border-muted">
+          Explore specs &amp; decisions <ArrowRight size={18} aria-hidden="true" />
+        </a>
       </div>
+      <Screenshot
+        name="specs-decisions"
+        alt="Specs & Decisions tab of a feature in the Features dashboard: a timeline of specs and decision records with status badges, task progress bars and links between them"
+      />
     </div>
-  </Section>
-
-  <!-- Languages -->
-  <Section
-    id="languages"
-    eyebrow="Technology agnostic"
-    title="Works with the stack you already have"
-    lead="Features only reads folders, READMEs, git history and comments. Feature annotations are recognized in all these languages."
-  >
-    <ul class="flex flex-wrap gap-2">
-      {
-        languages.map((language) => (
-          <li class="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 font-mono text-sm text-muted">{language}</li>
-        ))
-      }
-    </ul>
   </Section>
 
   <CallToAction />

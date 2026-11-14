@@ -7,8 +7,8 @@ Thank you for your interest in contributing to the Features CLI project! This do
 ### Prerequisites
 
 - [Rust](https://rustup.rs/) (latest stable version)
-- [Node.js](https://nodejs.org/) (version 14 or higher)
-- [pnpm](https://pnpm.io/) for package management
+- [Node.js](https://nodejs.org/) (version 22 or higher)
+- [Bun](https://bun.sh/) for package management of the web dashboard and website
 - Git
 
 ### Local Development
@@ -63,7 +63,7 @@ When a new version tag (e.g., `v0.5.0`) is pushed, the GitHub Actions workflow a
 3. **Publishes to crates.io** - publishes the Rust crate
 4. **Publishes to npm** - creates and publishes npm packages for all platforms
 5. **Creates GitHub release** - with release notes, binary attachments and a `checksums.txt` (SHA256 of every binary)
-6. **Updates the Homebrew tap** - renders `packaging/homebrew/features.rb.tmpl` with the new version and checksums, and pushes it to `Formula/features.rb` in [interaction-dynamics/homebrew-tap](https://github.com/interaction-dynamics/homebrew-tap). This step is skipped when `HOMEBREW_TAP_TOKEN` is not set.
+6. **Updates the Homebrew tap** - renders `projects/cli/packaging/homebrew/features.rb.tmpl` with the new version and checksums, and pushes it to `Formula/features.rb` in [interaction-dynamics/homebrew-tap](https://github.com/interaction-dynamics/homebrew-tap). This step is skipped when `HOMEBREW_TAP_TOKEN` is not set.
 
 ### Publishing credentials (trusted publishing)
 
@@ -113,7 +113,7 @@ To render the formula locally (e.g. to fix a release by hand):
 
 ```bash
 gh release download vX.Y.Z -p checksums.txt -D /tmp/features
-packaging/homebrew/render.sh X.Y.Z /tmp/features/checksums.txt features.rb
+projects/cli/packaging/homebrew/render.sh X.Y.Z /tmp/features/checksums.txt features.rb
 ```
 
 ### Version Management

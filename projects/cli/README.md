@@ -10,7 +10,7 @@ cargo run ../../examples/demo/src/features
 
 # For the web dashboard
 cd ../web
-pnpm build_for_cli
+bun run build_for_cli
 cd ../cli
 
 cargo run -- serve ../../examples/demo/src/features # for the Web dashboard
@@ -20,7 +20,7 @@ cargo run -- serve ../../examples/demo/src/features # for the Web dashboard
 
 ```bash
 cd ../web
-pnpm build_for_cli
+bun run build_for_cli
 cd ../cli
 
 cargo publish --allow-dirty

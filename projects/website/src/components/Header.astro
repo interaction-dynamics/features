@@ -33,18 +33,78 @@ const current = Astro.url.pathname.replace(/\.html$/, '')
       </svg>
       GitHub
     </a>
+    <button
+      type="button"
+      class="inline-flex size-9 items-center justify-center rounded-md border border-line text-muted transition hover:border-muted hover:text-text md:hidden"
+      aria-controls="mobile-menu"
+      aria-expanded="false"
+      aria-label="Open menu"
+      data-mobile-menu-toggle
+    >
+      <svg class="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <path data-icon-open d="M2 4h12M2 8h12M2 12h12" />
+        <path data-icon-close class="hidden" d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
+      </svg>
+    </button>
   </div>
-  <nav aria-label="Main mobile" class="flex gap-1 overflow-x-auto border-t border-line/70 px-4 py-2 text-sm md:hidden">
-    {
-      nav.map((item) => (
-        <a
-          href={item.href}
-          aria-current={current === item.href ? 'page' : undefined}
-          class="shrink-0 rounded-md px-3 py-1 text-muted aria-[current=page]:bg-surface-2 aria-[current=page]:text-text"
-        >
-          {item.label}
-        </a>
-      ))
-    }
+  <nav
+    id="mobile-menu"
+    aria-label="Main mobile"
+    class="hidden border-t border-line/70 px-4 py-2 text-sm md:hidden"
+    data-mobile-menu
+  >
+    <ul class="flex flex-col gap-1">
+      {
+        nav.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              aria-current={current === item.href ? 'page' : undefined}
+              class="block rounded-md px-3 py-2.5 text-muted transition hover:bg-surface-2 hover:text-text aria-[current=page]:bg-surface-2 aria-[current=page]:text-text"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
   </nav>
 </header>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-mobile-menu-toggle]')
+  const menu = document.querySelector<HTMLElement>('[data-mobile-menu]')
+
+  if (toggle && menu) {
+    const iconOpen = toggle.querySelector('[data-icon-open]')
+    const iconClose = toggle.querySelector('[data-icon-close]')
+
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open))
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu')
+      menu.classList.toggle('hidden', !open)
+      iconOpen?.classList.toggle('hidden', open)
+      iconClose?.classList.toggle('hidden', !open)
+    }
+
+    toggle.addEventListener('click', () => {
+      setOpen(toggle.getAttribute('aria-expanded') !== 'true')
+    })
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        setOpen(false)
+        toggle.focus()
+      }
+    })
+
+    document.addEventListener('click', (event) => {
+      const target = event.target as Node
+      if (!toggle.contains(target) && !menu.contains(target)) setOpen(false)
+    })
+
+    window.matchMedia('(min-width: 48rem)').addEventListener('change', (event) => {
+      if (event.matches) setOpen(false)
+    })
+  }
+</script>

@@ -9,7 +9,7 @@ import { githubUrl } from '../data/site'
 import Base from '../layouts/Base.astro'
 
 const description =
-  'How to structure a project so Features detects every feature: the features folder convention, README front matter, owners, decision records and feature flag annotations.'
+  'How to structure a project so Features detects every feature: the features folder convention, README front matter, owners, specs, decision records and feature flag annotations.'
 
 const featuresFolder: TreeNode[] = [
   {
@@ -92,50 +92,92 @@ const flagged: TreeNode[] = [
 const rules = [
   {
     level: 'MUST',
-    color: 'text-magenta border-magenta/40 bg-magenta/10',
+    color: 'text-accent-2 border-accent-2/40 bg-accent-2/10',
     text: 'Create features in a features folder, or add feature: true to the README front matter.',
     example: 'features/feature-1/',
   },
   {
     level: 'MUST',
-    color: 'text-magenta border-magenta/40 bg-magenta/10',
+    color: 'text-accent-2 border-accent-2/40 bg-accent-2/10',
     text: 'Put the code related to the feature inside the feature folder.',
     example: 'feature-1/file.js',
   },
   {
     level: 'SHOULD',
-    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    color: 'text-accent border-accent/40 bg-accent/10',
     text: 'Add a README.md or README.mdx file into the feature folder.',
     example: 'features/feature-1/README.md',
   },
   {
     level: 'SHOULD',
-    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    color: 'text-accent border-accent/40 bg-accent/10',
     text: 'Add a line of text describing the feature right after the README title.',
     example: 'Handles user login and logout',
   },
   {
     level: 'SHOULD',
-    color: 'text-cyan border-cyan/40 bg-cyan/10',
+    color: 'text-accent border-accent/40 bg-accent/10',
     text: 'Add front matter to the README with an owner property.',
     example: 'owner: backend-team',
   },
   {
     level: 'MAY',
-    color: 'text-lime border-lime/40 bg-lime/10',
+    color: 'text-accent-3 border-accent-3/40 bg-accent-3/10',
     text: 'Add any other properties you want to the front matter.',
     example: 'figma: <url>',
   },
   {
     level: 'MAY',
-    color: 'text-lime border-lime/40 bg-lime/10',
+    color: 'text-accent-3 border-accent-3/40 bg-accent-3/10',
     text: 'Add MADR decision records into the feature decisions folder.',
     example: '__docs__/decisions/001-use-jwt-tokens.md',
+  },
+  {
+    level: 'MAY',
+    color: 'text-accent-3 border-accent-3/40 bg-accent-3/10',
+    text: 'Add specs into the feature specs folder, as a file or a folder with spec.md, plan.md and tasks.md.',
+    example: '__docs__/specs/001-login-flow.md',
+  },
+  {
+    level: 'MAY',
+    color: 'text-accent-3 border-accent-3/40 bg-accent-3/10',
+    text: 'Link specs and decisions with the decisions, spec and supersedes front matter keys.',
+    example: 'decisions: [002-use-jwt]',
   },
 ]
 
 // A literal front matter fence would end the Astro component script.
 const fence = '-'.repeat(3)
+const spec = `${fence}
+status: accepted # draft, accepted, implemented, superseded
+date: 2026-01-02
+decisions: [002-use-jwt] # linked both ways
+${fence}
+
+# Login flow
+
+## Context
+
+Users sign in with an email and a password.
+
+## Requirements
+
+- [x] Sign in with email and password
+- [ ] Lock the account after 5 failed attempts
+
+## Out of scope
+
+## Plan`
+
+const decision = `${fence}
+status: accepted # proposed, accepted, rejected, deprecated, superseded
+date: 2026-01-04
+spec: 001-login-flow
+supersedes: 001-session-cookies
+${fence}
+
+# Use JWT tokens`
+
 const readme = `${fence}
 feature: true # required if not in a \`features\` folder
 owner: team_1
@@ -147,6 +189,29 @@ ${fence}
 # Save user
 
 Creates and updates user accounts from the profile page.`
+
+const languages = [
+  'Rust',
+  'TypeScript',
+  'JavaScript',
+  'Python',
+  'Go',
+  'Java',
+  'Kotlin',
+  'Swift',
+  'C#',
+  'C/C++',
+  'Scala',
+  'Ruby',
+  'Perl',
+  'Lua',
+  'SQL',
+  'Bash',
+  'CSS/SCSS',
+  'YAML',
+  'TOML',
+  'HTML/XML',
+]
 
 const annotations = [
   {
@@ -249,7 +314,7 @@ const howTo = {
     id="rules"
     eyebrow="Checklist"
     title="Must, should, may"
-    lead="Only the first two rules are required. The others unlock descriptions, ownership and decisions in the dashboard."
+    lead="Only the first two rules are required. The others unlock descriptions, ownership, specs and decisions in the dashboard."
   >
     <ol class="space-y-3">
       {
@@ -290,11 +355,52 @@ const howTo = {
   </Section>
 
   <Section
-    id="decisions"
-    eyebrow="Decision records"
-    title="Keep decisions next to the code they shaped"
-    lead="Add Markdown files to a __docs__/decisions/ or .docs/decisions/ folder in the feature. They appear under the feature in the dashboard. The template is inspired by MADR."
+    id="specs-decisions"
+    eyebrow="Specs & decisions"
+    title="Write what to build next to why it's built that way"
+    lead="Add specs to a __docs__/specs/ folder and decision records to a __docs__/decisions/ folder in the feature (.docs/ works too). Both appear in the Specs & Decisions tab of the feature, in one timeline sorted by date."
   >
+    <div class="grid items-start gap-6 lg:grid-cols-2">
+      <div>
+        <p class="mb-3 font-mono text-xs text-muted">__docs__/specs/001-login-flow.md</p>
+        <Code code={spec} lang="markdown" theme="github-dark-default" />
+      </div>
+      <div>
+        <p class="mb-3 font-mono text-xs text-muted">__docs__/decisions/002-use-jwt.md</p>
+        <Code code={decision} lang="markdown" theme="github-dark-default" />
+        <ul class="mt-4 space-y-3 text-sm">
+          <li class="card p-4"><code>status</code> <span class="text-muted">— shown as a badge. Without front matter, a <code>**Status**:</code> line or a <code>## Status</code> section works, as in classic ADRs.</span></li>
+          <li class="card p-4"><code>decisions</code> / <code>spec</code> / <code>supersedes</code> <span class="text-muted">— links to other records by id. Write them once: the other record links back.</span></li>
+          <li class="card p-4"><code>- [ ]</code> <span class="text-muted">— task checkboxes (of <code>tasks.md</code> in a folder spec) become a progress bar.</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+      <div class="card p-5">
+        <p class="font-semibold">Folder specs</p>
+        <p class="mt-1.5 text-sm text-muted">
+          A spec can be a folder: <code>spec.md</code> is the main file, <code>plan.md</code>, <code>tasks.md</code>
+          and the others show up as tabs.
+        </p>
+      </div>
+      <div class="card p-5">
+        <p class="font-semibold">GitHub Spec Kit and Kiro</p>
+        <p class="mt-1.5 text-sm text-muted">
+          <code>specs/NNN-name/</code> (<a href="https://github.com/github/spec-kit" rel="noopener" class="link">Spec Kit</a>)
+          and <code>.kiro/specs/name/</code> (<a href="https://kiro.dev/docs/specs/" rel="noopener" class="link">Kiro</a>)
+          are read too and attached to the feature whose name matches the folder, or to the one named by a
+          <code>feature:</code> key.
+        </p>
+      </div>
+      <div class="card p-5">
+        <p class="font-semibold">Project-level records</p>
+        <p class="mt-1.5 text-sm text-muted">
+          Specs and decisions about the whole project go in <code>docs/specs/</code>, <code>docs/decisions/</code>
+          or <code>docs/adr/</code>. They get their own page in the dashboard.
+        </p>
+      </div>
+    </div>
+    <p class="mt-10 mb-4 font-semibold">Decision record sections</p>
     <ol class="grid gap-3 sm:grid-cols-5">
       {
         [
@@ -312,10 +418,11 @@ const howTo = {
         ))
       }
     </ol>
+    <p class="mt-4 text-sm text-muted">The template is inspired by <a href="https://adr.github.io/madr/" rel="noopener" class="link">MADR</a>. <code>features check</code> warns about broken links, missing statuses, superseded records nothing replaces and implemented specs with open tasks.</p>
     <Screenshot
-      name="decisions"
-      alt="Decisions tab of a feature in the Features dashboard listing its decision records"
-      caption="Decision records listed in the Decisions tab of the feature."
+      name="specs-decisions"
+      alt="Specs & Decisions tab of a feature in the Features dashboard: a timeline of specs and decision records with status badges, task progress bars and links between them"
+      caption="Specs and decision records in the Specs & Decisions tab of the feature, with filters, status badges, task progress and links."
       class="mt-10"
     />
   </Section>
@@ -327,9 +434,9 @@ const howTo = {
     lead="Special comments attach metadata to a feature from anywhere in the codebase. The metadata key becomes a tab in the web UI, and properties are free-form key-value pairs."
   >
     <div class="card mb-6 p-5 font-mono text-sm">
-      <span class="text-muted">--feature-</span><span class="text-magenta">&lt;metadata-key&gt;</span>
-      <span class="text-cyan">feature:</span><span class="text-text">&lt;feature-folder-basename&gt;</span><span class="text-muted">,</span>
-      <span class="text-lime">property:</span> <span class="text-text">value</span><span class="text-muted">, ...</span>
+      <span class="text-muted">--feature-</span><span class="text-accent-2">&lt;metadata-key&gt;</span>
+      <span class="text-accent">feature:</span><span class="text-text">&lt;feature-folder-basename&gt;</span><span class="text-muted">,</span>
+      <span class="text-accent-3">property:</span> <span class="text-text">value</span><span class="text-muted">, ...</span>
       <p class="mt-3 font-sans text-xs text-muted">
         <code>feature:</code> is optional when the comment is already inside the feature folder.
       </p>
@@ -343,6 +450,17 @@ const howTo = {
           </figure>
         ))
       }
+    </div>
+    <div class="mt-8">
+      <h3 class="font-semibold">Recognized in every language you use</h3>
+      <p class="mt-1.5 text-sm text-muted">Annotations are read from the comments of all these languages.</p>
+      <ul class="mt-4 flex flex-wrap gap-2">
+        {
+          languages.map((language) => (
+            <li class="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 font-mono text-sm text-muted">{language}</li>
+          ))
+        }
+      </ul>
     </div>
     <Screenshot
       name="flags"

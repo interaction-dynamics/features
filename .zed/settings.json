@@ -1,9 +1,0 @@
-{
-	"lsp": {
-		"biome": {
-			"settings": {
-				"config_path": "projects/web/biome.json"
-			}
-		}
-	}
-}

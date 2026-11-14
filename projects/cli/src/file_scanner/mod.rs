@@ -4,7 +4,8 @@
 //! enriches it in separate passes, the same way `scan.rs` adds coverage:
 //!
 //! 1. [`metadata`]: `--feature-<key>` annotations merged into `meta`
-//! 2. [`decisions`]: decision records
+//! 2. [`decisions`]: decision records (raw markdown, kept for compatibility)
+//!    and [`records`]: specs and decision records
 //! 3. [`stats`]: file, line and TODO counts
 //! 4. [`history`]: git changes and commit statistics (only with history)
 //! 5. [`dependencies`]: dependencies resolved from imports
@@ -15,6 +16,7 @@ mod decisions;
 mod dependencies;
 mod history;
 mod metadata;
+mod records;
 mod stats;
 mod walk;
 
@@ -102,6 +104,7 @@ fn scan_with_enrichment(
 
     metadata::apply_feature_metadata(&mut features, &feature_metadata);
     decisions::populate_decisions(&mut features, dir);
+    records::populate_records(&mut features, dir);
     stats::populate_file_stats(&mut features, dir, &filter);
     if let Some(history) = history {
         history::populate_history(&mut features, dir, history);

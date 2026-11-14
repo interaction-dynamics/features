@@ -1,24 +1,29 @@
 {
   "name": "features-website",
-  "private": true,
   "version": "^0.1.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
-    "lint": "biome lint .",
-    "format": "biome format .",
-    "format:fix": "biome format . --write"
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "preview": "astro preview"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.5",
     "@lucide/astro": "^1.62.0",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "^7.4.12",
-    "tailwindcss": "^4.3.5"
+    "tailwindcss": "^4.3.5",
+    "turndown": "^7.2.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5"
-  }
+    "@types/turndown": "^5.0.6",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0"
+  },
+  "packageManager": "bun@1.3.11"
 }
