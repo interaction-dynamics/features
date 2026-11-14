@@ -1,0 +1,574 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Monochrome palette, in the spirit of Linear: near-black, off-white and grays. */
+  --color-ink: #08090a;
+  --color-surface: #0f1011;
+  --color-surface-2: #161718;
+  --color-line: #23252a;
+  --color-text: #f7f8f8;
+  --color-muted: #8a8f98;
+  /* Three gray levels replace the old neon trio for emphasis and data series. */
+  --color-accent: #edeef0;
+  --color-accent-2: #b4b8c0;
+  --color-accent-3: #80858e;
+  /*
+   * A few colors, used sparingly like Linear does: one highlighted bar,
+   * a status dot, a glow behind a screenshot. Never for large surfaces.
+   */
+  --color-indigo: #7c84f2;
+  --color-violet: #a78bfa;
+  --color-green: #4cb782;
+  --color-orange: #f2994a;
+  --color-yellow: #f2c94c;
+  /* Same light falloff as the logo. */
+  --color-gradient-from: #f9f9f9;
+  --color-gradient-to: #b3b3b3;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono',
+    monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-ink);
+  color: var(--color-text);
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(
+      60rem 30rem at 50% -10%,
+      color-mix(in oklab, var(--color-text) 6%, transparent),
+      transparent 70%
+    ),
+    var(--color-ink);
+  background-repeat: no-repeat;
+}
+
+/* Linear-style heading gradient: bright at the top left, fading to the bottom right. */
+@utility text-gradient {
+  background-image: linear-gradient(
+    to right bottom,
+    var(--color-gradient-from) 30%,
+    color-mix(in oklab, var(--color-gradient-from) 45%, transparent)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Text that fades out downwards, for big decorative numbers. */
+@utility text-fade {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-text) 35%, transparent),
+    transparent 90%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility bg-gradient-brand {
+  background-image: linear-gradient(
+    180deg,
+    var(--color-gradient-from),
+    var(--color-gradient-to)
+  );
+}
+
+/*
+ * Linear-style panel: light falls from the top, so the surface is a touch
+ * brighter at the top and the border catches a highlight that fades out.
+ */
+@utility card {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  background:
+    linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--color-text) 3.5%, transparent),
+        transparent 55%
+      )
+      padding-box,
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--color-text) 17%, var(--color-line)),
+        var(--color-line) 45%
+      )
+      border-box;
+}
+
+/* Small square holding an icon, lit from the top like the cards. */
+@utility icon-tile {
+  border: 1px solid var(--color-line);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-text) 9%, var(--color-surface-2)),
+    var(--color-surface)
+  );
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, var(--color-text) 10%, transparent),
+    0 4px 12px -4px rgb(0 0 0 / 0.6);
+}
+
+/* Soft off-white light behind an illustration. */
+@utility spotlight {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--color-text) 9%, transparent),
+    transparent
+  );
+  filter: blur(24px);
+}
+
+/* Colored glow (indigo into violet), for the hero screenshots. */
+@utility spotlight-color {
+  background:
+    radial-gradient(
+      closest-side at 35% 55%,
+      color-mix(in oklab, var(--color-indigo) 50%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      closest-side at 70% 45%,
+      color-mix(in oklab, var(--color-violet) 30%, transparent),
+      transparent
+    );
+  filter: blur(40px);
+}
+
+/* Horizontal rule that fades out at both ends. */
+@utility hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-text) 14%, transparent),
+    transparent
+  );
+}
+
+/* Fade an illustration into the page instead of cutting it. */
+@utility fade-b {
+  mask-image: linear-gradient(180deg, #000 55%, transparent);
+}
+
+/* Screenshot that dissolves into the page: opaque on top, transparent at the bottom. */
+@utility fade-shot {
+  mask-image: linear-gradient(180deg, #000 45%, transparent 98%);
+}
+
+@utility fade-x {
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+
+@utility dot-grid {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--color-text) 14%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 14px 14px;
+  mask-image: radial-gradient(ellipse at center, #000 20%, transparent 70%);
+}
+
+/* A light that travels along a line, for diagrams. */
+@utility beam {
+  background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-gradient-from),
+      transparent
+    )
+    no-repeat;
+  background-size: 40% 100%;
+  animation: beam 3.5s ease-in-out infinite;
+}
+
+@keyframes beam {
+  from {
+    background-position: -60% 0;
+  }
+  to {
+    background-position: 160% 0;
+  }
+}
+
+/* Screenshots start tilted back and straighten as they scroll into view. */
+@utility tilt {
+  transform-origin: 50% 0;
+  @supports (animation-timeline: view()) {
+    animation: untilt linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 40%;
+  }
+}
+
+@keyframes untilt {
+  from {
+    transform: perspective(2400px) rotateX(18deg) scale(0.94);
+    opacity: 0.4;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/*
+ * Illustration animations.
+ * Each element sets its start with `--delay`. Inside a `.reveal` container the
+ * animations wait until the container scrolls into view (see Base.astro), only
+ * when JavaScript runs (`html.js`), so the final state always shows without it.
+ * The declared styles are the final state: `animation: none` leaves a finished,
+ * static illustration (reduced motion).
+ */
+.anim-rise {
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+    filter: blur(6px);
+  }
+}
+
+/* Rows and blocks sliding in one after the other. */
+.anim-row {
+  animation: row-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* Bars filling from the left. */
+.anim-grow {
+  transform-origin: 0 50%;
+  animation: grow-x 1s cubic-bezier(0.3, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Blocks with text revealed from the left, without stretching the text. */
+.anim-wipe {
+  animation: wipe 0.7s cubic-bezier(0.3, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+@keyframes wipe {
+  from {
+    clip-path: inset(0 100% 0 0 round 0.25rem);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 0.25rem);
+  }
+}
+
+/* Highlighted entries lighting up once, after the rest has appeared. */
+.anim-glow {
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  animation: glow 1.4s ease-out var(--delay, 0ms) both;
+}
+
+@keyframes glow {
+  from {
+    background-size: 0% 100%;
+    box-shadow: inset 0 0 0 transparent;
+  }
+  40% {
+    filter: brightness(1.6);
+  }
+}
+
+/* SVG paths drawing themselves; the path needs pathLength="1". */
+.anim-draw {
+  stroke-dasharray: 1;
+  animation: draw 1.6s ease-in-out var(--delay, 0ms) both;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* SVG dots popping in. */
+.anim-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) var(--delay, 0ms) both;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/* Numbers counting up to `--to`. */
+@property --n {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: false;
+}
+
+.anim-count {
+  --n: var(--to);
+  counter-reset: n var(--n);
+  animation: count 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both;
+}
+
+.anim-count::after {
+  content: counter(n);
+}
+
+@keyframes count {
+  from {
+    --n: 0;
+  }
+}
+
+/*
+ * Hero filter demo, a 9s loop: the query types itself, the rows that don't
+ * match dim, then the query is erased.
+ */
+.anim-type {
+  width: 0;
+  animation: type 9s 2.6s infinite;
+}
+
+@keyframes type {
+  0%,
+  8% {
+    width: 0;
+    animation-timing-function: steps(15, end);
+  }
+  26%,
+  72% {
+    width: calc(var(--chars) * 1ch);
+    animation-timing-function: steps(15, end);
+  }
+  80%,
+  100% {
+    width: 0;
+  }
+}
+
+.anim-placeholder {
+  animation: placeholder 9s 2.6s infinite;
+}
+
+@keyframes placeholder {
+  0%,
+  7%,
+  81%,
+  100% {
+    opacity: 1;
+  }
+  8%,
+  80% {
+    opacity: 0;
+  }
+}
+
+.anim-caret {
+  opacity: 0;
+  animation: caret 1s 2.6s steps(1) infinite;
+}
+
+@keyframes caret {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.anim-row.anim-miss {
+  animation:
+    row-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both,
+    filter-miss 9s 2.6s ease infinite;
+}
+
+@keyframes filter-miss {
+  0%,
+  30%,
+  76%,
+  100% {
+    opacity: 1;
+  }
+  36%,
+  70% {
+    opacity: 0.22;
+  }
+}
+
+.anim-row.anim-hit {
+  animation:
+    row-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms) both,
+    filter-hit 9s 2.6s ease infinite;
+}
+
+@keyframes filter-hit {
+  0%,
+  30%,
+  76%,
+  100% {
+    background-color: transparent;
+  }
+  36%,
+  70% {
+    background-color: color-mix(in oklab, var(--color-indigo) 10%, transparent);
+  }
+}
+
+/* Sidebar entry selected while the filter shows its feature. */
+.anim-select {
+  animation: select 9s 2.6s ease infinite;
+}
+
+@keyframes select {
+  0%,
+  30%,
+  76%,
+  100% {
+    background-color: transparent;
+    color: inherit;
+  }
+  36%,
+  70% {
+    background-color: var(--color-surface-2);
+    color: var(--color-text);
+  }
+}
+
+/* A highlight jumping from one band to the next, for the layered diagram. */
+.anim-hop {
+  animation: hop 4s ease-in-out var(--delay, 0ms) infinite;
+}
+
+@keyframes hop {
+  0%,
+  30%,
+  100% {
+    filter: none;
+    opacity: 0.55;
+  }
+  8%,
+  18% {
+    filter: brightness(1.25);
+    opacity: 1;
+  }
+}
+
+html.js .reveal:not(.in-view),
+html.js .reveal:not(.in-view) * {
+  animation-play-state: paused !important;
+}
+
+@utility grid-bg {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 2.5rem 2.5rem;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+.prose-site p {
+  color: var(--color-muted);
+  line-height: 1.75;
+}
+
+.prose-site a,
+a.link {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(
+    in oklab,
+    var(--color-accent) 40%,
+    transparent
+  );
+}
+
+.prose-site a:hover,
+a.link:hover {
+  text-decoration-color: var(--color-accent);
+}
+
+code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  padding: 0.1em 0.4em;
+  border-radius: 0.375rem;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+/* Let wide code blocks scroll inside grid cells instead of stretching them. */
+.grid > * {
+  min-width: 0;
+}
+
+pre.astro-code {
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  border: 1px solid var(--color-line);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .beam,
+  .tilt,
+  [class*='anim-'] {
+    animation: none !important;
+  }
+
+  .anim-caret {
+    display: none;
+  }
+}

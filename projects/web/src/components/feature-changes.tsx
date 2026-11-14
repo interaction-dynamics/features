@@ -13,7 +13,7 @@ interface FeatureChangesProps {
 /**
  * Parses commit title and replaces PR numbers like (#123) with clickable links
  */
-function renderTitleWithPRLinks(
+export function renderTitleWithPRLinks(
   title: string,
   repositoryUrl: string | undefined,
 ) {

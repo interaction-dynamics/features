@@ -8,6 +8,7 @@ use anyhow::Result;
 use std::path::{Path, PathBuf};
 
 use crate::coverage_parser::{self, map_coverage_to_features, parse_coverage_reports};
+use crate::external_data::import_external_data;
 use crate::file_scanner::{
     list_features_ownership_only, list_files_recursive, list_files_recursive_with_changes,
 };
@@ -46,6 +47,10 @@ pub struct ScanConfig {
 
     /// Remove commit author emails from the output
     pub strip_emails: bool,
+
+    /// JSON files with data from external tools, merged into the features by key
+    /// (see `external_data`). Read again on every scan.
+    pub data_files: Vec<PathBuf>,
 }
 
 impl ScanConfig {
@@ -61,6 +66,7 @@ impl ScanConfig {
             ownership_only: false,
             include_skipped_dirs: false,
             strip_emails: false,
+            data_files: Vec::new(),
         }
     }
 
@@ -109,6 +115,12 @@ impl ScanConfig {
     /// Set whether to remove commit author emails from the output
     pub fn strip_emails(mut self, strip_emails: bool) -> Self {
         self.strip_emails = strip_emails;
+        self
+    }
+
+    /// Set the JSON files with data from external tools to merge into the features
+    pub fn data_files(mut self, data_files: Vec<PathBuf>) -> Self {
+        self.data_files = data_files;
         self
     }
 }
@@ -179,6 +191,9 @@ pub fn scan_features_with(base_path: &Path, config: &ScanConfig) -> Result<Vec<F
     if config.strip_emails {
         strip_author_emails(&mut features);
     }
+
+    // Step 4: Merge data from external tools
+    import_external_data(&mut features, &config.data_files)?;
 
     Ok(features)
 }
@@ -297,6 +312,32 @@ mod tests {
         assert!(!config.ownership_only);
         assert!(!config.include_skipped_dirs);
         assert!(!config.strip_emails);
+        assert!(config.data_files.is_empty());
+    }
+
+    #[test]
+    fn test_scan_features_imports_external_data() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let base = temp_dir.path().join("src");
+        std::fs::create_dir_all(base.join("features").join("checkout")).unwrap();
+        let data_file = temp_dir.path().join("data.json");
+        std::fs::write(&data_file, r#"{ "checkout": { "weekly_users": 1200 } }"#).unwrap();
+
+        let config = ScanConfig::new(temp_dir.path())
+            .skip_changes(true)
+            .data_files(vec![data_file]);
+        let features = scan_features(&base, config).unwrap();
+
+        assert_eq!(features[0].key, "checkout");
+        assert_eq!(
+            features[0].external["weekly_users"],
+            serde_json::json!(1200)
+        );
+
+        let config = ScanConfig::new(temp_dir.path())
+            .skip_changes(true)
+            .data_files(vec![temp_dir.path().join("missing.json")]);
+        assert!(scan_features(&base, config).is_err());
     }
 
     #[test]

@@ -7,8 +7,8 @@ Thank you for your interest in contributing to the Features CLI project! This do
 ### Prerequisites
 
 - [Rust](https://rustup.rs/) (latest stable version)
-- [Node.js](https://nodejs.org/) (version 14 or higher)
-- [pnpm](https://pnpm.io/) for package management
+- [Node.js](https://nodejs.org/) (version 22 or higher)
+- [Bun](https://bun.sh/) for package management of the web dashboard and website
 - Git
 
 ### Local Development
@@ -62,7 +62,8 @@ When a new version tag (e.g., `v0.5.0`) is pushed, the GitHub Actions workflow a
 2. **Builds binaries** - creates binaries for all supported platforms
 3. **Publishes to crates.io** - publishes the Rust crate
 4. **Publishes to npm** - creates and publishes npm packages for all platforms
-5. **Creates GitHub release** - with release notes and binary attachments
+5. **Creates GitHub release** - with release notes, binary attachments and a `checksums.txt` (SHA256 of every binary)
+6. **Updates the Homebrew tap** - renders `projects/cli/packaging/homebrew/features.rb.tmpl` with the new version and checksums, and pushes it to `Formula/features.rb` in [interaction-dynamics/homebrew-tap](https://github.com/interaction-dynamics/homebrew-tap). This step is skipped when `HOMEBREW_TAP_TOKEN` is not set.
 
 ### Publishing credentials (trusted publishing)
 
@@ -95,6 +96,25 @@ both to the `master` branch so only the release workflow on `master` can publish
 #### Pinned actions
 Third-party actions are pinned to full commit SHAs, with the version in a
 comment. Dependabot (`.github/dependabot.yml`) opens PRs to update them.
+
+### Homebrew tap
+
+The `homebrew-tap` job is the one step that needs a long-lived token, because it
+pushes to another repository. Keep that token scoped to the tap repository only.
+
+- The `interaction-dynamics/homebrew-tap` repository must exist (public, default branch `main` or `master`).
+- `HOMEBREW_TAP_TOKEN`: a fine-grained personal access token
+  - Resource owner: `interaction-dynamics`; repository access: only `interaction-dynamics/homebrew-tap`
+  - Repository permissions: **Contents: Read and write** (nothing else)
+  - Add it as a repository secret of this repository
+- Without this secret, the release still succeeds and the tap update is skipped with a notice.
+
+To render the formula locally (e.g. to fix a release by hand):
+
+```bash
+gh release download vX.Y.Z -p checksums.txt -D /tmp/features
+projects/cli/packaging/homebrew/render.sh X.Y.Z /tmp/features/checksums.txt features.rb
+```
 
 ### Version Management
 

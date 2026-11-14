@@ -1,6 +1,5 @@
 import { ChevronRight, Folder, FolderOpen, FoldVertical } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-
+import { useCallback, useContext, useEffect, useState } from 'react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -14,6 +13,8 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
 } from '@/components/ui/sidebar'
+import { useUnmergedFeatures } from '@/features/reconciliation/use-unmerged-features'
+import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import { cn } from '@/lib/utils'
 import type { Feature } from '@/models/feature'
@@ -66,8 +67,10 @@ function findCommonAncestor(paths: string[]): string {
   return commonParts.join('/')
 }
 
-// Build a tree structure from features based on their paths
-function buildPathTree(features: Feature[]): TreeNode {
+// Build a tree structure from features based on their paths.
+// With `flat`, top-level features are placed at the root instead of in folders
+// built from their paths (aggregated reports have no shared folder structure).
+function buildPathTree(features: Feature[], flat = false): TreeNode {
   // Get all feature paths
   const allPaths: string[] = []
 
@@ -83,7 +86,7 @@ function buildPathTree(features: Feature[]): TreeNode {
   collectPaths(features)
 
   // Find common ancestor
-  const commonAncestor = findCommonAncestor(allPaths)
+  const commonAncestor = flat ? '' : findCommonAncestor(allPaths)
   const ancestorParts = commonAncestor ? commonAncestor.split('/') : []
 
   // Create root node
@@ -101,9 +104,11 @@ function buildPathTree(features: Feature[]): TreeNode {
     node: TreeNode,
     parentOwner?: string,
   ) {
-    const relativePath = commonAncestor
-      ? feature.path.slice(commonAncestor.length + 1)
-      : feature.path
+    const relativePath = flat
+      ? feature.path.replaceAll('/', '-')
+      : commonAncestor
+        ? feature.path.slice(commonAncestor.length + 1)
+        : feature.path
 
     if (!relativePath) return
 
@@ -173,7 +178,7 @@ function buildPathTree(features: Feature[]): TreeNode {
                 children: new Map(),
                 parentOwner,
               }
-              parent.children.set(f.name, child)
+              parent.children.set(f.path, child)
               if (f.features && f.features.length > 0) {
                 addNested(f.features, child, f.owner)
               }
@@ -182,11 +187,11 @@ function buildPathTree(features: Feature[]): TreeNode {
           addNested(nestedFeature.features, nestedNode, nestedFeature.owner)
         }
 
-        featureNode.children.set(nestedFeature.name, nestedNode)
+        featureNode.children.set(nestedFeature.path, nestedNode)
       }
     }
     if (currentNode) {
-      currentNode.children.set(featureName, featureNode)
+      currentNode.children.set(feature.path, featureNode)
     }
   }
 
@@ -225,6 +230,7 @@ function TreeNodeItem({
 }) {
   const hasChildren = node.children.size > 0
   const isActive = activeFeature?.path === node.path
+  const unmerged = useUnmergedFeatures().get(node.path)
   const isFeature = !!node.feature
 
   // Only show owner dot if the owner differs from parent
@@ -307,6 +313,14 @@ function TreeNodeItem({
             >
               {!isFeature && <Folder className="h-4 w-4 opacity-60" />}
               {formatNodeName(node.name, isFeature)}
+              {unmerged && (
+                <span
+                  className="shrink-0 text-[10px] text-amber-700 dark:text-amber-400"
+                  title={`Not merged: only the feature of ${unmerged.repository}`}
+                >
+                  @{unmerged.repository}
+                </span>
+              )}
             </span>
             {shouldShowOwnerDot && node.feature?.owner && (
               <OwnerDot owner={node.feature.owner} />
@@ -354,6 +368,14 @@ function TreeNodeItem({
                   <Folder className="h-4 w-4 opacity-60" />
                 ))}
               {formatNodeName(node.name, isFeature)}
+              {unmerged && (
+                <span
+                  className="shrink-0 text-[10px] text-amber-700 dark:text-amber-400"
+                  title={`Not merged: only the feature of ${unmerged.repository}`}
+                >
+                  @{unmerged.repository}
+                </span>
+              )}
             </span>
             {shouldShowOwnerDot && node.feature?.owner && (
               <OwnerDot owner={node.feature.owner} />
@@ -394,6 +416,8 @@ function NavFeaturesMenu({
   collapseAll = 0,
   onOpenStateChange,
 }: NavFeaturesProps) {
+  const { isAggregated } = useContext(FeaturesContext)
+
   if (items.length === 0) {
     return (
       <div className="px-2 py-4">
@@ -408,7 +432,7 @@ function NavFeaturesMenu({
     )
   }
 
-  const tree = buildPathTree(items)
+  const tree = buildPathTree(items, isAggregated)
 
   const nodesToRender = Array.from(tree.children.values())
 

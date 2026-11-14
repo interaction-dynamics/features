@@ -1,12 +1,13 @@
 import {
   BarChart3,
-  CheckSquare,
   FileText,
   Flag,
   FlaskConical,
   FolderTree,
   GitCommitVertical,
+  KeyRound,
   Network,
+  ScrollText,
   Settings,
   Table,
   ToggleLeft,
@@ -14,15 +15,18 @@ import {
 } from 'lucide-react'
 import { lazy, useContext } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { FeatureRepositories } from '@/features/reconciliation/feature-repositories'
+import { featureRecords } from '@/features/records/utils'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
-
+import { FeatureExternalData } from './feature-external-data'
+import { FeatureLinks } from './feature-links'
 import { FeatureMeta } from './feature-meta'
 import { FeatureOwner } from './feature-owner'
 
 const FeatureChanges = lazy(() => import('./feature-changes'))
-const FeatureDecisions = lazy(() => import('./feature-decisions'))
+const FeatureRecords = lazy(() => import('@/features/records'))
 const FeatureDependencies = lazy(() => import('@/features/dependencies'))
 const FeatureDescription = lazy(() => import('./feature-description'))
 const FeatureInsights = lazy(() => import('./feature-insights'))
@@ -35,7 +39,7 @@ interface FeatureDetailsProps {
 }
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
-  const { features } = useContext(FeaturesContext)
+  const { features, isAggregated } = useContext(FeaturesContext)
 
   // Extract metadata keys that have array values (e.g., 'flag', 'experiment', 'toggle')
   // Common feature metadata types
@@ -66,6 +70,8 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
     return Table
   }
 
+  const recordsCount = featureRecords(feature).length
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -74,15 +80,33 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
         </h1>
       </div>
       <div className="flex flex-col gap-3">
-        <div className="flex items-start gap-3">
-          <FolderTree className="h-4 w-4 text-muted-foreground mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground mb-1">Path</p>
-            <p className="text-xs font-mono text-muted-foreground">
-              {feature.path}
-            </p>
+        {isAggregated ? (
+          <FeatureRepositories feature={feature} />
+        ) : (
+          <div className="flex items-start gap-3">
+            <FolderTree className="h-4 w-4 text-muted-foreground mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground mb-1">Path</p>
+              <p className="text-xs font-mono text-muted-foreground">
+                {feature.path}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
+        {feature.key && (
+          <div className="flex items-start gap-3">
+            <KeyRound className="h-4 w-4 text-muted-foreground mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground mb-1">Key</p>
+              <p
+                className="text-xs font-mono text-muted-foreground"
+                title="Tag events, errors and issues with this key to link them to the feature"
+              >
+                {feature.key}
+              </p>
+            </div>
+          </div>
+        )}
         <div className="flex items-start gap-3">
           <User className="h-4 w-4 text-muted-foreground mt-0.5" />
           <div className="flex-1">
@@ -93,6 +117,8 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
           </div>
         </div>
         <FeatureMeta feature={feature} />
+        <FeatureLinks feature={feature} />
+        <FeatureExternalData feature={feature} />
       </div>
 
       <Tabs defaultValue="description" className="mt-4">
@@ -113,9 +139,17 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
               Tests
             </TabsTrigger>
           )}
-          <TabsTrigger value="decisions">
-            <CheckSquare className="h-4 w-4" />
-            Decisions
+          <TabsTrigger value="records">
+            <ScrollText className="h-4 w-4" />
+            Specs & Decisions
+            {recordsCount > 0 && (
+              <span
+                className="rounded bg-muted px-1.5 text-xs tabular-nums text-muted-foreground"
+                data-testid="records-count"
+              >
+                {recordsCount}
+              </span>
+            )}
           </TabsTrigger>
           {feature.stats && (
             <TabsTrigger value="insights">
@@ -150,8 +184,8 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
             <FeatureTests stats={feature.stats} />
           </TabsContent>
         )}
-        <TabsContent value="decisions" className="mt-1">
-          <FeatureDecisions decisions={feature.decisions} />
+        <TabsContent value="records" className="mt-1">
+          <FeatureRecords feature={feature} />
         </TabsContent>
         {feature.stats && (
           <TabsContent value="insights" className="mt-1">
