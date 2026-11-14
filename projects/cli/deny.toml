@@ -1,0 +1,15 @@
+# cargo-deny configuration, used by the "Audit CLI dependencies" CI job
+# (`cargo deny check advisories`). See https://embarkstudios.github.io/cargo-deny/
+
+[advisories]
+# Advisories accepted for now. Each entry needs a reason and should be
+# removed as soon as the dependency can be upgraded.
+ignore = [
+    # h2 0.3 comes from hyper 0.14 via warp 0.3; the fix only exists in h2 0.4,
+    # which requires migrating the server to warp 0.4 / hyper 1. The server only
+    # listens on 127.0.0.1 and rejects non-loopback Host headers.
+    { id = "RUSTSEC-2026-0258", reason = "needs warp 0.4 migration; server is loopback-only" },
+    # unsafe-libyaml is unmaintained; it comes from serde_yaml (also deprecated),
+    # used to parse README front matter. Replacing serde_yaml is a separate change.
+    { id = "RUSTSEC-2024-0449", reason = "needs serde_yaml replacement" },
+]

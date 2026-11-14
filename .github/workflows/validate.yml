@@ -82,6 +82,18 @@ jobs:
       - name: Test ✔️
         run: cargo test --verbose
 
+  audit-cli:
+    name: Audit CLI dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      # Fails on RustSec advisories (vulnerable, unmaintained or yanked crates).
+      # Accepted advisories are listed in projects/cli/deny.toml.
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          manifest-path: projects/cli/Cargo.toml
+          command: check advisories
+
   e2e-tests:
     name: End-to-end Tests
     runs-on: ubuntu-24.04 # Playwright 1.57 has no chromium build for ubuntu 26.04
