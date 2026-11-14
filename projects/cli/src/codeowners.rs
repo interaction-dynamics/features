@@ -174,7 +174,7 @@ fn collect_entries_with_parent(
 }
 
 /// Format owner with specified prefix if not already present
-fn format_owner(owner: &str, prefix: &str) -> String {
+pub fn format_owner(owner: &str, prefix: &str) -> String {
     if prefix.is_empty() || owner.starts_with(prefix) {
         owner.to_string()
     } else {

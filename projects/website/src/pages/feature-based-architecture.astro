@@ -1,0 +1,410 @@
+---
+import {
+  Box,
+  Boxes,
+  Folder,
+  Layers,
+  MessagesSquare,
+  Network,
+  Puzzle,
+  TrendingUp,
+} from '@lucide/astro'
+import CallToAction from '../components/CallToAction.astro'
+import FileTree, { type TreeNode } from '../components/FileTree.astro'
+import PageHero from '../components/PageHero.astro'
+import Screenshot from '../components/Screenshot.astro'
+import Section from '../components/Section.astro'
+import { site } from '../data/site'
+import Base from '../layouts/Base.astro'
+
+const title = 'What is a feature-based architecture?'
+const description =
+  'Feature-based architecture organizes code around business features instead of technical layers. Learn how it works, why it scales and how it complements hexagonal architecture.'
+
+const layered: TreeNode[] = [
+  {
+    name: 'src',
+    children: [
+      {
+        name: 'components',
+        children: [
+          { name: 'UserForm.ts', kind: 'feature', note: 'save user' },
+          { name: 'EmailInput.ts', kind: 'feature', note: 'save user' },
+          { name: 'InvoiceTable.ts' },
+        ],
+      },
+      {
+        name: 'hooks',
+        children: [
+          { name: 'useSaveUser.ts', kind: 'feature', note: 'save user' },
+          { name: 'useInvoices.ts' },
+        ],
+      },
+      {
+        name: 'utils',
+        children: [
+          { name: 'transformUser.ts', kind: 'feature', note: 'save user' },
+          { name: 'formatPrice.ts' },
+        ],
+      },
+    ],
+  },
+]
+
+const featureBased: TreeNode[] = [
+  {
+    name: 'src',
+    children: [
+      {
+        name: 'features',
+        kind: 'features',
+        children: [
+          {
+            name: 'saveUser',
+            kind: 'feature',
+            owner: 'team-accounts',
+            children: [
+              {
+                name: 'components',
+                children: [{ name: 'UserForm.ts' }, { name: 'EmailInput.ts' }],
+              },
+              {
+                name: 'utils',
+                children: [
+                  { name: 'useSaveUser.ts' },
+                  { name: 'transformUser.ts' },
+                ],
+              },
+              { name: 'README.md', kind: 'readme' },
+            ],
+          },
+          {
+            name: 'invoices',
+            kind: 'feature',
+            owner: 'team-billing',
+            children: [],
+          },
+        ],
+      },
+      { name: 'components', note: 'shared across features', children: [] },
+    ],
+  },
+]
+
+const anatomy: TreeNode[] = [
+  {
+    name: 'saveUser',
+    kind: 'feature',
+    children: [
+      { name: 'README.md', kind: 'readme', note: 'description + owner' },
+      {
+        name: '__docs__',
+        children: [
+          {
+            name: 'specs',
+            children: [
+              { name: '001-save-user-form.md', note: 'what to build' },
+            ],
+          },
+          {
+            name: 'decisions',
+            children: [
+              { name: '001-use-jwt-tokens.md', note: 'why: MADR decision' },
+            ],
+          },
+        ],
+      },
+      { name: 'components', children: [{ name: 'UserForm.ts' }] },
+      {
+        name: 'utils',
+        children: [{ name: 'useSaveUser.ts', note: '// TODO counted as debt' }],
+      },
+      {
+        name: 'features',
+        kind: 'features',
+        note: 'nested features',
+        children: [{ name: 'emailValidation', kind: 'feature' }],
+      },
+    ],
+  },
+]
+
+const layers = [
+  { name: 'UI components', folder: 'components/' },
+  { name: 'State & hooks', folder: 'hooks/' },
+  { name: 'Services & API', folder: 'services/' },
+  { name: 'Utils', folder: 'utils/' },
+]
+// One file per feature and layer, shown in both views of the slices diagram.
+const columns = [
+  { name: 'auth', owner: 'team-auth', color: 'var(--color-green)', files: ['LoginForm.tsx', 'useSession.ts', 'authApi.ts', 'token.ts'] },
+  { name: 'billing', owner: 'team-billing', color: 'var(--color-yellow)', files: ['Invoice.tsx', 'usePlan.ts', 'stripe.ts', 'money.ts'] },
+  { name: 'search', owner: 'team-discovery', color: 'var(--color-orange)', files: ['SearchBar.tsx', 'useQuery.ts', 'searchApi.ts', 'rank.ts'] },
+]
+
+const benefits = [
+  {
+    icon: Boxes,
+    title: 'Modular',
+    text: 'Each feature lives in its own self-contained folder with everything it needs.',
+  },
+  {
+    icon: Puzzle,
+    title: 'Maintainable',
+    text: 'Changing a feature means working in one place, not across five technical folders.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Scalable',
+    text: 'Complex systems are broken down into smaller parts that teams can own independently.',
+  },
+  {
+    icon: MessagesSquare,
+    title: 'Shared language',
+    text: 'Product managers, designers and stakeholders recognize the business features in the code.',
+  },
+  {
+    icon: Network,
+    title: 'Recursive',
+    text: 'Features can contain features. Structure grows with the product, at any depth.',
+  },
+  {
+    icon: Layers,
+    title: 'Complementary',
+    text: 'It does not replace hexagonal or clean architecture. It organizes them around the business.',
+  },
+]
+
+const reading = [
+  {
+    href: 'https://dev.to/naserrasouli/scalable-react-projects-with-feature-based-architecture-117c',
+    title: 'Scalable React Projects with Feature-Based Architecture',
+  },
+  {
+    href: 'https://khalilstemmler.com/articles/software-design-architecture/feature-driven/',
+    title: 'Why I Recommend a Feature-Driven Approach to Software Design',
+  },
+  {
+    href: 'https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md',
+    title: 'Bulletproof React project structure',
+  },
+  {
+    href: 'https://www.reddit.com/r/reactjs/comments/1afywy4/codebase_examples_of_featuredriven_or_vertical/',
+    title: 'Reddit discussion about feature-driven codebases',
+  },
+]
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline: title,
+  description,
+  about: 'Feature-based architecture',
+  author: {
+    '@type': 'Organization',
+    name: site.organization,
+    url: site.organizationUrl,
+  },
+}
+---
+
+<Base
+  title="Feature-based architecture explained"
+  description={description}
+  breadcrumbs={[{ name: 'Feature-based architecture', path: '/feature-based-architecture' }]}
+  jsonLd={[article]}
+>
+  <PageHero
+    eyebrow="The concept"
+    title={title}
+    lead="An approach that organizes code and folders around features, the business capabilities of your product, rather than around technical layers like components, services or utils."
+  />
+
+  <!-- Slices diagram -->
+  <Section
+    eyebrow="Horizontal vs vertical"
+    title="Slice your code like your product"
+    lead="A layered codebase cuts the product horizontally: one feature is spread across every technical folder. A feature-based codebase cuts it vertically: each feature is one column you can see, own and measure."
+  >
+    <div class="reveal grid gap-6 md:grid-cols-2">
+      <figure class="card overflow-hidden p-6">
+        <div class="dot-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true"></div>
+        <figcaption class="relative flex items-center justify-between">
+          <span class="font-semibold">Layered</span>
+          <span class="text-xs text-muted">organized by technical role</span>
+        </figcaption>
+        <div class="relative mt-6 space-y-2" role="img" aria-label="Diagram: each technical layer is a horizontal folder containing a file of every feature, so the files of auth are split across four folders">
+          {
+            layers.map((layer, layerIndex) => (
+              <div class="anim-row rounded-lg border border-line bg-ink/70 px-3 py-2" style={`--delay:${layerIndex * 120}ms`}>
+                <div class="flex items-center justify-between text-[0.65rem] text-muted">
+                  <span class="inline-flex items-center gap-1.5 font-mono"><Folder size={11} aria-hidden="true" />{layer.folder}</span>
+                  <span>{layer.name}</span>
+                </div>
+                <div class="mt-1.5 grid grid-cols-3 gap-1.5">
+                  {columns.map((column, index) => (
+                    <span
+                      class:list={[
+                        'truncate rounded px-1.5 py-1 font-mono text-[0.6rem]',
+                        index === 0
+                          ? 'anim-hop bg-gradient-to-r from-accent to-accent-2 font-semibold text-ink shadow-[0_0_12px_-2px_var(--color-accent)]'
+                          : 'bg-gradient-to-r from-accent-3/25 to-accent-3/10 text-muted',
+                      ]}
+                      style={index === 0 ? `--delay:${800 + layerIndex * 600}ms` : undefined}
+                    >
+                      {column.files[layerIndex]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))
+          }
+          <div class="grid grid-cols-3 gap-1.5 px-3 pt-1 text-center font-mono text-[0.65rem] text-muted" aria-hidden="true">
+            {columns.map((column, index) => <span class:list={[index === 0 && 'text-accent']}>{column.name}</span>)}
+          </div>
+        </div>
+        <p class="relative mt-4 text-sm text-muted">To understand <em>auth</em>, you read four folders.</p>
+      </figure>
+      <figure class="card overflow-hidden p-6">
+        <div class="dot-grid pointer-events-none absolute inset-0 opacity-60" aria-hidden="true"></div>
+        <figcaption class="relative flex items-center justify-between">
+          <span class="font-semibold">Feature-based</span>
+          <span class="text-xs text-muted">organized by business capability</span>
+        </figcaption>
+        <div class="relative mt-6 grid grid-cols-3 gap-3" role="img" aria-label="Diagram: each feature is a vertical folder containing all its layers and an owner, so auth is one folder owned by team-auth">
+          {
+            columns.map((column, index) => {
+              const active = index === 0
+              return (
+                <div
+                  class:list={[
+                    'anim-rise relative flex flex-col overflow-hidden rounded-lg border p-2',
+                    active
+                      ? 'border-accent/40 bg-gradient-to-b from-accent/10 to-ink/70 shadow-[0_0_30px_-8px_var(--color-accent)]'
+                      : 'border-line bg-ink/70',
+                  ]}
+                  style={`--delay:${index * 150}ms`}
+                >
+                  {active && <span class="beam absolute inset-x-0 top-0 h-px" aria-hidden="true" />}
+                  <p class:list={['mb-2 flex items-center justify-center gap-1 font-mono text-xs font-semibold', active ? 'text-accent' : 'text-muted']}>
+                    <Box size={12} class="opacity-70" aria-hidden="true" />
+                    {column.name}/
+                  </p>
+                  <div class="space-y-1.5">
+                    {column.files.map((file, layerIndex) => (
+                      <span
+                        class:list={[
+                          'anim-wipe block truncate rounded px-1.5 py-1 font-mono text-[0.6rem]',
+                          active ? 'bg-gradient-to-r from-accent to-accent-2 font-semibold text-ink' : 'bg-gradient-to-r from-accent-3/25 to-accent-3/10 text-muted',
+                        ]}
+                        style={`--delay:${400 + index * 150 + layerIndex * 110}ms${active ? `;opacity:${1 - layerIndex * 0.1}` : ''}`}
+                        title={layers[layerIndex].name}
+                      >
+                        {file}
+                      </span>
+                    ))}
+                  </div>
+                  <span class="mt-2 inline-flex items-center gap-1 self-center truncate rounded-full border border-line bg-surface-2 px-1.5 text-[0.55rem] leading-4 text-muted">
+                    <span class="size-1.5 shrink-0 rounded-full" style={`background:${column.color}`} aria-hidden="true" />
+                    {column.owner}
+                  </span>
+                </div>
+              )
+            })
+          }
+        </div>
+        <p class="relative mt-4 text-sm text-muted">To understand <em>auth</em>, you open one folder, owned by one team.</p>
+      </figure>
+    </div>
+  </Section>
+
+  <!-- Trees -->
+  <Section
+    eyebrow="In practice"
+    title="The same code, two structures"
+    lead="Highlighted files all belong to the “save user” feature. In a layered tree they are scattered; in a feature tree they live together, with a README that names the owner."
+  >
+    <div class="grid gap-6 lg:grid-cols-2">
+      <FileTree title="layered structure" nodes={layered} />
+      <FileTree title="feature-based structure" nodes={featureBased} />
+    </div>
+  </Section>
+
+  <!-- Benefits -->
+  <Section eyebrow="Why it works" title="Benefits of a feature-based architecture">
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        benefits.map(({ icon: Icon, title, text }) => (
+          <li class="card p-6">
+            <Icon size={22} class="text-accent" aria-hidden="true" />
+            <h3 class="mt-4 font-semibold">{title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- Anatomy -->
+  <Section
+    eyebrow="Anatomy of a feature"
+    title="Everything about a feature, in its folder"
+    lead="Features reads each part of the folder to build its reports. Nothing to configure: the conventions are the configuration."
+  >
+    <div class="grid items-start gap-8 lg:grid-cols-[1fr_1.1fr]">
+      <FileTree title="src/features/saveUser" nodes={anatomy} />
+      <dl class="grid gap-4 sm:grid-cols-2">
+        <div class="card p-5">
+          <dt class="font-mono text-sm text-accent-3">README.md</dt>
+          <dd class="mt-2 text-sm text-muted">The first line after the title becomes the description. The <code>owner</code> front matter property sets the team.</dd>
+        </div>
+        <div class="card p-5">
+          <dt class="font-mono text-sm text-text">__docs__/specs/ &amp; decisions/</dt>
+          <dd class="mt-2 text-sm text-muted">Specs (what to build) and architecture decision records (why), linked together and listed with the feature.</dd>
+        </div>
+        <div class="card p-5">
+          <dt class="font-mono text-sm text-text">source files</dt>
+          <dd class="mt-2 text-sm text-muted">Lines of code, files, git history, coverage and TODOs are all computed per feature.</dd>
+        </div>
+        <div class="card p-5">
+          <dt class="font-mono text-sm text-accent-2">features/</dt>
+          <dd class="mt-2 text-sm text-muted">A nested <code>features</code> folder holds sub-features, with ownership inherited from the parent.</dd>
+        </div>
+      </dl>
+    </div>
+    <Screenshot
+      name="nested-features"
+      alt="Feature page in the Features dashboard: Feature 1 with its path, owner and metadata, its nested features in the sidebar, and tabs for changes, tests, decisions, insights, dependencies and flags"
+      caption="In the dashboard, nested features appear under their parent and every part of the folder gets its own tab."
+      class="mt-12"
+      featured
+      fade
+    />
+  </Section>
+
+  <!-- Not design -->
+  <Section eyebrow="Good to know" title="Feature-based architecture is not feature-based design">
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="card prose-site p-6">
+        <h3 class="font-semibold">Close to DDD, more structured</h3>
+        <p class="mt-2 text-sm">
+          It is similar to domain-driven design, but more recursive and more structured. It is also easier to
+          understand for beginners, which makes it a good default for growing teams.
+        </p>
+      </div>
+      <div class="card prose-site p-6">
+        <h3 class="font-semibold">Further reading</h3>
+        <ul class="mt-3 space-y-2 text-sm">
+          {reading.map((item) => (
+            <li><a href={item.href} rel="noopener">{item.title}</a></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+    <p class="mt-8">
+      <a href="/guidelines" class="link">Read the guidelines to structure your project →</a>
+    </p>
+  </Section>
+
+  <CallToAction title="Map your own features" />
+</Base>

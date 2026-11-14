@@ -4,6 +4,7 @@ export interface Metadata {
   version: string
   repository?: string
   skipChanges?: boolean
+  builtAt?: string
 }
 
 const fetcher = async (url: string): Promise<Metadata> => {
@@ -22,9 +23,8 @@ export function useMetadata() {
     './metadata.json',
     fetcher,
     {
-      revalidateOnFocus: false,
+      // features.json revalidates on focus: keep builtAt in sync with it
       revalidateOnReconnect: false,
-      dedupingInterval: 60000, // Cache for 1 minute
     },
   )
 

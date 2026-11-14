@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate } from '@/lib/format-date'
+import { formatDate, formatDateTime } from '@/lib/format-date'
 
 describe('formatDate', () => {
   it('should return "N/A" for undefined', () => {
@@ -65,5 +65,14 @@ describe('formatDate', () => {
   it('should format date with milliseconds', () => {
     const result = formatDate('2024-08-22T12:34:56.789Z')
     expect(result).toMatch(/Aug 22, 2024/)
+  })
+})
+
+describe('formatDateTime', () => {
+  it('should format date with time', () => {
+    const date = new Date(2024, 0, 15, 15, 4)
+    expect(formatDateTime(date.toISOString())).toMatch(
+      /Jan 15, 2024,? (at )?3:04\sPM/,
+    )
   })
 })

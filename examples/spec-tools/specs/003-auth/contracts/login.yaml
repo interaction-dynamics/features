@@ -1,0 +1,5 @@
+openapi: 3.0.0
+paths:
+  /auth/magic-link:
+    post:
+      summary: Send a sign-in link

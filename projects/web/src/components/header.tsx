@@ -1,4 +1,5 @@
 import { MessageSquareMore } from 'lucide-react'
+import { DataBuildDate } from './data-build-date'
 import { Button } from './ui/button'
 import { Separator } from './ui/separator'
 import { SidebarTrigger } from './ui/sidebar'
@@ -16,6 +17,7 @@ export function Header({ children }: HeaderProps) {
         {children}
       </div>
       <div className="ml-auto px-3 flex items-center gap-2">
+        <DataBuildDate />
         <Button
           variant="outline"
           size="sm"

@@ -8,3 +8,15 @@ export const formatDate = (dateString?: string) => {
     day: 'numeric',
   })
 }
+
+// Format date string to a readable format including the time
+export const formatDateTime = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}

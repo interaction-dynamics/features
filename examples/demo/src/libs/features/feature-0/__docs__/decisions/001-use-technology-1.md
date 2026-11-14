@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2023-10-02
+---
+
 # Decision 1 (open to get more details)
 
 You can add decision files in `__docs__/decisions` folder.

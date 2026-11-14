@@ -1,87 +1,208 @@
 <div align="center">
-    <img width="100" src="./projects/web/public/feature-icon.svg" alt="feature logo" />
+    <img width="100" src="https://raw.githubusercontent.com/interaction-dynamics/features/master/projects/web/public/feature-icon.svg" alt="features-cli logo" />
 </div>
 <h1 align="center">Features</h1>
 
+<p align="center">
+    <strong>See your codebase the way your product team does: by feature.</strong>
+</p>
+
+<p align="center">
+    Map every feature in your codebase: who owns it, how well it's tested and how much debt it carries.<br/>
+    Works with any language. One command, no config.
+</p>
+
 <div align="center">
-    <a href="https://crates.io/crates/features-cli"><img src="https://img.shields.io/crates/v/features-cli.svg" alt="Crates.io version" /></a>
-    <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg" alt="Npm version" /></a>
+    <a href="https://crates.io/crates/features-cli"><img src="https://img.shields.io/crates/v/features-cli.svg?color=green" alt="Crates.io version" /></a>
+    <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/v/features-cli.svg?color=green" alt="npm version" /></a>
+    <a href="https://www.npmjs.com/package/features-cli"><img src="https://img.shields.io/npm/dm/features-cli.svg?color=green" alt="npm downloads" /></a>
+    <a href="https://crates.io/crates/features-cli"><img src="https://img.shields.io/crates/d/features-cli.svg?color=green" alt="Crates.io downloads" /></a>
+    <a href="https://github.com/interaction-dynamics/features/actions/workflows/validate.yml"><img src="https://github.com/interaction-dynamics/features/actions/workflows/validate.yml/badge.svg" alt="CI status" /></a>
+    <a href="https://github.com/interaction-dynamics/features/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT license" /></a>
+    <a href="https://github.com/interaction-dynamics/features/stargazers"><img src="https://img.shields.io/github/stars/interaction-dynamics/features?style=flat&color=green" alt="GitHub stars" /></a>
 </div>
 
-`Features` is a Rust-based Web and CLI tool to explore the features in your projects, visualize their metrics and understand the ownership of each of these features.
+<p align="center">
+    <a href="https://interaction-dynamics.io/features/"><strong>Live demo</strong></a> ·
+    <a href="#quick-start">Quick start</a> ·
+    <a href="https://github.com/interaction-dynamics/features/blob/master/docs/cli.md">CLI reference</a> ·
+    <a href="https://github.com/interaction-dynamics/features/blob/master/FAQ.md">FAQ</a>
+</p>
 
-It is technology agnostic and can be used with any programming language or framework.
-
-You can: 
-
-- list all the features in a project
-- find the team 'owning' a specific feature
-- get the history of a feature (git log)
-- find the documentation related to the feature
-- list the test coverage by feature
-- check [the technical debt by feature](./FAQ.md#what-is-the-technical-debt-of-a-feature)
-- see statistics about the features like the repartition of feature, fix and refactor commits, lines of code, and files
-- generate CODEOWNERS file
-- list the feature flags and other feature dependencies
-
-> If you see an other use case, feel free to contribute to this repository.
-
-It also provides a UI to explore the feature. Check a live [demo](http://interaction-dynamics.io/features/).
-
-<a href="http://interaction-dynamics.io/features">
-    <img src="https://github.com/user-attachments/assets/e5e76d65-53a2-4469-9736-76daec884839" width="100%" alt="screenshot" />
+<a href="https://interaction-dynamics.io/features/">
+    <img src="https://github.com/user-attachments/assets/e5e76d65-53a2-4469-9736-76daec884839" width="100%" alt="features-cli web dashboard showing the features of a project with their owners, metrics and test coverage" />
 </a>
 
-`features-cli` provides a Web Dashboard and also a CLI to generate json reports.
-    
-## Getting started 
+## Quick start
 
 ```bash
-npx features-cli@latest /path/to/project --project-dir ./repository --serve
-
-# or with installation
-npm install -g features-cli
-# or
-cargo binstall features-cli
-# then 
-features /path/to/project --project-dir ./repository --serve
+npx features-cli@latest serve ./src
 ```
 
-Commands and their descriptions are listed below:
+Then open [http://localhost:3000](http://localhost:3000). That's it.
 
-| Command | Description |
-| ------- | ----------- |
-| `--json` | Output features as JSON |
-| `--flat` | Output features as a flat array instead of nested structure |
-| `--description` | Include feature descriptions in the output (automatically enabled for `--serve`, `--build`, and `--json`) |
-| `--coverage` | Include coverage information in the output (automatically enabled for `--serve`, `--build`, and `--json`) |
-| `--list-owners` | Display only unique list of owners |
-| `--find-owner <path>` | Find the owner of a specific file or folder |
-| `--check` | Run validation checks on features (e.g., duplicate names) |
-| `--skip-changes` | Skip computing git commit history (faster for large repos) |
-| `--ignore-path <path>` | Ignore a folder and all its subfolders when scanning for features. Can be repeated to ignore multiple folders |
-| `--include-skipped-dirs` | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
-| `--serve` | Start an HTTP server to serve features and the web dashboard UI |
-| `--port <port>` | Change the port (default: 3000). Should be used with `--serve` |
-| `--build` | Build a static version of the web dashboard UI |
-| `--build-dir <path>` | Output directory for the static build (default: `build`) |
-| `--coverage-dir <path>` | Specify a custom coverage directory (overrides automatic search) |
-| `--generate-codeowners` | Generate or update a CODEOWNERS file with feature ownership information |
-| `--project-dir <path>` | Project directory for CODEOWNERS generation and additional coverage search locations |
-| `--codeowners-path <path>` | Custom path and filename for CODEOWNERS file (default: `CODEOWNERS` in project directory) |
-| `--codeowners-prefix <prefix>` | Custom prefix for owner names in CODEOWNERS file (default: `@`) |
+Prefer a global install?
 
-## Guidelines
+```bash
+npm install -g features-cli
+# or: brew install interaction-dynamics/tap/features
+# or: cargo binstall features-cli
+features serve ./src
+```
 
-By following specific guidelines and conventions, it becomes easier for `features` to find your feature:
+## Why Features?
 
-### Folder structure
+Most codebases are organized by technical layer (`components/`, `services/`, `utils/`), so the features your users care about are scattered everywhere. As a result:
 
-Features can be organized in two ways:
+- **Nobody knows who owns what.** Questions and bugs bounce between teams.
+- **CODEOWNERS files drift** out of sync with the code.
+- **Tech debt and missing tests stay invisible** until something breaks.
+- **New joiners struggle** to find where a feature lives and why it was built that way.
+- **Features span several repositories.** The web app, the API and the mobile app each hold a piece of the same feature, and nobody sees the whole of it.
 
-#### Method 1: Features folder (recommended)
+`features-cli` scans your repository, finds every feature and turns it into an interactive dashboard and a JSON report, using the folders, READMEs and git history you already have.
 
-Place your features folder in a dedicated `features` folder:
+## Built for the age of AI
+
+With Claude Code, Cursor or Copilot, a new feature takes minutes, not weeks. Writing code is no longer the bottleneck. Keeping track of what you built is.
+
+- **Lines of code don't mean much anymore.** An agent writes a thousand lines as easily as ten. What matters is what the code does for your users: the features.
+- **Features pile up faster than anyone can follow.** When several people and agents ship every day, nobody holds the whole product in their head. Features get duplicated, forgotten or left half-finished.
+- **Reviews get shallower.** The more code is generated, the less of it gets read closely. You need a higher-level view to check that each change lands in the right place and doesn't break another team's feature.
+- **The knowledge behind the code gets lost.** An agent's reasoning vanishes with its session. Docs and decision records kept next to each feature keep it for the next person, or the next agent.
+
+You need one place to overview all your features: what exists, who owns it, how healthy it is and what changed recently. `features-cli` builds that place from your code, so it stays current however fast you ship.
+
+## What you get
+
+**For engineering managers**
+- See which team owns each feature, and find the owner of any file or folder
+- Generate and keep a `CODEOWNERS` file in sync automatically
+- See which features and owners a pull request touches, and [ping the right teams automatically](#ping-the-right-teams-on-every-pull-request)
+- See every feature across all your repositories in [one dashboard](#one-dashboard-for-all-your-repositories)
+
+**For tech leads**
+- Spot risky areas with [technical debt per feature](https://github.com/interaction-dynamics/features/blob/master/FAQ.md#what-is-the-technical-debt-of-a-feature)
+- Track test coverage per feature
+- Compare feature, fix and refactor commits, lines of code and file count per feature
+
+**For new joiners**
+- Browse every feature with its description, docs, specs and decision records
+- Read a feature's history from its git log
+
+**For product and QA**
+- List feature flags, experiments and other feature metadata across the codebase
+- Link each feature to its analytics, error tracking and design, and see their data next to the code
+
+**For AI coding agents**
+- Give Claude Code, Cursor, Copilot and other agents a [map of the codebase by feature](#give-your-ai-coding-agent-a-map-of-the-codebase), so they find the right files without grepping the whole repository
+- Let them read each feature's description, docs and decision records before changing it
+- Check which features and owners their change touches before opening a pull request
+
+> Have another use case? [Open an issue](https://github.com/interaction-dynamics/features/issues). We'd love to hear about it.
+
+## Share a dashboard with your team
+
+Build a static version of the dashboard and host it anywhere:
+
+```bash
+features build ./src --build-dir ./dashboard
+```
+
+Add `--strip-emails` to remove commit author emails before publishing it.
+
+To publish it to GitHub Pages on every push, see the [GitHub Actions setup](#publish-the-dashboard-to-github-pages).
+
+## One dashboard for all your repositories
+
+Does a feature live partly in your web app, partly in your API and partly in your mobile app? Export one report per repository and combine them:
+
+```bash
+features scan ./web/src --json > reports/web.json
+features scan ./api/src --json > reports/api.json
+features aggregate ./reports --build-dir ./dashboard
+```
+
+Features with the same name become one feature that combines the metrics and history of every repository and lists the repositories it lives in. If two repositories disagree on how features are nested, `features-cli` keeps them apart and shows the conflict on the *Outside features* page instead of guessing.
+
+See how features are merged in the [CLI reference](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md#aggregate-several-repositories).
+
+## Use it in CI and scripts
+
+```bash
+features check ./src                                     # fail the build on invalid features (e.g. duplicate names)
+features codeowners ./src --project-dir .                # regenerate CODEOWNERS
+features scan ./src --json > features.json               # export a report for scripts, dashboards or AI coding agents
+features find-owner src/features/checkout/api.ts         # who owns this file?
+features diff ./src --since origin/main                  # which features (and owners) does my change touch?
+```
+
+All options are listed in the [CLI reference](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md).
+
+## Give your AI coding agent a map of the codebase
+
+AI coding agents work best when they know where things live. Without a map, they search the repository file by file, spend context on unrelated code and miss the decisions behind it. `features-cli` gives them that map in one command:
+
+- **Find the right code faster.** The JSON report lists every feature with its path, description and owner, so the agent goes straight to the folder it needs.
+- **Respect past decisions.** Each feature comes with its docs and decision records, so the agent understands why the code is built that way before changing it.
+- **Know the blast radius.** `features diff` shows which features and owners a change touches, so the agent can flag cross-team changes and suggest reviewers.
+- **Stay within the conventions.** `features check` catches invalid features (e.g. duplicate names) the agent may have introduced.
+- **Works with any agent.** It's a plain CLI with JSON output: no plugin, server or API key needed.
+
+Add a few lines to your `AGENTS.md`, `CLAUDE.md` or `.cursor/rules` file:
+
+```markdown
+## Finding your way around
+
+This codebase is organized by feature. Before exploring the code:
+
+- Run `npx features-cli@latest scan ./src --json --skip-changes` to list the features with their path, description, owner, specs and decision records.
+- Run `npx features-cli@latest find-owner <file>` to find who owns a file.
+- Before opening a pull request, run `npx features-cli@latest diff ./src --since origin/main` and mention the features and owners touched.
+```
+
+`--skip-changes` leaves out the git history, which keeps the report small and fast on large repositories.
+
+## Ping the right teams on every pull request
+
+`features diff --since <ref>` lists the features a change touches, with their owners. It compares the merge base of `<ref>` and `HEAD` with your working tree, so uncommitted and untracked files are included (add `--committed-only` to compare with `HEAD` only). The path defaults to the current directory.
+
+```bash
+features diff src --since origin/master
+```
+
+```text
+Features touched since origin/master (merge base 1a2b3c4, including uncommitted changes):
+
+  Auth (features/auth) - owner: team-auth
+    M src/features/auth/login.ts
+    R src/features/auth/old.ts -> src/features/billing/moved.ts
+
+  Billing (features/billing) - owner: team-billing
+    R src/features/auth/old.ts -> src/features/billing/moved.ts
+    D src/features/billing/legacy.ts
+
+Files outside any feature:
+    M README.md
+```
+
+Each changed file is mapped to its closest feature, like `find-owner`. A renamed file touches the features of both its old and new path, and deleted files are mapped by path. File paths are relative to the repository root; feature paths are relative to the scanned folder, as in the other outputs.
+
+- `--json` gives a report with `features` (name, path, owner, `is_owner_inherited`, changed files) and `files_outside_features`.
+- `--markdown` gives a table ready to post as a pull request comment.
+- `--owners-only` prints the unique owners, one per line, with `--codeowners-prefix` added. Features without an owner are left out.
+
+The command exits with `0` even when no feature is touched.
+
+To post this list on every pull request and request reviews from the owning teams, see the [GitHub Actions setup](#comment-on-pull-requests).
+
+## How it finds your features
+
+`features-cli` follows a few simple conventions. No config file is required.
+
+### Option 1: a `features` folder (recommended)
+
+Put each feature in its own folder inside a `features` folder:
 
 ```bash
 src/
@@ -94,18 +215,19 @@ src/
 │   │   │   ├── useSaveUser.ts
 │   │   │   ├── useFetchUser.ts
 │   │   │   └── transformUser.ts
-│   │   └── README.md # a README.md file for large features helps
+│   │   └── README.md # description, owner and other metadata
 │   └── feature-2
-│       └── ... # ...
+│       └── ...
 ├── components # common components used across features
 ├── utils # common utils/hooks used across features
 └── ... # other source code
 ```
 
-> You can read the detailed [guidelines](./docs/folder-architecture-guidelines.md) or just jump into trying the CLI with the `--serve` options. The UI will guide you through the methodology.
+> Read the detailed [guidelines](https://github.com/interaction-dynamics/features/blob/master/docs/folder-architecture-guidelines.md), or just run `features serve`: the dashboard guides you through the methodology.
 
-#### Method 2: Feature flag
-Mark any folder as a feature by adding `feature: true` in its README frontmatter:
+### Option 2: README frontmatter
+
+Mark any folder as a feature by adding `feature: true` to its README frontmatter. This lets you keep features anywhere in your codebase:
 
 ```yaml
 ---
@@ -114,9 +236,7 @@ owner: backend-team
 ---
 ```
 
-This allows features to be organized anywhere in your codebase while still being discoverable by the tools.
-
-Conversely, adding `feature: false` skips a folder from being detected as a feature, even if it's a direct subfolder of a `features` folder. Unlike `--ignore-path`, its subfolders are still scanned, so any nested features it contains are still discovered:
+Conversely, `feature: false` stops a folder from being detected as a feature, even if it sits directly inside a `features` folder. Unlike `--ignore-path`, its subfolders are still scanned, so any nested features are still discovered:
 
 ```yaml
 ---
@@ -124,9 +244,9 @@ feature: false
 ---
 ```
 
-### Feature Metadata Annotations
+### Feature metadata annotations
 
-You can annotate your code with feature metadata using special comments. These annotations can be placed **anywhere in your codebase** and will be automatically associated with the matching feature:
+Annotate your code with special comments to attach metadata (feature flags, experiments, anything) to a feature. Annotations can live **anywhere in your codebase**:
 
 ```typescript
 // --feature-flag feature: feature-1, name: feature-flag1, type: experiment, owner: team-a, introduced_on: 2025-01-01
@@ -136,13 +256,13 @@ export function experimentalLoginFlow() {
 }
 ```
 
-The syntax is: `--feature-<metadata-key> feature:<feature-folder-basename>, property: value, ...`
+The syntax is `--feature-<metadata-key> feature:<feature-folder-basename>, property: value, ...`
 
-- **`feature:`** property is optional if the comment is inside a feature folder - it will automatically link to that feature
+- **`feature:`** is optional when the comment is inside a feature folder: it links to that feature automatically
 - **`<metadata-key>`** becomes a tab in the web UI (e.g., `flag`, `experiment`)
-- Properties are flexible - add any key-value pairs you need
+- Properties are free-form: add any key-value pairs you need
 
-This works in any programming language:
+It works the same in every language:
 
 ```python
 # --feature-flag name: feature-flag1, type: processing, language: python
@@ -152,32 +272,133 @@ This works in any programming language:
 // --feature-flag name: feature-flag1, type: core, status: stable
 ```
 
-```bash
-# --feature-flag name: feature-flag1, environment: production, region: us-west-2
+Annotations are supported in Rust, C/C++, Java, JavaScript/TypeScript, C#, Go, Swift, Kotlin, Scala, CSS/SCSS/Less, Python, Bash/Shell, Ruby, Perl, YAML, TOML, SQL, Lua and HTML/XML/SVG.
+
+## Connect PostHog, Sentry and your other tools
+
+Every feature has a `key` (its folder name, slugified, or `key` in its README front matter). Use it to tag your analytics events, errors and issues, then bring that data into the dashboard, still without any network call from the CLI:
+
+```yaml
+---
+key: checkout
+links:
+  posthog: https://eu.posthog.com/project/1/dashboard/2
+  sentry: https://sentry.io/organizations/acme/issues/?query=feature:checkout
+---
 ```
 
-## Supported Programming Languages
+```bash
+# usage.json: { "checkout": { "weekly_users": 12840, "open_errors": 3 } }
+features build ./src --data usage.json
+```
 
-The tool supports feature metadata annotations in the following programming languages: Rust, C/C++, Java, JavaScript/TypeScript, C#, Go, Swift, Kotlin, Scala, CSS/SCSS/Less, Python, Bash/Shell, Ruby, Perl, YAML, TOML, SQL, Lua, HTML/XML/SVG.
+Links show up on the feature page, and the imported metrics on the feature page and as sortable columns of the insights table. See [Import data from external tools](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md#import-data-from-external-tools).
 
-## License
+## Let Claude reorganize your codebase by feature
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+Not organized by feature yet? The [Claude skills](https://github.com/interaction-dynamics/features/tree/master/projects/skills) in this repository teach Claude to map the features from the JSON report, plan a feature breakdown, move the code one feature at a time with your tests passing, write each feature's README and decision records, and check the result with `features check`. In Claude Code:
+
+```
+/plugin marketplace add interaction-dynamics/features
+/plugin install features@interaction-dynamics
+```
+
+## GitHub Actions setup
+
+### Publish the dashboard to GitHub Pages
+
+```yaml
+# .github/workflows/features.yml
+name: Features dashboard
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full git history for feature metrics
+      - run: npx features-cli@latest build ./src --build-dir ./dashboard --strip-emails
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./dashboard
+      - uses: actions/deploy-pages@v5
+```
+
+### Comment on pull requests
+
+```yaml
+# .github/workflows/features-touched.yml
+name: Features touched
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the merge base with the target branch is needed
+
+      - name: List touched features
+        run: npx features-cli@latest diff src --since origin/${{ github.base_ref }} --committed-only --markdown > features.md
+
+      - name: Comment on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Updates the bot's last comment on each push. If other workflows comment as the same bot,
+        # use a sticky-comment action instead so they don't overwrite each other.
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file features.md --edit-last --create-if-none
+```
+
+To also request reviews from the owning teams, feed `--owners-only` to `gh`. Reviewers must be GitHub users or `org/team` slugs, so set the prefix accordingly, e.g. `--codeowners-prefix my-org/` when owners are team names:
+
+```bash
+features diff src --since origin/master --committed-only --owners-only --codeowners-prefix my-org/ \
+  | xargs -r -n1 gh pr edit "$PR_NUMBER" --add-reviewer
+```
+
+Pull requests from forks get a read-only token, so commenting from those needs a `pull_request_target` workflow; read GitHub's security guidance before using it.
+
+## How it compares
+
+| | Features | CODEOWNERS alone | Service catalogs (e.g. Backstage) |
+| --- | --- | --- | --- |
+| Granularity | Features inside a codebase | Files and folders | Services and repositories |
+| Setup | One command, no config | Hand-written file | Hosted platform + YAML per service |
+| Ownership | ✅ (and generates CODEOWNERS) | ✅ | ✅ |
+| Tests, debt and git metrics per feature | ✅ | ❌ | Via plugins |
+| One view across repositories | ✅ | ❌ | ✅ |
+| Works offline / in CI | ✅ | ✅ | ❌ |
+
+## Learn more about feature-based architecture
+
+> Feature-based architecture is about how you organize **code**: each feature lives in its own folder. It is not the same as feature-based **design**, which is about how you plan the product.
+
+- [FAQ](https://github.com/interaction-dynamics/features/blob/master/FAQ.md)
+- [Why I Recommend a Feature-Driven Approach to Software Design](https://khalilstemmler.com/articles/software-design-architecture/feature-driven/): the big picture of feature-oriented development
+- [Scalable React Projects with Feature-Based Architecture](https://dev.to/naserrasouli/scalable-react-projects-with-feature-based-architecture-117c)
+- [Bulletproof React folder architecture](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md)
+- [Reddit discussion about feature-based architecture](https://www.reddit.com/r/reactjs/comments/1afywy4/codebase_examples_of_featuredriven_or_vertical/)
 
 ## Contributing
 
-We welcome contributions to this project! If you have any ideas or suggestions, please feel free to open an issue or submit a pull request.
+Contributions are welcome! Read the [contributing guide](https://github.com/interaction-dynamics/features/blob/master/CONTRIBUTING.md), pick a [good first issue](https://github.com/interaction-dynamics/features/labels/good%20first%20issue) or check the [roadmap](https://github.com/orgs/interaction-dynamics/projects/18/views/4).
 
-## Roadmap
+If `features-cli` helps you, **[give it a ⭐ on GitHub](https://github.com/interaction-dynamics/features)**. It helps other developers find it.
 
-Check [here](https://github.com/orgs/interaction-dynamics/projects/18/views/4).
+## License
 
-## Bibliography about features-based architecture
-
-> Feature based architecture shouldn't be confused with feature-based design.
-
-- [FAQ](./FAQ.md)
-- [Scalable React Projects with Feature-Based Architecture](https://dev.to/naserrasouli/scalable-react-projects-with-feature-based-architecture-117c)
-- [Reddit discussion about feature-based architecture](https://www.reddit.com/r/reactjs/comments/1afywy4/codebase_examples_of_featuredriven_or_vertical/)
-- [Why I Recommend a Feature-Driven Approach to Software Design](https://khalilstemmler.com/articles/software-design-architecture/feature-driven/): global vision of feature oriented development
-- [Bullet-proof react folder architecture](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md)
+MIT. See [LICENSE](https://github.com/interaction-dynamics/features/blob/master/LICENSE).

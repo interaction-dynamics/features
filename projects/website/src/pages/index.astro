@@ -1,0 +1,350 @@
+---
+import {
+  ArrowRight,
+  BookOpen,
+  Braces,
+  ChartPie,
+  Construction,
+  FileLock,
+  Flag,
+  FlaskConical,
+  FolderTree,
+  GitCommitHorizontal,
+  GitPullRequest,
+  LayoutDashboard,
+  Users,
+} from '@lucide/astro'
+import CallToAction from '../components/CallToAction.astro'
+import HeroIllustration from '../components/HeroIllustration.astro'
+import IsoFigure from '../components/IsoFigure.astro'
+import Screenshot from '../components/Screenshot.astro'
+import Section from '../components/Section.astro'
+import { site } from '../data/site'
+import Base from '../layouts/Base.astro'
+
+const pillars = [
+  {
+    figure: 'map',
+    title: 'Every feature, mapped',
+    text: 'One view of what the product does, built from your folders. Not lines of code: features.',
+  },
+  {
+    figure: 'owners',
+    title: 'Owned and connected',
+    text: 'Who owns each feature, what it imports and which teams a change touches.',
+  },
+  {
+    figure: 'specs',
+    title: 'Intent kept in the repository',
+    text: "Specs and decision records next to the code, so an agent's reasoning outlives its session.",
+  },
+] as const
+
+const capabilities = [
+  {
+    icon: FolderTree,
+    title: 'List every feature',
+    text: 'Scan any folder and get the full tree of features, nested features included.',
+  },
+  {
+    icon: Users,
+    title: 'Find the owner',
+    text: 'Know which team owns a feature, a folder or a single file in one command.',
+  },
+  {
+    icon: GitCommitHorizontal,
+    title: 'Read the history',
+    text: 'Get the git log of each feature, split into feature, fix and refactor commits.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Surface the docs',
+    text: 'README descriptions, specs and decision records (ADR) are attached to their feature, Spec Kit and Kiro specs included.',
+  },
+  {
+    icon: FlaskConical,
+    title: 'Coverage by feature',
+    text: 'LCOV and Cobertura reports are mapped back to each feature automatically.',
+  },
+  {
+    icon: Construction,
+    title: 'Track technical debt',
+    text: 'TODOs found in the code are counted per feature so debt stays visible.',
+  },
+  {
+    icon: ChartPie,
+    title: 'Measure everything',
+    text: 'Lines of code, files and the repartition of commit types for every feature.',
+  },
+  {
+    icon: FileLock,
+    title: 'Generate CODEOWNERS',
+    text: 'Turn feature ownership into a CODEOWNERS file, kept in sync on each run.',
+  },
+  {
+    icon: GitPullRequest,
+    title: 'Ping the right teams',
+    text: 'List the features and owners touched by a change, right in your pull request.',
+  },
+  {
+    icon: Flag,
+    title: 'Map feature flags',
+    text: 'Annotate code with comments to track flags, experiments and dependencies.',
+  },
+]
+
+const specLayouts = [
+  {
+    tool: 'Native',
+    path: 'src/features/auth/__docs__/specs/001-login.md',
+    note: 'next to the feature',
+  },
+  {
+    tool: 'GitHub Spec Kit',
+    path: 'specs/003-auth/spec.md',
+    note: 'plan.md, tasks.md, contracts/ as tabs',
+  },
+  {
+    tool: 'Kiro',
+    path: '.kiro/specs/auth/requirements.md',
+    note: 'design.md, tasks.md as tabs',
+  },
+]
+
+const softwareApplication = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'features-cli',
+  alternateName: site.name,
+  description: site.description,
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'macOS, Linux, Windows',
+  license: 'https://opensource.org/licenses/MIT',
+  url: site.repository,
+  downloadUrl: site.npm,
+  installUrl: site.npm,
+  softwareHelp: { '@type': 'CreativeWork', url: site.demo },
+  sameAs: [site.repository, site.npm, site.crate],
+  isAccessibleForFree: true,
+  keywords:
+    'feature-based architecture, codebase map, code ownership, CODEOWNERS, technical debt, test coverage, architecture decision records, AI coding agents',
+  featureList: capabilities.map((capability) => capability.title),
+  screenshot: new URL('/screenshots/insights@2x.webp', Astro.site ?? Astro.url).href,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  author: {
+    '@type': 'Organization',
+    '@id': `${site.organizationUrl}/#organization`,
+    name: site.organization,
+    url: site.organizationUrl,
+  },
+}
+---
+
+<Base
+  title={site.name}
+  description={site.description}
+  jsonLd={[softwareApplication]}
+>
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="grid-bg pointer-events-none absolute inset-0 opacity-40" aria-hidden="true"></div>
+    <div class="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pt-16 pb-20 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
+      <div>
+        <div class="flex flex-wrap gap-2">
+          <p class="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs text-muted">
+            <span class="size-1.5 rounded-full bg-green shadow-[0_0_8px_var(--color-green)]" aria-hidden="true"></span>
+            Open source · Any language
+          </p>
+          <a href="/specs-decisions" class="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs text-accent transition hover:border-accent">
+            New: specs &amp; decisions, Spec Kit and Kiro <ArrowRight size={12} aria-hidden="true" />
+          </a>
+        </div>
+        <h1 class="mt-6 text-4xl font-bold tracking-tight text-balance sm:text-6xl">
+          Every feature of your codebase, <span class="text-gradient">mapped.</span>
+        </h1>
+        <p class="mt-6 max-w-xl text-lg text-pretty text-muted">
+          <strong class="font-semibold text-text">Features</strong> is a CLI and web dashboard that finds the
+          features in your project, shows who owns them, and measures their history, coverage and technical debt.
+          It works with any programming language or framework.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="/feature-based-architecture" class="bg-gradient-brand inline-flex items-center gap-2 rounded-lg px-5 py-2.5 font-semibold text-ink transition hover:brightness-110">
+            Discover the concept <ArrowRight size={18} aria-hidden="true" />
+          </a>
+          <a href={site.demo} class="rounded-lg border border-line px-5 py-2.5 font-semibold transition hover:border-muted">
+            Live demo
+          </a>
+        </div>
+        <code class="mt-8 block w-fit max-w-full overflow-x-auto rounded-lg !bg-surface px-4 py-2.5 !text-sm whitespace-nowrap">
+          <span class="text-muted select-none">$ </span>npx features-cli@latest serve ./src
+        </code>
+      </div>
+
+      <HeroIllustration />
+    </div>
+  </section>
+
+  <!-- AI era -->
+  <Section
+    id="ai-era"
+    eyebrow="Built for the age of AI"
+    title="Features ship in minutes. Keep track of all of them."
+    lead="With Claude Code, Cursor or Copilot, writing code is no longer the bottleneck. Tracking, documenting and maintaining what you built is. Features builds one place to overview it all, from your code, so it stays current however fast you ship."
+  >
+    <ul class="grid border-line/70 md:grid-cols-3 md:divide-x md:divide-line/70">
+      {
+        pillars.map((pillar, index) => (
+          <li class="flex flex-col py-6 md:px-8 md:first:pl-0 md:last:pr-0">
+            <p class="font-mono text-[0.7rem] tracking-wider text-muted/70">FIG 0.{index + 1}</p>
+            <div class="mx-auto my-8 flex h-44 w-full max-w-56 items-center justify-center">
+              <IsoFigure name={pillar.figure} class="max-h-full" />
+            </div>
+            <h3 class="font-medium">{pillar.title}</h3>
+            <p class="mt-2 text-sm text-pretty text-muted">{pillar.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-6">
+      <a href="/ai" class="inline-flex items-center gap-1 text-sm text-accent hover:underline">
+        Why it matters for AI coding agents <ArrowRight size={14} aria-hidden="true" />
+      </a>
+    </p>
+  </Section>
+
+  <!-- How it works -->
+  <Section
+    id="how-it-works"
+    eyebrow="How it works"
+    title="From folders to insights in three steps"
+    lead="Features reads the structure you already have. Group code by feature, run the CLI, and every report is generated for you."
+  >
+    <ol class="grid gap-5 md:grid-cols-3">
+      <li class="card relative p-6">
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">01</span>
+        <h3 class="mt-2 text-lg font-semibold">Organize by feature</h3>
+        <p class="mt-2 text-sm text-muted">
+          Put each business feature in its own folder inside a <code>features</code> folder, or flag any folder with
+          <code>feature: true</code> in its README.
+        </p>
+        <pre class="mt-5 rounded-lg bg-ink/60 p-3 font-mono text-xs leading-6 text-muted"><span class="text-accent-2">features/</span>
+├── <span class="text-accent">auth/</span>
+├── <span class="text-accent">billing/</span>
+└── <span class="text-accent">search/</span></pre>
+      </li>
+      <li class="card relative p-6">
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">02</span>
+        <h3 class="mt-2 text-lg font-semibold">Run the CLI</h3>
+        <p class="mt-2 text-sm text-muted">
+          One binary, written in Rust. Install it with npm or cargo, or run it on the fly with <code>npx</code>.
+        </p>
+        <pre class="mt-5 rounded-lg bg-ink/60 p-3 font-mono text-xs leading-6 text-muted"><span class="select-none">$ </span><span class="text-text">features scan ./src</span>
+<span class="select-none">$ </span><span class="text-text">features serve ./src</span>
+<span class="select-none">$ </span><span class="text-text">features codeowners ./src</span></pre>
+      </li>
+      <li class="card relative p-6">
+        <span class="text-fade font-mono text-5xl font-bold" aria-hidden="true">03</span>
+        <h3 class="mt-2 text-lg font-semibold">Explore and share</h3>
+        <p class="mt-2 text-sm text-muted">
+          Browse the dashboard, publish a static build, export JSON or comment on pull requests.
+        </p>
+        <ul class="mt-5 grid grid-cols-2 gap-2 text-xs md:grid-cols-1 lg:grid-cols-2">
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><LayoutDashboard size={14} class="shrink-0 text-indigo" aria-hidden="true" />Dashboard</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><Braces size={14} class="shrink-0 text-orange" aria-hidden="true" />JSON report</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><FileLock size={14} class="shrink-0 text-green" aria-hidden="true" />CODEOWNERS</li>
+          <li class="flex items-center gap-2 rounded-lg bg-ink/60 p-2.5"><GitPullRequest size={14} class="shrink-0 text-violet" aria-hidden="true" />PR comment</li>
+        </ul>
+      </li>
+    </ol>
+  </Section>
+
+  <!-- Capabilities -->
+  <Section
+    id="capabilities"
+    eyebrow="Capabilities"
+    title="One tool, every question about your features"
+    lead="Who owns this? How healthy is it? What did this pull request touch? Features answers from the code itself, so the answers never go stale."
+  >
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {
+        capabilities.map(({ icon: Icon, title, text }) => (
+          <li class="card group p-5 transition hover:border-muted/60">
+            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent transition group-hover:text-accent-3">
+              <Icon size={20} aria-hidden="true" />
+            </span>
+            <h3 class="mt-4 font-semibold">{title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- Screenshot -->
+  <Section
+    id="dashboard"
+    eyebrow="Web dashboard"
+    title="A dashboard your whole team can read"
+    lead="Run features serve for a live dashboard refreshed on every file change, or features build to publish a static version anywhere."
+  >
+    <Screenshot
+      name="insights"
+      alt="Insights page of the Features dashboard: totals of features and owners, and a table of every feature with its owner, dates, files, lines, TODOs and changes"
+      caption="Insights: every feature with its owner, size, TODOs and commit history, filterable with queries like owner:john AND lines:>1000."
+      featured
+      fade
+    />
+    <div class="mt-6 grid gap-6 lg:grid-cols-2">
+      <Screenshot
+        name="dependencies"
+        alt="Dependency graph of the Features dashboard: features as nodes colored by owner, with parent, child and sibling links and circular dependencies in red"
+        caption="Dependencies: a graph of the imports between features, colored by owner, with circular dependencies flagged."
+      />
+      <Screenshot
+        name="ownership"
+        alt="Ownership tab of the Features dashboard: a table of owners with their number of features, files, lines and annotations"
+        caption="Ownership: what each team owns, in features, files, lines and annotated flags."
+      />
+    </div>
+    <p class="mt-8">
+      <a href={site.demo} class="inline-flex items-center gap-1 text-accent hover:underline">
+        Explore the live demo <ArrowRight size={16} aria-hidden="true" />
+      </a>
+    </p>
+  </Section>
+
+  <!-- Specs & decisions -->
+  <Section
+    id="specs-decisions"
+    eyebrow="Specs & decisions"
+    title="What each feature does, and why it's built that way"
+    lead="Specs and decision records live next to each feature. Features links them, tracks their status and task progress, and shows them on the feature's page, so people and agents read the intent before they change the code."
+  >
+    <div class="grid items-center gap-8 lg:grid-cols-[1fr_1.6fr]">
+      <div>
+        <p class="text-sm text-muted">Already writing specs with an AI workflow? They are read where they are:</p>
+        <ul class="mt-4 space-y-2">
+          {
+            specLayouts.map((layout) => (
+              <li class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-surface/60 px-3.5 py-2.5">
+                <span class="rounded-full border border-accent/40 bg-accent/10 px-2 text-[0.7rem] leading-5 text-accent">
+                  {layout.tool}
+                </span>
+                <span class="text-xs text-muted">{layout.note}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <a href="/specs-decisions" class="mt-6 inline-flex items-center gap-2 rounded-lg border border-line px-5 py-2.5 font-semibold transition hover:border-muted">
+          Explore specs &amp; decisions <ArrowRight size={18} aria-hidden="true" />
+        </a>
+      </div>
+      <Screenshot
+        name="specs-decisions"
+        alt="Specs & Decisions tab of a feature in the Features dashboard: a timeline of specs and decision records with status badges, task progress bars and links between them"
+      />
+    </div>
+  </Section>
+
+  <CallToAction />
+</Base>

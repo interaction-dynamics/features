@@ -8,14 +8,17 @@ use anyhow::Result;
 use std::path::{Path, PathBuf};
 
 use crate::coverage_parser::{self, map_coverage_to_features, parse_coverage_reports};
+use crate::external_data::import_external_data;
 use crate::file_scanner::{
     list_features_ownership_only, list_files_recursive, list_files_recursive_with_changes,
 };
-use crate::models::Feature;
+use crate::models::{Feature, strip_author_emails};
 
 /// Configuration options for scanning features
+///
+/// It owns its paths, so a copy can be kept for later rescans (see `http_server`).
 #[derive(Debug, Clone)]
-pub struct ScanConfig<'a> {
+pub struct ScanConfig {
     /// Whether to include git history (changes, commits, stats)
     pub skip_changes: bool,
 
@@ -24,13 +27,13 @@ pub struct ScanConfig<'a> {
 
     /// Optional override for coverage directory location
     /// If None, will search in multiple default locations
-    pub coverage_dir_override: Option<&'a Path>,
+    pub coverage_dir_override: Option<PathBuf>,
 
     /// Current working directory (used for finding coverage)
-    pub current_dir: &'a Path,
+    pub current_dir: PathBuf,
 
     /// Optional project directory (used for finding coverage)
-    pub project_dir: Option<&'a Path>,
+    pub project_dir: Option<PathBuf>,
 
     /// Paths to ignore (and all their subfolders) when scanning for features
     pub ignore_paths: Vec<PathBuf>,
@@ -41,20 +44,29 @@ pub struct ScanConfig<'a> {
 
     /// Scan folders that are skipped by default (see `skip_dirs::SKIPPED_DIRS`)
     pub include_skipped_dirs: bool,
+
+    /// Remove commit author emails from the output
+    pub strip_emails: bool,
+
+    /// JSON files with data from external tools, merged into the features by key
+    /// (see `external_data`). Read again on every scan.
+    pub data_files: Vec<PathBuf>,
 }
 
-impl<'a> ScanConfig<'a> {
+impl ScanConfig {
     /// Create a new ScanConfig with minimal required parameters
-    pub fn new(current_dir: &'a Path) -> Self {
+    pub fn new(current_dir: impl AsRef<Path>) -> Self {
         Self {
             skip_changes: false,
             should_add_coverage: false,
             coverage_dir_override: None,
-            current_dir,
+            current_dir: current_dir.as_ref().to_path_buf(),
             project_dir: None,
             ignore_paths: Vec::new(),
             ownership_only: false,
             include_skipped_dirs: false,
+            strip_emails: false,
+            data_files: Vec::new(),
         }
     }
 
@@ -71,14 +83,14 @@ impl<'a> ScanConfig<'a> {
     }
 
     /// Set a specific coverage directory to use
-    pub fn coverage_dir(mut self, dir: &'a Path) -> Self {
-        self.coverage_dir_override = Some(dir);
+    pub fn coverage_dir(mut self, dir: impl AsRef<Path>) -> Self {
+        self.coverage_dir_override = Some(dir.as_ref().to_path_buf());
         self
     }
 
     /// Set the project directory for finding coverage
-    pub fn project_dir(mut self, dir: &'a Path) -> Self {
-        self.project_dir = Some(dir);
+    pub fn project_dir(mut self, dir: impl AsRef<Path>) -> Self {
+        self.project_dir = Some(dir.as_ref().to_path_buf());
         self
     }
 
@@ -97,6 +109,18 @@ impl<'a> ScanConfig<'a> {
     /// Set whether to scan folders that are skipped by default
     pub fn include_skipped_dirs(mut self, include_skipped_dirs: bool) -> Self {
         self.include_skipped_dirs = include_skipped_dirs;
+        self
+    }
+
+    /// Set whether to remove commit author emails from the output
+    pub fn strip_emails(mut self, strip_emails: bool) -> Self {
+        self.strip_emails = strip_emails;
+        self
+    }
+
+    /// Set the JSON files with data from external tools to merge into the features
+    pub fn data_files(mut self, data_files: Vec<PathBuf>) -> Self {
+        self.data_files = data_files;
         self
     }
 }
@@ -127,6 +151,12 @@ impl<'a> ScanConfig<'a> {
 /// println!("Found {} features", features.len());
 /// ```
 pub fn scan_features(base_path: &Path, config: ScanConfig) -> Result<Vec<Feature>> {
+    scan_features_with(base_path, &config)
+}
+
+/// Same as [`scan_features`], borrowing the configuration so it can be reused,
+/// e.g. by the file watcher to rescan with the options of the initial scan
+pub fn scan_features_with(base_path: &Path, config: &ScanConfig) -> Result<Vec<Feature>> {
     if config.ownership_only {
         return list_features_ownership_only(
             base_path,
@@ -151,11 +181,19 @@ pub fn scan_features(base_path: &Path, config: ScanConfig) -> Result<Vec<Feature
         add_coverage_to_features(
             &mut features,
             base_path,
-            config.coverage_dir_override,
-            config.current_dir,
-            config.project_dir,
+            config.coverage_dir_override.as_deref(),
+            &config.current_dir,
+            config.project_dir.as_deref(),
         );
     }
+
+    // Step 3: Remove author emails if requested
+    if config.strip_emails {
+        strip_author_emails(&mut features);
+    }
+
+    // Step 4: Merge data from external tools
+    import_external_data(&mut features, &config.data_files)?;
 
     Ok(features)
 }
@@ -273,6 +311,33 @@ mod tests {
         assert!(config.project_dir.is_none());
         assert!(!config.ownership_only);
         assert!(!config.include_skipped_dirs);
+        assert!(!config.strip_emails);
+        assert!(config.data_files.is_empty());
+    }
+
+    #[test]
+    fn test_scan_features_imports_external_data() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let base = temp_dir.path().join("src");
+        std::fs::create_dir_all(base.join("features").join("checkout")).unwrap();
+        let data_file = temp_dir.path().join("data.json");
+        std::fs::write(&data_file, r#"{ "checkout": { "weekly_users": 1200 } }"#).unwrap();
+
+        let config = ScanConfig::new(temp_dir.path())
+            .skip_changes(true)
+            .data_files(vec![data_file]);
+        let features = scan_features(&base, config).unwrap();
+
+        assert_eq!(features[0].key, "checkout");
+        assert_eq!(
+            features[0].external["weekly_users"],
+            serde_json::json!(1200)
+        );
+
+        let config = ScanConfig::new(temp_dir.path())
+            .skip_changes(true)
+            .data_files(vec![temp_dir.path().join("missing.json")]);
+        assert!(scan_features(&base, config).is_err());
     }
 
     #[test]
@@ -315,5 +380,42 @@ mod tests {
         // At least one feature should have changes
         let has_changes = features.iter().any(|f| !f.changes.is_empty());
         assert!(has_changes, "At least one feature should have git history");
+    }
+
+    #[test]
+    fn test_scan_features_strip_emails() {
+        let test_path = PathBuf::from("../../examples/tests-with-changes/src");
+
+        if !test_path.exists() {
+            println!("Skipping test - test path does not exist");
+            return;
+        }
+
+        fn all_changes(features: &[Feature]) -> Vec<&crate::models::Change> {
+            features
+                .iter()
+                .flat_map(|f| f.changes.iter().chain(all_changes(&f.features)))
+                .collect()
+        }
+
+        let current_dir = std::env::current_dir().unwrap();
+
+        let features = scan_features(&test_path, ScanConfig::new(&current_dir)).unwrap();
+        let changes = all_changes(&features);
+        assert!(!changes.is_empty(), "Should find git history");
+        assert!(
+            changes.iter().any(|c| !c.author_email.is_empty()),
+            "Emails are kept by default"
+        );
+
+        let features =
+            scan_features(&test_path, ScanConfig::new(&current_dir).strip_emails(true)).unwrap();
+        let changes = all_changes(&features);
+        assert!(!changes.is_empty(), "Should still find git history");
+        assert!(
+            changes.iter().all(|c| c.author_email.is_empty()),
+            "Emails are removed with strip_emails"
+        );
+        assert!(changes.iter().any(|c| !c.author_name.is_empty()));
     }
 }

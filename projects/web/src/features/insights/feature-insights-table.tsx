@@ -22,11 +22,15 @@ import {
 import { useMetadata } from '@/hooks/use-metadata'
 import { useTableFilter } from '@/hooks/use-table-filter'
 import { useTableSort } from '@/hooks/use-table-sort'
+import {
+  formatExternalValue,
+  getExternalMetricKeys,
+  humanize,
+} from '@/lib/external-tools'
 import { formatDate } from '@/lib/format-date'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import { cn } from '@/lib/utils'
 import type { Feature } from '@/models/feature'
-
 import { DependenciesCell } from './dependencies-cell'
 
 type FeatureInsightsTableProps = {
@@ -76,6 +80,9 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
 
   // Get all metadata keys present in features
   const metadataKeys = getAllMetadataKeys(features)
+
+  // Metrics imported from external tools with `--data`
+  const externalKeys = getExternalMetricKeys(features)
 
   // Define searchable fields for the smart filter
   const searchableFields = [
@@ -256,6 +263,16 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                   {key}
                 </TableHead>
               ))}
+              {externalKeys.map((key) => (
+                <SortableTableHeader
+                  key={`external.${key}`}
+                  field={`external.${key}`}
+                  label={humanize(key)}
+                  sortConfig={sortConfig}
+                  onSort={requestSort}
+                  align="right"
+                />
+              ))}
               <TableHead className="w-12.5"></TableHead>
             </TableRow>
           </TableHeader>
@@ -391,6 +408,14 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                       </TableCell>
                     )
                   })}
+                  {externalKeys.map((key) => (
+                    <TableCell
+                      key={`external.${key}`}
+                      className="text-right tabular-nums"
+                    >
+                      {formatExternalValue(feature.external?.[key])}
+                    </TableCell>
+                  ))}
                   <TableCell>
                     <Button
                       variant="ghost"

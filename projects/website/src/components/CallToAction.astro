@@ -1,0 +1,28 @@
+---
+import { site } from '../data/site'
+
+interface Props {
+  title?: string
+}
+
+const { title = 'See your features in one command' } = Astro.props
+---
+
+<section class="mx-auto max-w-6xl px-4 sm:px-6">
+  <div class="card overflow-hidden !rounded-3xl p-10 text-center sm:p-14">
+    <div class="dot-grid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true"></div>
+    <div class="spotlight pointer-events-none absolute inset-x-[15%] -top-24 h-56" aria-hidden="true"></div>
+    <div class="hairline pointer-events-none absolute inset-x-[20%] top-0" aria-hidden="true"></div>
+    <h2 class="relative text-3xl font-bold tracking-tight text-balance">{title}</h2>
+    <p class="relative mx-auto mt-4 max-w-xl text-muted">
+      No configuration, no account. Point the CLI at a folder and open the dashboard.
+    </p>
+    <code class="relative mx-auto mt-8 block w-fit max-w-full overflow-x-auto rounded-lg !border-line !bg-ink px-5 py-3 text-left !text-sm whitespace-nowrap">
+      <span class="text-muted select-none">$ </span>npx features-cli@latest serve ./src
+    </code>
+    <div class="relative mt-8 flex flex-wrap justify-center gap-3">
+      <a href={site.demo} class="bg-gradient-brand rounded-lg px-5 py-2.5 font-semibold text-ink transition hover:brightness-110">Open the live demo</a>
+      <a href={site.repository} rel="noopener" class="rounded-lg border border-line px-5 py-2.5 font-semibold transition hover:border-muted">Star on GitHub</a>
+    </div>
+  </div>
+</section>

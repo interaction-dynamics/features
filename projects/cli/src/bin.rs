@@ -2,133 +2,29 @@ use anyhow::Result;
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
-mod build;
-mod checker;
-mod codeowners;
-mod coverage_parser;
-mod dependency_resolver;
-mod feature_metadata_detector;
-mod features_toml_parser;
-mod file_scanner;
-mod git_helper;
-mod http_server;
-mod import_detector;
-mod models;
-mod printer;
-mod readme_parser;
-mod scan;
-mod skip_dirs;
-
-use build::{BuildConfig, create_build};
-use checker::run_checks;
-use codeowners::generate_codeowners;
-use http_server::serve_features_with_watching;
-use models::Feature;
-use printer::print_features;
-use scan::{ScanConfig, scan_features};
-
-/// A CLI tool for discovering features in a folder by reading README.md or README.mdx files,
-/// and serving them via HTTP or static builds.
-#[derive(Parser)]
-#[command(name = "features")]
-#[command(author = env!("CARGO_PKG_AUTHORS"))]
-#[command(about = env!("CARGO_PKG_DESCRIPTION"))]
-#[command(arg_required_else_help = true)]
-struct Cli {
-    /// The path to the directory to list
-    #[arg(required = false)]
-    path: Option<std::path::PathBuf>,
-
-    /// Print version information
-    #[arg(short = 'V', long)]
-    version: bool,
-
-    /// Output features as JSON
-    #[arg(long)]
-    json: bool,
-
-    /// Output features as a flat array instead of nested structure
-    #[arg(long)]
-    flat: bool,
-
-    /// Include descriptions in the output
-    #[arg(long)]
-    description: bool,
-
-    /// Display only unique list of owners
-    #[arg(long)]
-    list_owners: bool,
-
-    /// Run checks on features (e.g., duplicate names)
-    #[arg(long)]
-    check: bool,
-
-    /// Start an HTTP server to serve the features
-    #[arg(long)]
-    serve: bool,
-
-    /// Port for the HTTP server (default: 3000)
-    #[arg(long, default_value = "3000")]
-    port: u16,
-
-    /// Create a static build with embedded files and features.json
-    #[arg(long)]
-    build: bool,
-
-    /// Output directory for the static build
-    #[arg(long, default_value = "build")]
-    build_dir: std::path::PathBuf,
-
-    /// Skip computing changes (git commits and decisions) in the output
-    #[arg(long)]
-    skip_changes: bool,
-
-    /// Find the owner of a specific file or folder
-    #[arg(long)]
-    find_owner: Option<String>,
-
-    /// Path to the coverage directory (overrides default search)
-    #[arg(long)]
-    coverage_dir: Option<std::path::PathBuf>,
-
-    /// Include coverage information in the output
-    #[arg(long)]
-    coverage: bool,
-
-    /// Generate or update CODEOWNERS file
-    #[arg(long)]
-    generate_codeowners: bool,
-
-    /// Project directory for CODEOWNERS file generation
-    #[arg(long)]
-    project_dir: Option<std::path::PathBuf>,
-
-    /// Custom path and filename for CODEOWNERS file (default: CODEOWNERS)
-    #[arg(long)]
-    codeowners_path: Option<std::path::PathBuf>,
-
-    /// Custom prefix for owner names in CODEOWNERS file (default: @)
-    #[arg(long, default_value = "@")]
-    codeowners_prefix: String,
-
-    /// Ignore a folder and all its subfolders when scanning for features (can be repeated)
-    #[arg(long)]
-    ignore_path: Vec<std::path::PathBuf>,
-
-    /// Also scan folders skipped by default (node_modules) for features, stats and imports
-    #[arg(long)]
-    include_skipped_dirs: bool,
-}
+use features_cli::aggregate;
+use features_cli::build::{BuildConfig, create_build, write_records_json};
+use features_cli::checker::run_checks;
+use features_cli::cli::{
+    Action, AggregateArgs, Cli, CodeownersOptions, DiffArgs, Invocation, ScanArgs,
+};
+use features_cli::codeowners::generate_codeowners;
+use features_cli::diff;
+use features_cli::external_data::import_external_data;
+use features_cli::http_server::{ServerConfig, serve_features_with_watching};
+use features_cli::models::{Feature, Record};
+use features_cli::ownership::find_owner_for_path;
+use features_cli::printer::print_features;
+use features_cli::records::{create_record, project_records};
+use features_cli::scan::{ScanConfig, scan_features_with};
 
 /// Resolve `--ignore-path` values to canonical absolute paths.
 ///
 /// Relative paths are resolved against `current_dir`. Paths that don't exist are
 /// skipped with a warning rather than causing a hard error.
-fn resolve_ignore_paths(
-    ignore_paths: &[std::path::PathBuf],
-    current_dir: &std::path::Path,
-) -> Vec<std::path::PathBuf> {
+fn resolve_ignore_paths(ignore_paths: &[PathBuf], current_dir: &Path) -> Vec<PathBuf> {
     ignore_paths
         .iter()
         .filter_map(|raw_path| {
@@ -159,16 +55,20 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
         // Create a flattened version of this feature (without nested features)
         let flat_feature = Feature {
             name: feature.name.clone(),
+            key: feature.key.clone(),
             description: feature.description.clone(),
             owner: feature.owner.clone(),
             is_owner_inherited: feature.is_owner_inherited,
             path: feature.path.clone(),
             features: Vec::new(), // Empty for flat structure
             meta: feature.meta.clone(),
+            links: feature.links.clone(),
             changes: Vec::new(),
             decisions: Vec::new(),
+            records: Vec::new(),
             stats: feature.stats.clone(),
             dependencies: feature.dependencies.clone(),
+            external: feature.external.clone(),
         };
 
         flat_features.push(flat_feature);
@@ -181,105 +81,6 @@ fn flatten_features(features: &[Feature]) -> Vec<Feature> {
     flat_features
 }
 
-#[derive(Debug, serde::Serialize)]
-struct OwnerInfo {
-    owner: String,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    inherited: bool,
-    feature_name: String,
-    feature_path: String,
-}
-
-fn find_owner_for_path(
-    target_path: &std::path::Path,
-    features: &[Feature],
-    base_path: &std::path::Path,
-) -> Option<OwnerInfo> {
-    // Canonicalize the target path
-    let canonical_target = std::fs::canonicalize(target_path).ok()?;
-
-    // Helper function to recursively search for the closest feature
-    fn find_closest_feature(
-        target: &std::path::Path,
-        features: &[Feature],
-        _parent_owner: Option<&str>,
-        base_path: &std::path::Path,
-    ) -> Option<OwnerInfo> {
-        let mut best_match: Option<OwnerInfo> = None;
-        let mut best_match_depth = usize::MAX;
-
-        for feature in features {
-            let feature_path = base_path.join(&feature.path);
-            if let Ok(canonical_feature_path) = std::fs::canonicalize(&feature_path) {
-                // Check if target is within this feature's directory
-                if target.starts_with(&canonical_feature_path) {
-                    // Calculate depth (how many components between feature and target)
-                    let depth = target
-                        .strip_prefix(&canonical_feature_path)
-                        .ok()
-                        .map(|p| p.components().count())
-                        .unwrap_or(usize::MAX);
-
-                    // Check nested features first
-                    if let Some(nested_match) = find_closest_feature(
-                        target,
-                        &feature.features,
-                        Some(&feature.owner),
-                        base_path,
-                    ) {
-                        if best_match.is_none() || depth < best_match_depth {
-                            best_match = Some(nested_match);
-                            best_match_depth = depth;
-                        }
-                    } else {
-                        // This is the closest feature so far
-                        if depth < best_match_depth {
-                            let owner = OwnerInfo {
-                                owner: feature.owner.clone(),
-                                inherited: feature.is_owner_inherited,
-                                feature_name: feature.name.clone(),
-                                feature_path: feature.path.clone(),
-                            };
-                            best_match = Some(owner);
-                            best_match_depth = depth;
-                        }
-                    }
-                }
-            }
-        }
-
-        best_match
-    }
-
-    find_closest_feature(&canonical_target, features, None, base_path)
-}
-
-/// Add coverage data from .coverage and coverage directories to features
-/// Add coverage data to features by searching for coverage reports in multiple locations.
-///
-/// This function searches for coverage reports in the following priority order:
-/// 1. If `coverage_dir_override` is provided, only that directory is checked
-/// 2. Otherwise, searches in this order (stops at first directory with coverage data):
-///    - `base_path/.coverage`
-///    - `base_path/coverage`
-///    - `current_dir/.coverage`
-///    - `current_dir/coverage`
-///    - `project_dir/.coverage` (if project_dir is provided)
-///    - `project_dir/coverage` (if project_dir is provided)
-///
-/// # Arguments
-///
-/// * `features` - Mutable reference to features that will be updated with coverage data
-/// * `base_path` - Base path of the project being analyzed
-/// * `coverage_dir_override` - Optional explicit coverage directory (takes precedence over all)
-/// * `current_dir` - Current working directory where the CLI is executed
-/// * `project_dir` - Optional project directory for additional coverage locations
-///
-/// # Behavior
-///
-/// - Stops searching after finding coverage data in the first valid directory
-/// - Only processes directories that contain actual coverage files
-/// - Updates feature stats with coverage information (line/branch coverage percentages)
 fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
     let mut owners_set = HashSet::new();
 
@@ -299,205 +100,352 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = Cli::parse();
-
-    // Handle version flag
-    if args.version {
-        println!("{}", env!("CARGO_PKG_VERSION"));
-        return Ok(());
-    }
-
-    // Handle find-owner flag - this requires a target path but not the base path
-    if let Some(target_file) = &args.find_owner {
-        let target_path = std::path::PathBuf::from(target_file);
-
-        if !target_path.exists() {
-            eprintln!("Error: Path '{}' does not exist.", target_file);
-            std::process::exit(1);
-        }
-
-        // Determine the base path to scan for features
-        let base_path = if let Some(p) = &args.path {
-            p.clone()
-        } else {
-            // Use current directory or try to find a suitable base
-            std::env::current_dir()?
-        };
-
-        let current_dir = std::env::current_dir()?;
-        let ignore_paths = resolve_ignore_paths(&args.ignore_path, &current_dir);
-        let config = ScanConfig::new(&current_dir)
-            .skip_changes(args.skip_changes)
-            .ignore_paths(ignore_paths)
-            .ownership_only(true)
-            .include_skipped_dirs(args.include_skipped_dirs);
-
-        let features = scan_features(&base_path, config)?;
-
-        match find_owner_for_path(&target_path, &features, &base_path) {
-            Some(owner_info) => {
-                if args.json {
-                    let json = serde_json::to_string_pretty(&owner_info)?;
-                    println!("{}", json);
-                } else {
-                    println!(
-                        "Owner: {}{}",
-                        owner_info.owner,
-                        if owner_info.inherited {
-                            " (inherited)"
-                        } else {
-                            ""
-                        }
-                    );
-                    println!("Feature: {}", owner_info.feature_name);
-                    println!("Feature Path: {}", owner_info.feature_path);
-                }
-            }
-            None => {
-                eprintln!("No feature found for path: {}", target_file);
-                std::process::exit(1);
-            }
-        }
-
-        return Ok(());
-    }
-
-    // If no path is provided and no special flags are used, show help
-    let path = match args.path {
-        Some(p) => p,
-        None => {
-            // If we get here, it means no version/help flag was used
-            // This shouldn't happen with arg_required_else_help, but just in case
-            eprintln!("Error: The path argument is required.");
-            eprintln!("Try 'features --help' for more information.");
-            std::process::exit(1);
-        }
+    let invocation = match Cli::parse().into_invocation() {
+        Ok(invocation) => invocation,
+        Err(err) => err.exit(),
     };
+    run(invocation).await
+}
 
-    // Handle serve flag - show spinner while loading
-    let spinner = if args.serve {
-        let pb = ProgressBar::new_spinner();
-        pb.set_style(
-            ProgressStyle::default_spinner()
-                .template("{spinner:.green} {msg}")
-                .unwrap()
-                .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
-        );
-        pb.set_message(format!(
-            "Starting Features CLI v{}...",
-            env!("CARGO_PKG_VERSION")
-        ));
-        pb.enable_steady_tick(std::time::Duration::from_millis(100));
-        Some(pb)
-    } else {
-        None
-    };
+/// Scan configuration from the scan options shared by every action
+fn scan_config(scan: &ScanArgs, current_dir: &Path) -> ScanConfig {
+    let mut config = ScanConfig::new(current_dir)
+        .skip_changes(scan.skip_changes)
+        .ignore_paths(resolve_ignore_paths(&scan.ignore_path, current_dir))
+        .include_skipped_dirs(scan.include_skipped_dirs)
+        .strip_emails(scan.strip_emails)
+        .data_files(scan.data.clone());
 
-    // Build scan configuration
-    let current_dir = std::env::current_dir()?;
-    let should_add_coverage = args.serve || args.build || args.json || args.coverage;
-    let ignore_paths = resolve_ignore_paths(&args.ignore_path, &current_dir);
-
-    // CODEOWNERS only needs ownership; skip the expensive parts of the scan
-    // unless another action that uses the full feature data is requested.
-    let ownership_only = args.generate_codeowners && !args.serve && !args.build && !args.check;
-
-    let mut config = ScanConfig::new(&current_dir)
-        .skip_changes(args.skip_changes)
-        .with_coverage(should_add_coverage)
-        .ignore_paths(ignore_paths.clone())
-        .ownership_only(ownership_only)
-        .include_skipped_dirs(args.include_skipped_dirs);
-
-    if let Some(ref coverage_dir) = args.coverage_dir {
+    if let Some(coverage_dir) = &scan.coverage_dir {
         config = config.coverage_dir(coverage_dir);
     }
-
-    if let Some(ref project_dir) = args.project_dir {
+    if let Some(project_dir) = &scan.project_dir {
         config = config.project_dir(project_dir);
     }
 
-    let features = scan_features(&path, config)?;
+    config
+}
 
-    // Generate CODEOWNERS file if requested
-    if args.generate_codeowners {
-        let output_dir = args.project_dir.as_deref().unwrap_or(&current_dir);
-        generate_codeowners(
-            &features,
-            &path,
-            args.project_dir.as_deref(),
-            output_dir,
-            args.codeowners_path.as_deref(),
-            &args.codeowners_prefix,
-        )?;
+fn serve_spinner() -> ProgressBar {
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(
+        ProgressStyle::default_spinner()
+            .template("{spinner:.green} {msg}")
+            .unwrap()
+            .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]),
+    );
+    pb.set_message(format!(
+        "Starting Features CLI v{}...",
+        env!("CARGO_PKG_VERSION")
+    ));
+    pb.enable_steady_tick(std::time::Duration::from_millis(100));
+    pb
+}
+
+async fn run(invocation: Invocation) -> Result<()> {
+    let Invocation {
+        action,
+        scan,
+        codeowners,
+    } = invocation;
+    let current_dir = std::env::current_dir()?;
+
+    // Scan the features, then generate CODEOWNERS if requested alongside the action
+    let scan_path = |path: &Path, config: &ScanConfig| -> Result<Vec<Feature>> {
+        let features = scan_features_with(path, config)?;
+        if let Some(options) = &codeowners {
+            write_codeowners(&features, path, &scan, options, &current_dir)?;
+        }
+        Ok(features)
+    };
+
+    match action {
+        Action::Version => println!("{}", env!("CARGO_PKG_VERSION")),
+
+        Action::FindOwner { target, path, json } => {
+            let base_path = path.unwrap_or_else(|| current_dir.clone());
+            find_owner(&target, &base_path, &scan, &current_dir, json)?;
+        }
+
+        Action::List(args) => {
+            let config = scan_config(&scan, &current_dir).with_coverage(args.json || args.coverage);
+            let features = scan_path(&args.path, &config)?;
+
+            let output_features = if args.flat {
+                flatten_features(&features)
+            } else {
+                features
+            };
+
+            if args.json {
+                let json = serde_json::to_string_pretty(&output_features)?;
+                println!("{}", json);
+            } else {
+                eprintln!("Features found in {}:", args.path.display());
+                if output_features.is_empty() {
+                    eprintln!("No features found.");
+                } else {
+                    print_features(&output_features, 0, args.description);
+                }
+            }
+        }
+
+        Action::Serve(args) => {
+            let spinner = serve_spinner();
+            let config = scan_config(&scan, &current_dir).with_coverage(true);
+            let features = scan_path(&args.path, &config)?;
+
+            spinner.set_message("Server is starting...");
+            let server_config =
+                ServerConfig::new(args.port).with_allowed_origins(args.allow_origin);
+            serve_features_with_watching(
+                &features,
+                server_config,
+                args.path,
+                Some(Box::new(move || spinner.finish_and_clear())),
+                config,
+            )
+            .await?;
+        }
+
+        Action::Build(args) => {
+            let config = scan_config(&scan, &current_dir).with_coverage(true);
+            let features = scan_path(&args.path, &config)?;
+            let records = project_records(&features, &args.path);
+            create_build(
+                &features,
+                BuildConfig::new(args.build_dir.clone()),
+                scan.skip_changes,
+            )
+            .await?;
+            write_records_json(&records, &args.build_dir).await?;
+        }
+
+        Action::Check { path } => {
+            let features = scan_path(&path, &scan_config(&scan, &current_dir))?;
+            run_checks(&features, &project_records(&features, &path))?;
+        }
+
+        Action::Records { path, json } => {
+            let config = scan_config(&scan, &current_dir).skip_changes(true);
+            let features = scan_path(&path, &config)?;
+            let records = project_records(&features, &path);
+            if json {
+                let json =
+                    serde_json::to_string_pretty(&serde_json::json!({ "records": records }))?;
+                println!("{}", json);
+            } else {
+                print_records(&features, &records);
+            }
+        }
+
+        Action::New(args) => {
+            let config = scan_config(&scan, &current_dir).ownership_only(true);
+            let features = scan_path(&args.path, &config)?;
+            let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+            let created = create_record(
+                &args.path,
+                &features,
+                args.kind.into(),
+                &args.feature,
+                &args.title,
+                &today,
+            )?;
+            println!("{}", created.display());
+        }
+
+        Action::Codeowners { path } => {
+            // CODEOWNERS only needs ownership: skip the expensive parts of the scan
+            let config = scan_config(&scan, &current_dir).ownership_only(true);
+            scan_path(&path, &config)?;
+        }
+
+        Action::Diff(args) => run_diff(&args, &scan, &current_dir)?,
+
+        Action::Aggregate(args) => run_aggregate(args).await?,
+
+        Action::Owners { path, json } => {
+            let config = scan_config(&scan, &current_dir).ownership_only(true);
+            let features = scan_path(&path, &config)?;
+            let unique_owners = extract_unique_owners(&features);
+
+            if json {
+                let json = serde_json::to_string_pretty(&unique_owners)?;
+                println!("{}", json);
+            } else {
+                eprintln!("Unique owners found in {}:", path.display());
+                for owner in unique_owners {
+                    println!("{}", owner);
+                }
+            }
+        }
     }
 
-    // Handle main actions - these can be combined with generate-codeowners
-    if args.serve {
-        if let Some(pb) = spinner {
-            pb.set_message("Server is starting...");
-            let pb_clone = pb.clone();
-            serve_features_with_watching(
-                &features,
-                args.port,
-                path.clone(),
-                Some(Box::new(move || {
-                    pb_clone.finish_and_clear();
-                })),
-                args.skip_changes,
-                ignore_paths.clone(),
-                args.include_skipped_dirs,
-            )
-            .await?;
-        } else {
-            serve_features_with_watching(
-                &features,
-                args.port,
-                path.clone(),
-                None,
-                args.skip_changes,
-                ignore_paths.clone(),
-                args.include_skipped_dirs,
-            )
-            .await?;
-        }
-    } else if args.build {
-        let build_config = BuildConfig::new(args.build_dir);
-        create_build(&features, build_config, args.skip_changes).await?;
-    } else if args.check {
-        run_checks(&features)?;
-    } else if args.generate_codeowners {
-        // If only generate-codeowners flag is set, we've already done the work above
-        // No additional output needed
-    } else if args.list_owners {
-        let unique_owners = extract_unique_owners(&features);
+    Ok(())
+}
 
-        if args.json {
-            let json = serde_json::to_string_pretty(&unique_owners)?;
-            println!("{}", json);
-        } else {
-            eprintln!("Unique owners found in {}:", path.display());
-            for owner in unique_owners {
-                println!("{}", owner);
+/// Print the project-level records, then the records of every feature
+fn print_records(features: &[Feature], project: &[Record]) {
+    fn print_list(records: &[Record]) {
+        for record in records {
+            let mut details: Vec<String> = Vec::new();
+            if let Some(status) = &record.status {
+                details.push(status.clone());
             }
-        }
-    } else {
-        let output_features = if args.flat {
-            flatten_features(&features)
-        } else {
-            features
-        };
-
-        if args.json {
-            let json = serde_json::to_string_pretty(&output_features)?;
-            println!("{}", json);
-        } else {
-            eprintln!("Features found in {}:", path.display());
-            if output_features.is_empty() {
-                eprintln!("No features found.");
+            if let Some(date) = &record.date {
+                details.push(date.clone());
+            }
+            if let Some(tasks) = record.tasks {
+                details.push(format!("{}/{} tasks", tasks.done, tasks.total));
+            }
+            let details = if details.is_empty() {
+                String::new()
             } else {
-                print_features(&output_features, 0, args.description);
+                format!(" ({})", details.join(", "))
+            };
+            println!(
+                "  [{}] {}: {}{}",
+                record.kind.label(),
+                record.id,
+                record.title,
+                details
+            );
+        }
+    }
+
+    fn visit(features: &[Feature], found: &mut bool) {
+        for feature in features {
+            if !feature.records.is_empty() {
+                *found = true;
+                println!("{} ({}):", feature.name, feature.path);
+                print_list(&feature.records);
             }
+            visit(&feature.features, found);
+        }
+    }
+
+    let mut found = !project.is_empty();
+    if found {
+        println!("Project:");
+        print_list(project);
+    }
+    visit(features, &mut found);
+    if !found {
+        eprintln!("No specs or decision records found.");
+    }
+}
+
+fn write_codeowners(
+    features: &[Feature],
+    base_path: &Path,
+    scan: &ScanArgs,
+    options: &CodeownersOptions,
+    current_dir: &Path,
+) -> Result<()> {
+    let output_dir = scan.project_dir.as_deref().unwrap_or(current_dir);
+    generate_codeowners(
+        features,
+        base_path,
+        scan.project_dir.as_deref(),
+        output_dir,
+        options.codeowners_path.as_deref(),
+        &options.codeowners_prefix,
+    )
+}
+
+/// Aggregate the features reports of several repositories
+async fn run_aggregate(args: AggregateArgs) -> Result<()> {
+    let mut report = aggregate::aggregate_folder(&args.folder)?;
+    import_external_data(&mut report.features, &args.data)?;
+
+    eprintln!(
+        "Aggregated {} repositories: {}",
+        report.repositories.len(),
+        report.repositories.join(", ")
+    );
+    if !report.errors.is_empty() {
+        eprintln!("{} reconciliation issue(s):", report.errors.len());
+        for error in &report.errors {
+            eprintln!("  - {}", error.message);
+        }
+    }
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        create_build(&report, BuildConfig::new(args.build_dir), false).await?;
+    }
+
+    Ok(())
+}
+
+/// Diff mode: print the features touched since `args.since`.
+fn run_diff(args: &DiffArgs, scan: &ScanArgs, current_dir: &Path) -> Result<()> {
+    let base_path = args
+        .path
+        .clone()
+        .unwrap_or_else(|| current_dir.to_path_buf());
+    let config = scan_config(scan, current_dir).ownership_only(true);
+    let features = scan_features_with(&base_path, &config)?;
+
+    let include_uncommitted = !args.committed_only;
+    let changes = diff::collect_changes(&base_path, &args.since, include_uncommitted)?;
+    let report = diff::build_report(&args.since, include_uncommitted, &changes, &features);
+
+    if args.owners_only {
+        for owner in diff::unique_owners(&report, &args.codeowners_prefix) {
+            println!("{}", owner);
+        }
+    } else if args.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else if args.markdown {
+        print!(
+            "{}",
+            diff::render_markdown(&report, &args.codeowners_prefix)
+        );
+    } else {
+        print!("{}", diff::render_text(&report));
+    }
+    Ok(())
+}
+
+fn find_owner(
+    target: &Path,
+    base_path: &Path,
+    scan: &ScanArgs,
+    current_dir: &Path,
+    json: bool,
+) -> Result<()> {
+    if !target.exists() {
+        eprintln!("Error: Path '{}' does not exist.", target.display());
+        std::process::exit(1);
+    }
+
+    let config = scan_config(scan, current_dir).ownership_only(true);
+    let features = scan_features_with(base_path, &config)?;
+
+    match find_owner_for_path(target, &features, base_path) {
+        Some(owner_info) => {
+            if json {
+                let json = serde_json::to_string_pretty(&owner_info)?;
+                println!("{}", json);
+            } else {
+                println!(
+                    "Owner: {}{}",
+                    owner_info.owner,
+                    if owner_info.inherited {
+                        " (inherited)"
+                    } else {
+                        ""
+                    }
+                );
+                println!("Feature: {}", owner_info.feature_name);
+                println!("Feature Path: {}", owner_info.feature_path);
+            }
+        }
+        None => {
+            eprintln!("No feature found for path: {}", target.display());
+            std::process::exit(1);
         }
     }
 

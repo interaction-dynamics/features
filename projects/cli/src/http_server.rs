@@ -2,25 +2,30 @@
 //!
 //! This module provides functionality to start an HTTP server that serves:
 //! - Features data as JSON at `/features.json`
+//! - Project-level specs and decision records at `/records.json`
 //! - Embedded static files from the compiled binary
 //! - A default index page at the root path
 //!
-//! The server uses the `warp` web framework and supports CORS for cross-origin requests.
+//! The server uses the `warp` web framework. It only answers requests whose
+//! `Host` header names the loopback interface (protection against DNS
+//! rebinding) and sends no CORS headers unless origins are explicitly allowed
+//! with `--allow-origin`, so other websites cannot read the features data.
 //! Static files are embedded at compile time using the `include_dir` crate.
 
 use anyhow::Result;
 use include_dir::{Dir, include_dir};
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::RwLock;
-use tokio::time::sleep;
+use warp::filters::BoxedFilter;
 use warp::{Filter, Reply};
 
-use crate::file_scanner::list_files_recursive_with_changes;
+use crate::build::current_build_timestamp;
+use crate::file_watcher::{self, MAX_WAIT, QUIET_PERIOD, WatchFilter};
 use crate::git_helper::get_repository_url;
-use crate::models::Feature;
+use crate::models::{Feature, Record};
+use crate::records::project_records;
+use crate::scan::{ScanConfig, scan_features_with};
 
 // Embed the public directory at compile time
 static STATIC_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/public");
@@ -32,6 +37,9 @@ pub struct ServerConfig {
     pub port: u16,
     /// Host address to bind to
     pub host: [u8; 4],
+    /// Origins allowed to read the server's responses cross-origin (CORS).
+    /// Empty means no CORS headers are sent. `*` allows any origin.
+    pub allowed_origins: Vec<String>,
 }
 
 impl Default for ServerConfig {
@@ -39,6 +47,7 @@ impl Default for ServerConfig {
         Self {
             port: 3000,
             host: [127, 0, 0, 1],
+            allowed_origins: Vec::new(),
         }
     }
 }
@@ -58,6 +67,90 @@ impl ServerConfig {
         self.host = host;
         self
     }
+
+    /// Set the origins allowed to make cross-origin requests
+    pub fn with_allowed_origins(mut self, origins: Vec<String>) -> Self {
+        self.allowed_origins = origins;
+        self
+    }
+}
+
+/// Validates and normalizes a value passed to `--allow-origin`.
+///
+/// Accepts `*` or an origin of the form `http(s)://host[:port]` (a trailing
+/// slash is dropped). Paths, queries, fragments and credentials are rejected.
+pub fn parse_allowed_origin(value: &str) -> std::result::Result<String, String> {
+    let value = value.trim();
+    if value == "*" {
+        return Ok(value.to_string());
+    }
+
+    let normalized = value.strip_suffix('/').unwrap_or(value);
+    let authority = normalized
+        .strip_prefix("http://")
+        .or_else(|| normalized.strip_prefix("https://"))
+        .ok_or_else(|| format!("invalid origin '{value}': must start with http:// or https://"))?;
+
+    if authority.is_empty()
+        || authority.contains(['/', '?', '#', '@'])
+        || authority.chars().any(char::is_whitespace)
+        || authority.parse::<warp::http::uri::Authority>().is_err()
+    {
+        return Err(format!(
+            "invalid origin '{value}': expected scheme://host[:port], e.g. http://localhost:5173"
+        ));
+    }
+
+    Ok(normalized.to_string())
+}
+
+/// Returns true if a `Host` header value names the loopback interface:
+/// `localhost`, `127.0.0.1` or `[::1]`, with or without a port.
+fn is_allowed_host(host: &str) -> bool {
+    let (name, port) = if let Some(rest) = host.strip_prefix('[') {
+        let Some((name, after)) = rest.split_once(']') else {
+            return false;
+        };
+        let port = match after {
+            "" => None,
+            after => match after.strip_prefix(':') {
+                Some(digits) => Some(digits),
+                None => return false,
+            },
+        };
+        (name, port)
+    } else {
+        match host.rsplit_once(':') {
+            Some((name, digits)) => (name, Some(digits)),
+            None => (host, None),
+        }
+    };
+
+    let port_ok =
+        port.is_none_or(|digits| !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit()));
+    let name_ok = name.eq_ignore_ascii_case("localhost") || name == "127.0.0.1" || name == "::1";
+
+    port_ok && name_ok
+}
+
+/// Rejection for requests whose `Host` header is not a loopback name
+#[derive(Debug)]
+struct ForbiddenHost;
+impl warp::reject::Reject for ForbiddenHost {}
+
+/// Filter rejecting requests whose `Host` header is missing or not a loopback name.
+///
+/// This blocks DNS rebinding attacks, where a malicious website points its own
+/// domain at 127.0.0.1 to read the server's responses as same-origin.
+fn host_guard() -> impl Filter<Extract = (), Error = warp::Rejection> + Clone {
+    warp::header::optional::<String>("host")
+        .and_then(|host: Option<String>| async move {
+            match host {
+                Some(host) if is_allowed_host(&host) => Ok(()),
+                _ => Err(warp::reject::custom(ForbiddenHost)),
+            }
+        })
+        .untuple_one()
 }
 
 /// Starts an HTTP server with file watching for a specific directory.
@@ -65,34 +158,28 @@ impl ServerConfig {
 /// # Arguments
 ///
 /// * `features` - Initial Feature objects to serve as JSON
-/// * `port` - Port number to run the server on
+/// * `config` - Server configuration (port, allowed CORS origins)
 /// * `watch_path` - Path to watch for file changes
 /// * `on_ready` - Optional callback to be called when server is ready
-/// * `skip_changes` - Whether changes were skipped during feature computation
-/// * `ignore_paths` - Folders to ignore when features are recomputed
-/// * `include_skipped_dirs` - Whether to scan folders skipped by default when features are recomputed
+/// * `scan_config` - Options the features were scanned with, reused when the
+///   file watcher recomputes them
 ///
 /// # Returns
 ///
 /// * `Result<()>` - Ok if server starts successfully, Err otherwise
 pub async fn serve_features_with_watching(
     features: &[Feature],
-    port: u16,
+    config: ServerConfig,
     watch_path: PathBuf,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
-    skip_changes: bool,
-    ignore_paths: Vec<PathBuf>,
-    include_skipped_dirs: bool,
+    scan_config: ScanConfig,
 ) -> Result<()> {
-    let config = ServerConfig::new(port);
     serve_features_with_config_and_watching(
         features,
         config,
-        Some(watch_path.clone()),
+        Some(watch_path),
         on_ready,
-        skip_changes,
-        ignore_paths,
-        include_skipped_dirs,
+        scan_config,
     )
     .await
 }
@@ -105,9 +192,8 @@ pub async fn serve_features_with_watching(
 /// * `config` - Server configuration
 /// * `watch_path` - Optional path to watch for file changes
 /// * `on_ready` - Optional callback to be called when server is ready
-/// * `skip_changes` - Whether changes were skipped during feature computation
-/// * `ignore_paths` - Folders to ignore when features are recomputed
-/// * `include_skipped_dirs` - Whether to scan folders skipped by default when features are recomputed
+/// * `scan_config` - Options the features were scanned with, reused when the
+///   file watcher recomputes them
 ///
 /// # Returns
 ///
@@ -117,12 +203,21 @@ pub async fn serve_features_with_config_and_watching(
     config: ServerConfig,
     watch_path: Option<PathBuf>,
     on_ready: Option<Box<dyn FnOnce() + Send>>,
-    skip_changes: bool,
-    ignore_paths: Vec<PathBuf>,
-    include_skipped_dirs: bool,
+    scan_config: ScanConfig,
 ) -> Result<()> {
+    let skip_changes = scan_config.skip_changes;
+
     // Create shared state for features
     let features_data = Arc::new(RwLock::new(features.to_vec()));
+
+    // Project-level records (root `docs/` records not attached to a feature)
+    let records_data = Arc::new(RwLock::new(match &watch_path {
+        Some(path) => project_records(features, path),
+        None => Vec::new(),
+    }));
+
+    // When the features data was last built, refreshed by the file watcher
+    let built_at = Arc::new(RwLock::new(current_build_timestamp()));
 
     // Get repository URL from git config
     let repository_url = watch_path
@@ -132,14 +227,17 @@ pub async fn serve_features_with_config_and_watching(
     // Set up file watching if watch_path is provided
     if let Some(ref path) = watch_path {
         let features_data_clone = Arc::clone(&features_data);
+        let records_data_clone = Arc::clone(&records_data);
+        let built_at_clone = Arc::clone(&built_at);
         let watch_path_clone = path.clone();
 
         tokio::spawn(async move {
             if let Err(e) = setup_file_watcher(
                 features_data_clone,
+                records_data_clone,
+                built_at_clone,
                 watch_path_clone,
-                ignore_paths,
-                include_skipped_dirs,
+                scan_config,
             )
             .await
             {
@@ -148,12 +246,51 @@ pub async fn serve_features_with_config_and_watching(
         });
     }
 
+    let app = build_app(
+        features_data,
+        records_data,
+        built_at,
+        repository_url,
+        skip_changes,
+        &config,
+    );
+
+    // Call the ready callback if provided
+    if let Some(callback) = on_ready {
+        callback();
+    }
+
+    println!(
+        "Server running at http://{}:{}",
+        config
+            .host
+            .iter()
+            .map(|&b| b.to_string())
+            .collect::<Vec<_>>()
+            .join("."),
+        config.port,
+    );
+    warp::serve(app).run((config.host, config.port)).await;
+
+    Ok(())
+}
+
+/// Builds the complete request handler: routes, `Host` header guard, optional
+/// CORS and rejection handling.
+fn build_app(
+    features_data: Arc<RwLock<Vec<Feature>>>,
+    records_data: Arc<RwLock<Vec<Record>>>,
+    built_at: Arc<RwLock<String>>,
+    repository_url: Option<String>,
+    skip_changes: bool,
+    config: &ServerConfig,
+) -> BoxedFilter<(warp::reply::Response,)> {
     // Route for features.json with shared state
-    let features_data_clone = Arc::clone(&features_data);
     let features_route = warp::path("features.json")
+        .and(warp::path::end())
         .and(warp::get())
         .and_then(move || {
-            let features_data = Arc::clone(&features_data_clone);
+            let features_data = Arc::clone(&features_data);
             async move {
                 let features = features_data.read().await;
                 let features_json = match serde_json::to_string_pretty(&*features) {
@@ -172,15 +309,45 @@ pub async fn serve_features_with_config_and_watching(
             }
         });
 
+    // Route for records.json with the project-level records
+    let records_route = warp::path("records.json")
+        .and(warp::path::end())
+        .and(warp::get())
+        .and_then(move || {
+            let records_data = Arc::clone(&records_data);
+            async move {
+                let records = records_data.read().await;
+                let records_json = match serde_json::to_string_pretty(&serde_json::json!({
+                    "records": &*records
+                })) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        eprintln!("Failed to serialize records: {}", e);
+                        return Err(warp::reject::custom(SerializationError));
+                    }
+                };
+
+                Ok::<_, warp::Rejection>(warp::reply::with_header(
+                    records_json,
+                    "content-type",
+                    "application/json",
+                ))
+            }
+        });
+
     // Route for metadata.json with version info and repository URL
     let metadata_route = warp::path("metadata.json")
+        .and(warp::path::end())
         .and(warp::get())
         .and_then(move || {
             let repo_url = repository_url.clone();
+            let built_at = Arc::clone(&built_at);
             async move {
+                let built_at = built_at.read().await.clone();
                 let mut metadata = serde_json::json!({
                     "version": env!("CARGO_PKG_VERSION"),
-                    "skipChanges": skip_changes
+                    "skipChanges": skip_changes,
+                    "builtAt": built_at
                 });
 
                 // Add repository URL if available
@@ -212,98 +379,98 @@ pub async fn serve_features_with_config_and_watching(
         .and(warp::get())
         .and_then(serve_static_file);
 
-    let routes = features_route
-        .or(metadata_route)
-        .or(index_route)
-        .or(static_route)
-        .with(warp::cors().allow_any_origin())
-        .recover(handle_rejection);
+    let routes = host_guard().and(
+        features_route
+            .or(records_route)
+            .or(metadata_route)
+            .or(index_route)
+            .or(static_route),
+    );
 
-    // Call the ready callback if provided
-    if let Some(callback) = on_ready {
-        callback();
+    if config.allowed_origins.is_empty() {
+        return routes
+            .recover(handle_rejection)
+            .map(Reply::into_response)
+            .boxed();
     }
 
-    println!(
-        "Server running at http://{}:{}",
-        config
-            .host
-            .iter()
-            .map(|&b| b.to_string())
-            .collect::<Vec<_>>()
-            .join("."),
-        config.port,
-    );
-    warp::serve(routes).run((config.host, config.port)).await;
+    let cors = if config.allowed_origins.iter().any(|origin| origin == "*") {
+        warp::cors().allow_any_origin()
+    } else {
+        // The dashboard's own origins must stay allowed: once CORS is enabled,
+        // warp rejects any request carrying an Origin header that is not listed.
+        let own_origins = [
+            format!("http://localhost:{}", config.port),
+            format!("http://127.0.0.1:{}", config.port),
+            format!("http://[::1]:{}", config.port),
+        ];
+        warp::cors().allow_origins(
+            config
+                .allowed_origins
+                .iter()
+                .map(String::as_str)
+                .chain(own_origins.iter().map(String::as_str)),
+        )
+    }
+    .allow_methods(vec!["GET"]);
 
-    Ok(())
+    routes
+        .with(cors)
+        .recover(handle_rejection)
+        .map(Reply::into_response)
+        .boxed()
 }
 
-/// Sets up file system watching for the specified path.
+/// Watches `watch_path` and recomputes the features when a relevant change
+/// happens, once per burst of changes.
 async fn setup_file_watcher(
     features_data: Arc<RwLock<Vec<Feature>>>,
+    records_data: Arc<RwLock<Vec<Record>>>,
+    built_at: Arc<RwLock<String>>,
     watch_path: PathBuf,
-    ignore_paths: Vec<PathBuf>,
-    include_skipped_dirs: bool,
+    scan_config: ScanConfig,
 ) -> Result<()> {
-    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    let filter = WatchFilter::new(
+        &watch_path,
+        scan_config.ignore_paths.clone(),
+        scan_config.include_skipped_dirs,
+    );
+    // Dropping the watcher would stop it, so keep it for the whole loop
+    let (_watcher, mut changes) = file_watcher::watch(&watch_path, filter)?;
 
-    // Set up the file watcher in a blocking task
-    let watch_path_clone = watch_path.clone();
-    let _watcher = tokio::task::spawn_blocking(move || -> Result<RecommendedWatcher> {
-        let mut watcher = RecommendedWatcher::new(
-            move |res: notify::Result<Event>| {
-                match res {
-                    Ok(event) => {
-                        // Send event through channel
-                        if let Err(e) = tx.blocking_send(event) {
-                            eprintln!("Failed to send file system event: {}", e);
-                        }
-                    }
-                    Err(e) => eprintln!("File watcher error: {:?}", e),
-                }
-            },
-            Config::default(),
-        )?;
+    while file_watcher::next_change(&mut changes, QUIET_PERIOD, MAX_WAIT).await {
+        // Scanning reads the whole project, so keep it off the async workers.
+        // Changes made meanwhile leave one pending signal: one more rescan.
+        let path = watch_path.clone();
+        let config = scan_config.clone();
+        let result = tokio::task::spawn_blocking(move || rescan_features(&path, &config)).await?;
 
-        watcher.watch(&watch_path_clone, RecursiveMode::Recursive)?;
-        Ok(watcher)
-    })
-    .await??;
-
-    // Process file system events
-    while let Some(event) = rx.recv().await {
-        // Check if this is a file we care about (README.md files or directory changes)
-        let should_recompute = event.paths.iter().any(|path| {
-            path.file_name()
-                .map(|name| name == "README.md")
-                .unwrap_or(false)
-                || event.kind.is_create()
-                || event.kind.is_remove()
-        });
-
-        if should_recompute {
-            // Add a small delay to avoid excessive recomputation during rapid changes
-            sleep(Duration::from_millis(500)).await;
-
-            match list_files_recursive_with_changes(
-                &watch_path,
-                &ignore_paths,
-                include_skipped_dirs,
-            ) {
-                Ok(new_features) => {
-                    let mut features = features_data.write().await;
-                    *features = new_features;
-                    println!("✅ Features updated successfully");
-                }
-                Err(e) => {
-                    eprintln!("❌ Failed to recompute features: {}", e);
-                }
+        match result {
+            Ok((new_features, new_records)) => {
+                let mut features = features_data.write().await;
+                *features = new_features;
+                *records_data.write().await = new_records;
+                *built_at.write().await = current_build_timestamp();
+                println!("✅ Features updated successfully");
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to recompute features: {}", e);
             }
         }
     }
 
     Ok(())
+}
+
+/// Recomputes the features after a file change, with the same options as the
+/// initial scan (git history or not, coverage, ignored folders, emails...)
+fn rescan_features(
+    watch_path: &Path,
+    scan_config: &ScanConfig,
+) -> Result<(Vec<Feature>, Vec<Record>)> {
+    let features = scan_features_with(watch_path, scan_config)?;
+    let records = project_records(&features, watch_path);
+    Ok((features, records))
 }
 
 /// Custom error type for serialization failures
@@ -445,6 +612,7 @@ fn create_default_index_html() -> String {
         <p>Welcome to the feature-based architecture server!</p>
         <ul class="links">
             <li><a href="/features.json">📊 View Features JSON</a></li>
+            <li><a href="/records.json">📝 View Project Records JSON</a></li>
             <li><a href="/metadata.json">ℹ️ View Metadata JSON</a></li>
         </ul>
         <p><small>This server provides features data and serves embedded static files from the binary.</small></p>
@@ -457,7 +625,11 @@ fn create_default_index_html() -> String {
 async fn handle_rejection(
     err: warp::Rejection,
 ) -> Result<impl warp::Reply, std::convert::Infallible> {
-    let (code, message) = if err.is_not_found() {
+    let (code, message) = if err.find::<ForbiddenHost>().is_some() {
+        (warp::http::StatusCode::FORBIDDEN, "FORBIDDEN_HOST")
+    } else if err.find::<warp::cors::CorsForbidden>().is_some() {
+        (warp::http::StatusCode::FORBIDDEN, "CORS_FORBIDDEN")
+    } else if err.is_not_found() {
         (warp::http::StatusCode::NOT_FOUND, "NOT_FOUND")
     } else if err
         .find::<warp::filters::body::BodyDeserializeError>()
@@ -478,4 +650,231 @@ async fn handle_rejection(
     };
 
     Ok(warp::reply::with_status(message, code))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn app(allowed_origins: Vec<String>) -> BoxedFilter<(warp::reply::Response,)> {
+        let config = ServerConfig::new(3000).with_allowed_origins(allowed_origins);
+        build_app(
+            Arc::new(RwLock::new(Vec::new())),
+            Arc::new(RwLock::new(Vec::new())),
+            Arc::new(RwLock::new(String::from("2026-01-01T00:00:00Z"))),
+            None,
+            false,
+            &config,
+        )
+    }
+
+    #[test]
+    fn test_is_allowed_host() {
+        for host in [
+            "localhost",
+            "localhost:3000",
+            "LocalHost:8080",
+            "127.0.0.1",
+            "127.0.0.1:3000",
+            "[::1]",
+            "[::1]:3000",
+        ] {
+            assert!(is_allowed_host(host), "{host} should be allowed");
+        }
+
+        for host in [
+            "",
+            "evil.com",
+            "evil.com:3000",
+            "localhost.evil.com",
+            "127.0.0.1.nip.io:3000",
+            "192.168.1.10:3000",
+            "0.0.0.0:3000",
+            "localhost:",
+            "localhost:abc",
+            "[::1]x",
+            "[::1",
+            "::1",
+        ] {
+            assert!(!is_allowed_host(host), "{host} should be rejected");
+        }
+    }
+
+    #[test]
+    fn test_parse_allowed_origin() {
+        assert_eq!(
+            parse_allowed_origin("http://localhost:5173").unwrap(),
+            "http://localhost:5173"
+        );
+        assert_eq!(
+            parse_allowed_origin("https://example.com/").unwrap(),
+            "https://example.com"
+        );
+        assert_eq!(parse_allowed_origin("*").unwrap(), "*");
+
+        for invalid in [
+            "localhost:5173",
+            "ftp://example.com",
+            "http://",
+            "http://example.com/path",
+            "http://example.com?q=1",
+            "http://user:pass@example.com",
+            "http://exa mple.com",
+        ] {
+            assert!(
+                parse_allowed_origin(invalid).is_err(),
+                "{invalid} should be rejected"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_rejects_non_loopback_host() {
+        let res = warp::test::request()
+            .path("/metadata.json")
+            .header("host", "evil.com")
+            .reply(&app(Vec::new()))
+            .await;
+        assert_eq!(res.status(), 403);
+    }
+
+    #[tokio::test]
+    async fn test_rejects_missing_host() {
+        let res = warp::test::request()
+            .path("/metadata.json")
+            .reply(&app(Vec::new()))
+            .await;
+        assert_eq!(res.status(), 403);
+    }
+
+    #[tokio::test]
+    async fn test_serves_project_records() {
+        let res = warp::test::request()
+            .path("/records.json")
+            .header("host", "localhost:3000")
+            .reply(&app(Vec::new()))
+            .await;
+        assert_eq!(res.status(), 200);
+        let body: serde_json::Value = serde_json::from_slice(res.body()).unwrap();
+        assert_eq!(body, serde_json::json!({ "records": [] }));
+    }
+
+    #[tokio::test]
+    async fn test_no_cors_headers_by_default() {
+        let res = warp::test::request()
+            .path("/features.json")
+            .header("host", "localhost:3000")
+            .header("origin", "https://evil.com")
+            .reply(&app(Vec::new()))
+            .await;
+        assert_eq!(res.status(), 200);
+        assert!(res.headers().get("access-control-allow-origin").is_none());
+    }
+
+    #[tokio::test]
+    async fn test_cors_allows_listed_origin_only() {
+        let app = app(vec![String::from("http://localhost:5173")]);
+
+        let allowed = warp::test::request()
+            .path("/features.json")
+            .header("host", "localhost:3000")
+            .header("origin", "http://localhost:5173")
+            .reply(&app)
+            .await;
+        assert_eq!(allowed.status(), 200);
+        assert_eq!(
+            allowed
+                .headers()
+                .get("access-control-allow-origin")
+                .unwrap(),
+            "http://localhost:5173"
+        );
+
+        let own_origin = warp::test::request()
+            .path("/features.json")
+            .header("host", "localhost:3000")
+            .header("origin", "http://localhost:3000")
+            .reply(&app)
+            .await;
+        assert_eq!(own_origin.status(), 200);
+
+        let denied = warp::test::request()
+            .path("/features.json")
+            .header("host", "localhost:3000")
+            .header("origin", "https://evil.com")
+            .reply(&app)
+            .await;
+        assert_eq!(denied.status(), 403);
+        assert!(
+            denied
+                .headers()
+                .get("access-control-allow-origin")
+                .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_cors_wildcard_allows_any_origin() {
+        let res = warp::test::request()
+            .path("/features.json")
+            .header("host", "localhost:3000")
+            .header("origin", "https://example.com")
+            .reply(&app(vec![String::from("*")]))
+            .await;
+        assert_eq!(res.status(), 200);
+        assert!(res.headers().get("access-control-allow-origin").is_some());
+    }
+
+    fn all_features(features: &[Feature]) -> Vec<&Feature> {
+        features
+            .iter()
+            .flat_map(|f| std::iter::once(f).chain(all_features(&f.features)))
+            .collect()
+    }
+
+    /// A rescan must keep the options of the initial scan: it used to always
+    /// compute git history and never add coverage.
+    #[test]
+    fn test_rescan_keeps_scan_options() {
+        let base = PathBuf::from("../../examples/rust-basic");
+        let config = ScanConfig::new(&base)
+            .skip_changes(true)
+            .with_coverage(true);
+
+        let initial = scan_features_with(&base, &config).unwrap();
+        let (rescanned, _) = rescan_features(&base, &config).unwrap();
+
+        for features in [&initial, &rescanned] {
+            let features = all_features(features);
+            assert!(!features.is_empty());
+            assert!(
+                features.iter().all(|f| f.changes.is_empty()),
+                "--skip-changes must survive a rescan"
+            );
+            assert!(
+                features
+                    .iter()
+                    .any(|f| f.stats.as_ref().is_some_and(|s| s.coverage.is_some())),
+                "coverage must survive a rescan"
+            );
+        }
+        assert_eq!(
+            serde_json::to_value(&initial).unwrap(),
+            serde_json::to_value(&rescanned).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_rescan_keeps_strip_emails() {
+        let base = PathBuf::from("../../examples/rust-basic");
+        let config = ScanConfig::new(&base).strip_emails(true);
+
+        let (rescanned, _) = rescan_features(&base, &config).unwrap();
+        let changes: Vec<_> = all_features(&rescanned)
+            .into_iter()
+            .flat_map(|f| &f.changes)
+            .collect();
+        assert!(!changes.is_empty(), "Should find git history");
+        assert!(changes.iter().all(|c| c.author_email.is_empty()));
+    }
 }

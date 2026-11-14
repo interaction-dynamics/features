@@ -1,0 +1,315 @@
+---
+import { Code } from 'astro:components'
+import {
+  BookOpenCheck,
+  Brain,
+  Compass,
+  GitCompare,
+  Layers,
+  ScanEye,
+  ShieldCheck,
+  Sparkles,
+} from '@lucide/astro'
+import CallToAction from '../components/CallToAction.astro'
+import PageHero from '../components/PageHero.astro'
+import Section from '../components/Section.astro'
+import Terminal from '../components/Terminal.astro'
+import { site } from '../data/site'
+import Base from '../layouts/Base.astro'
+
+const description =
+  'Use features-cli with Claude Code, Cursor, Copilot and other AI coding agents: give them a map of the codebase by feature, its owners and decisions, and let Claude reorganize a codebase into feature folders.'
+
+const aiEraReasons = [
+  {
+    icon: Sparkles,
+    title: "Lines of code don't mean much",
+    text: 'An agent writes a thousand lines as easily as ten. What matters is what the code does for your users: the features.',
+  },
+  {
+    icon: Layers,
+    title: 'Features pile up fast',
+    text: 'When people and agents ship every day, nobody holds the whole product in their head. Features get duplicated, forgotten or left half-finished.',
+  },
+  {
+    icon: ScanEye,
+    title: 'Reviews get shallower',
+    text: 'The more code is generated, the less of it is read closely. A higher-level view shows where each change lands and whose feature it touches.',
+  },
+  {
+    icon: Brain,
+    title: 'The reasoning gets lost',
+    text: "An agent's reasoning vanishes with its session. Specs and decision records kept next to each feature keep it for the next person, or the next agent.",
+  },
+]
+
+const benefits = [
+  {
+    icon: Compass,
+    title: 'Find the right code faster',
+    text: 'The JSON report lists every feature with its path, description and owner, so the agent goes straight to the folder it needs instead of grepping the whole repository.',
+  },
+  {
+    icon: BookOpenCheck,
+    title: 'Respect past decisions',
+    text: 'Each feature comes with its README and decision records, so the agent understands why the code is built that way before changing it.',
+  },
+  {
+    icon: GitCompare,
+    title: 'Know the blast radius',
+    text: 'features diff shows which features and owners a change touches, so the agent can flag cross-team changes and suggest reviewers.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Stay within the conventions',
+    text: 'features check catches invalid features, such as duplicate names, that the agent may have introduced.',
+  },
+]
+
+const instructions = `## Finding your way around
+
+This codebase is organized by feature. Before exploring the code:
+
+- Run \`npx features-cli@latest scan ./src --json --skip-changes\` to list the features with their path, description, owner and decision records.
+- Run \`npx features-cli@latest find-owner <file>\` to find who owns a file.
+- Before opening a pull request, run \`npx features-cli@latest diff ./src --since origin/main\` and mention the features and owners touched.`
+
+const loop = [
+  {
+    step: 'Before',
+    title: 'Map the codebase',
+    command: 'features scan ./src --json --skip-changes',
+    text: 'The agent reads the list of features and picks the one the task is about.',
+  },
+  {
+    step: 'While',
+    title: 'Read the feature first',
+    command: 'features find-owner src/features/billing',
+    text: 'It reads the feature README and its decision records, and knows who to ask.',
+  },
+  {
+    step: 'After',
+    title: 'Check the result',
+    command: 'features check ./src',
+    text: 'It validates the features it created or changed before handing back.',
+  },
+  {
+    step: 'Review',
+    title: 'Report what changed',
+    command: 'features diff ./src --since origin/main',
+    text: 'It lists the features and owners touched in the pull request description.',
+  },
+]
+
+const skills = [
+  [
+    'organize-by-feature',
+    'Entry point. Runs the whole refactor: checks the baseline, plans the breakdown, then extracts, documents, validates and commits one feature at a time.',
+  ],
+  [
+    'explore-features',
+    'Reads the JSON report through a compact index: every feature with its path, owner, description, decision records and imports. Useful on its own before changing any codebase.',
+  ],
+  [
+    'plan-feature-breakdown',
+    'Analyzes the codebase and writes a breakdown plan for you to approve: features, target paths, files to move, shared code, owners and migration order. Read-only.',
+  ],
+  [
+    'extract-feature',
+    'Moves one feature into its own folder with git mv, updates imports and runs your build and tests. No behavior change.',
+  ],
+  [
+    'document-feature',
+    'Writes the feature README (owner, creation date, title, description) and its decision records. Never invents an owner or a decision.',
+  ],
+  [
+    'validate-features',
+    'Runs features check and flags features without description or owner, imports between sibling features, oversized features and code outside any feature.',
+  ],
+]
+
+const prompts = [
+  'Reorganize ./src by feature.',
+  'Map the features of this repository before we start.',
+  'Which features does this codebase have? Propose a breakdown, don’t move anything yet.',
+  'Document the billing feature and record why we use Stripe.',
+  'Check that our features follow the guidelines.',
+]
+
+const skillsUrl = `${site.repository}/tree/master/projects/skills`
+---
+
+<Base
+  title="Features for AI coding agents"
+  description={description}
+  breadcrumbs={[{ name: 'AI', path: '/ai' }]}
+>
+  <PageHero
+    eyebrow="AI coding agents"
+    title="Give your coding agent a map of the codebase"
+    lead="Agents work best when they know where things live. Without a map, they search the repository file by file, spend context on unrelated code and miss the decisions behind it. features-cli gives them that map in one command."
+  />
+
+  <Section
+    id="why-now"
+    eyebrow="Why now"
+    title="Features ship in minutes. Keep track of all of them."
+    lead="With Claude Code, Cursor or Copilot, a new feature takes minutes, not weeks. Writing code is no longer the bottleneck. Tracking, documenting and maintaining what you built is."
+  >
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        aiEraReasons.map(({ icon: Icon, title, text }) => (
+          <li class="card p-5">
+            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent-2">
+              <Icon size={20} aria-hidden="true" />
+            </span>
+            <h3 class="mt-4 font-semibold">{title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section
+    id="why"
+    eyebrow="Why it helps"
+    title="Less searching, fewer surprises"
+    lead="It's a plain CLI with JSON output: no plugin, server or API key needed. Any agent that can run a shell command can use it."
+  >
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        benefits.map(({ icon: Icon, title, text }) => (
+          <li class="card p-5">
+            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent-2">
+              <Icon size={20} aria-hidden="true" />
+            </span>
+            <h3 class="mt-4 font-semibold">{title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section
+    id="setup"
+    eyebrow="Setup"
+    title="Tell your agent the map exists"
+    lead="Add a few lines to the instructions file your agent reads at the start of every session."
+  >
+    <div class="grid items-start gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <figure>
+        <figcaption class="mb-2 font-mono text-xs text-muted">AGENTS.md, CLAUDE.md or .cursor/rules</figcaption>
+        <Code code={instructions} lang="markdown" theme="github-dark-default" wrap />
+      </figure>
+      <div class="space-y-4">
+        <div class="card p-5">
+          <h3 class="font-semibold">Keep the report small</h3>
+          <p class="mt-2 text-sm text-muted">
+            <code>--skip-changes</code> leaves out the git history, which keeps the report small and fast on large
+            repositories, and saves the agent's context for the code.
+          </p>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-semibold">Adjust the paths</h3>
+          <p class="mt-2 text-sm text-muted">
+            Point the commands at the folder that holds your features, and replace <code>origin/main</code> with your
+            default branch.
+          </p>
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <Section
+    id="workflow"
+    eyebrow="Workflow"
+    title="One command at each step of a task"
+    lead="The same loop works for a human or an agent: find the feature, read why it's built that way, change it, check it and report what moved."
+  >
+    <ol class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {
+        loop.map((item, index) => (
+          <li class="card flex flex-col p-5">
+            <p class="font-mono text-xs text-accent">
+              {String(index + 1).padStart(2, '0')} · {item.step}
+            </p>
+            <h3 class="mt-2 font-semibold">{item.title}</h3>
+            <p class="mt-1.5 flex-1 text-sm text-muted">{item.text}</p>
+            <code class="mt-4 block overflow-x-auto !text-[0.7rem] whitespace-nowrap">{item.command}</code>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section
+    id="skills"
+    eyebrow="Claude skills"
+    title="Let Claude reorganize your codebase by feature"
+    lead="Not organized by feature yet? The Claude skills teach Claude to plan a feature breakdown, move the code one feature at a time with your tests passing, write each feature's README and decision records, and check the result with features check."
+  >
+    <div class="grid items-start gap-6 lg:grid-cols-[1fr_1.2fr]">
+      <div class="space-y-6">
+        <Terminal title="Claude Code">
+<span class="text-muted"># add the marketplace, then install the plugin</span>
+<span class="select-none text-muted">&gt; </span>/plugin marketplace add interaction-dynamics/features
+<span class="select-none text-muted">&gt; </span>/plugin install features@interaction-dynamics</Terminal>
+        <div class="card p-5">
+          <h3 class="font-semibold">Ask in your own words</h3>
+          <ul class="mt-3 space-y-2 text-sm text-muted">
+            {prompts.map((prompt) => <li>“{prompt}”</li>)}
+          </ul>
+          <p class="mt-4 text-xs text-muted">
+            Other agents can use the skill folders as they are, or take the content of a <code>SKILL.md</code> as
+            instructions. <a class="link" href={skillsUrl} rel="noopener">Install guide on GitHub</a>.
+          </p>
+        </div>
+      </div>
+      <div class="card overflow-hidden">
+        <h3 class="border-b border-line bg-surface-2 px-5 py-3 text-sm font-semibold">Six skills</h3>
+        <dl class="divide-y divide-line/60">
+          {
+            skills.map(([name, text]) => (
+              <div class="grid gap-1 px-5 py-3 sm:grid-cols-[minmax(0,12rem)_1fr] sm:gap-4">
+                <dt><code class="!text-xs">{name}</code></dt>
+                <dd class="text-sm text-muted">{text}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </div>
+  </Section>
+
+  <Section
+    id="knowledge"
+    eyebrow="Memory"
+    title="Keep the knowledge for the next agent"
+    lead="An agent's reasoning vanishes with its session. Write it down next to the feature, and the next person, or the next agent, finds it where the code is."
+  >
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="card p-5">
+        <p class="font-mono text-xs text-muted">features/billing/README.md</p>
+        <h3 class="mt-2 font-semibold">What the feature does and who owns it</h3>
+        <p class="mt-1.5 text-sm text-muted">
+          Ask the agent to update the README when a change alters the feature's behavior or owner.
+        </p>
+      </div>
+      <div class="card p-5">
+        <p class="font-mono text-xs text-muted">features/billing/__docs__/decisions/</p>
+        <h3 class="mt-2 font-semibold">Why it's built that way</h3>
+        <p class="mt-1.5 text-sm text-muted">
+          Ask the agent to add a decision record when it makes a choice worth keeping, such as a new library or a
+          trade-off.
+        </p>
+      </div>
+    </div>
+    <p class="mt-6 text-sm text-muted">
+      Formats and folder conventions are in the <a class="link" href="/guidelines">guidelines</a>.
+    </p>
+  </Section>
+
+  <CallToAction />
+</Base>

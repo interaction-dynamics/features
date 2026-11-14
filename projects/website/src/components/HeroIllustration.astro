@@ -1,0 +1,273 @@
+---
+/*
+ * Home hero illustration: a miniature of the real dashboard, Linear-style.
+ * Back panel: the page of the auth feature on its Changes tab.
+ * Front panel: the Insights page, whose filter types `owner:team-auth` in a loop
+ * and dims the rows that don't match.
+ */
+import {
+  BarChart3,
+  ChevronDown,
+  FileText,
+  Flag,
+  FlaskConical,
+  Folder,
+  GitCommitHorizontal,
+  Info,
+  Network,
+  NotebookText,
+  PanelLeft,
+  Search,
+  Sparkles,
+  User,
+} from '@lucide/astro'
+
+// Same hash as projects/web/src/lib/owner-color.ts, so owners get the dashboard's colors.
+const ownerColor = (owner: string) => {
+  let hash = 0
+  for (let i = 0; i < owner.length; i++) {
+    hash = owner.charCodeAt(i) + ((hash << 5) - hash)
+    hash = hash & hash
+  }
+  const value = Math.abs(hash)
+  return `hsl(${value % 360}, ${65 + (value % 20)}%, ${50 + (value % 15)}%)`
+}
+
+const query = 'owner:team-auth'
+
+const rows = [
+  { name: 'auth', owner: 'team-auth', lines: '4,210', todos: 1, mix: [55, 25, 20], changes: 182 },
+  { name: 'sso', parent: 'auth', owner: 'team-auth', inherited: true, lines: '860', todos: 0, mix: [62, 30, 8], changes: 41 },
+  { name: 'billing', owner: 'team-billing', lines: '3,045', todos: 4, mix: [40, 45, 15], changes: 127 },
+  { name: 'search', owner: 'team-discovery', lines: '2,318', todos: 7, mix: [35, 30, 35], changes: 96 },
+  { name: 'profile', owner: 'team-growth', lines: '1,402', todos: 0, mix: [70, 15, 15], changes: 58 },
+].map((row) => ({ ...row, match: row.owner === 'team-auth', color: ownerColor(row.owner) }))
+
+const sidebar = [
+  { folder: 'features', items: ['auth', 'billing', 'search', 'profile'] },
+  { folder: 'libs', items: ['ui-kit'] },
+]
+const ownerOf = (name: string) => rows.find((row) => row.name === name)?.owner ?? 'team-platform'
+
+const stats = [
+  { label: 'Total features', value: 18 },
+  { label: 'Total owners', value: 5 },
+  { label: 'Without owner', value: 1 },
+]
+
+const tabs = [
+  { label: 'Description', icon: FileText },
+  { label: 'Changes', icon: GitCommitHorizontal, active: true },
+  { label: 'Tests', icon: FlaskConical },
+  { label: 'Specs & Decisions', icon: NotebookText, count: 3 },
+  { label: 'Dependencies', icon: Network },
+  { label: 'Flags', icon: Flag },
+]
+
+// Deterministic scatter of commits per week for the chart of the back panel.
+const weeks = ['Aug', 'Sep', 'Oct', 'Nov']
+const commitDots = weeks.flatMap((_, week) => {
+  let seed = week * 7919 + 17
+  const random = () => {
+    seed = (seed * 16807) % 2147483647
+    return seed / 2147483647
+  }
+  const center = 56 - week * 7
+  return Array.from({ length: 26 }, () => ({
+    x: 46 + week * 78 + (random() - 0.5) * 18,
+    y: center + (random() + random() + random() - 1.5) * 19,
+    r: 1.5 + random() * 0.8,
+    level: random(),
+  }))
+})
+---
+
+<div
+  class="hero-illustration relative sm:pt-52"
+  role="img"
+  aria-label="Illustration of the Features dashboard: the Insights page lists features with their owner, lines, TODOs and commit mix, filtered by owner, over the Changes tab of the auth feature"
+>
+  <div class="spotlight pointer-events-none absolute inset-0 -z-10" aria-hidden="true"></div>
+
+  <!-- Back panel: the auth feature, Changes tab -->
+  <div class="card fade-b anim-rise absolute top-0 right-0 hidden w-[78%] overflow-hidden opacity-85 shadow-2xl shadow-black/60 sm:block" style="--delay:100ms" aria-hidden="true">
+    <div class="px-4 pt-3">
+      <div class="flex items-center gap-3">
+        <span class="text-base font-bold tracking-tight">auth</span>
+        <span class="inline-flex items-center gap-1 text-[0.6rem] text-muted"><User size={10} />team-auth</span>
+        <span class="rounded border border-indigo/50 bg-indigo/10 px-1.5 font-mono text-[0.55rem] leading-4 text-indigo">version: 2.1.0</span>
+        <span class="ml-auto font-mono text-[0.55rem] text-muted">src/features/auth</span>
+      </div>
+      <div class="mt-2.5 flex gap-1 overflow-hidden rounded-md bg-surface-2/70 p-0.5 text-[0.55rem] whitespace-nowrap text-muted">
+        {
+          tabs.map(({ label, icon: Icon, active, count }) => (
+            <span class:list={['inline-flex items-center gap-1 rounded px-1.5 py-0.5', active && 'border border-line bg-ink text-text']}>
+              <Icon size={9} />
+              {label}
+              {count && <span class="text-muted">{count}</span>}
+            </span>
+          ))
+        }
+      </div>
+    </div>
+    <div class="px-4 pt-2.5 pb-4">
+      <div class="flex items-center justify-between text-[0.6rem] text-muted">
+        <span>Commits per week</span>
+        <span class="flex items-center gap-2">
+          <span class="flex items-center gap-1"><span class="size-1.5 rounded-full bg-accent"></span>feat</span>
+          <span class="flex items-center gap-1"><span class="size-1.5 rounded-full bg-accent-2"></span>fix</span>
+          <span class="flex items-center gap-1"><span class="size-1.5 rounded-full bg-accent-3"></span>refactor</span>
+        </span>
+      </div>
+      <svg viewBox="0 0 300 110" class="mt-1 w-full" fill="none">
+        {[26, 54, 82].map((y) => <line x1="20" x2="300" y1={y} y2={y} stroke="var(--color-line)" stroke-dasharray="2 4" />)}
+        <path class="anim-draw" style="--delay:700ms" pathLength="1" d="M20 54 C 70 54, 80 47, 124 47 S 180 40, 202 40 S 260 31, 300 27" stroke="var(--color-indigo)" stroke-opacity="0.8" />
+        <path class="anim-draw" style="--delay:900ms" pathLength="1" d="M20 80 C 70 80, 80 74, 124 72 S 180 70, 202 67 S 260 60, 300 60" stroke="var(--color-accent-3)" stroke-opacity="0.4" />
+        {
+          commitDots.map((dot) => (
+            <circle
+              class="anim-pop"
+              style={`--delay:${Math.round(600 + dot.x * 5)}ms`}
+              cx={dot.x.toFixed(1)}
+              cy={dot.y.toFixed(1)}
+              r={dot.r.toFixed(1)}
+              fill={dot.level > 0.7 ? 'var(--color-accent)' : dot.level > 0.35 ? 'var(--color-accent-2)' : 'var(--color-accent-3)'}
+              fill-opacity={(0.45 + dot.level * 0.55).toFixed(2)}
+            />
+          ))
+        }
+        {weeks.map((week, index) => <text x={46 + index * 78} y="107" text-anchor="middle" fill="var(--color-muted)" font-size="8">{week}</text>)}
+      </svg>
+    </div>
+  </div>
+
+  <!-- Front panel: Insights -->
+  <div class="card anim-rise relative flex overflow-hidden text-left shadow-[0_30px_80px_-20px_rgb(0_0_0/0.9)] sm:mr-10" style="--delay:250ms" aria-hidden="true">
+    <!-- Sidebar -->
+    <div class="hidden w-[30%] shrink-0 flex-col border-r border-line/70 bg-ink/40 p-2.5 text-[0.6rem] sm:flex">
+      <div class="flex items-center gap-1.5 font-semibold">
+        <span class="icon-tile inline-flex size-5 items-center justify-center rounded font-mono text-[0.5rem]">{'{F}'}</span>
+        Features
+      </div>
+      <div class="mt-2.5 flex items-center gap-1 rounded-md border border-line px-1.5 py-1 text-muted">
+        <Search size={9} />
+        <span class="truncate">Search…</span>
+        <span class="ml-auto rounded border border-line px-0.5 text-[0.5rem]">⌘K</span>
+      </div>
+      <p class="mt-3 px-1 text-[0.55rem] font-medium text-muted">All features</p>
+      {
+        sidebar.map(({ folder, items }) => (
+          <div class="mt-1.5">
+            <div class="flex items-center gap-1 px-1 text-muted">
+              <Folder size={9} />
+              {folder}
+              <ChevronDown size={9} class="ml-auto" />
+            </div>
+            <ul class="mt-0.5 ml-2 border-l border-line/70 pl-1.5">
+              {items.map((item) => (
+                <li class:list={['flex items-center rounded px-1 py-[3px]', item === 'auth' && 'anim-select']}>
+                  <span class="truncate">{item}</span>
+                  <span class="ml-auto size-1.5 shrink-0 rounded-full" style={`background:${ownerColor(ownerOf(item))}`} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+      <div class="mt-auto space-y-0.5 pt-3">
+        <p class="flex items-center gap-1 rounded bg-surface-2 px-1 py-1 text-text"><BarChart3 size={9} />Insights</p>
+        <p class="flex items-center gap-1 px-1 py-0.5 text-muted"><NotebookText size={9} />Project records</p>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="min-w-0 flex-1 p-3 sm:p-3.5">
+      <div class="flex items-center gap-2 text-[0.65rem]">
+        <PanelLeft size={11} class="text-muted" />
+        <span class="inline-flex items-center gap-1 font-semibold"><BarChart3 size={11} />Insights</span>
+        <span class="ml-auto text-[0.55rem] text-muted">Data built Nov 14</span>
+      </div>
+
+      <div class="mt-2.5 grid grid-cols-3 gap-1.5">
+        {
+          stats.map((stat, index) => (
+            <div class="rounded-lg border border-line bg-gradient-to-b from-surface-2 to-surface px-2 py-1.5">
+              <p class="truncate text-[0.55rem] text-muted">{stat.label}</p>
+              <p class="anim-count text-sm font-bold" style={`--to:${stat.value};--delay:${500 + index * 120}ms`} />
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="mt-2.5 flex w-fit gap-0.5 rounded-md bg-surface-2/70 p-0.5 text-[0.55rem] text-muted">
+        <span class="rounded border border-line bg-ink px-1.5 py-0.5 text-text">Features</span>
+        <span class="px-1.5 py-0.5">Ownership</span>
+        <span class="px-1.5 py-0.5">Dependencies</span>
+      </div>
+
+      <div class="mt-2 flex items-center gap-1.5">
+        <div class="relative flex flex-1 items-center gap-1.5 rounded-md border border-line bg-ink/50 px-2 py-1 text-[0.6rem]">
+          <Search size={10} class="shrink-0 text-muted" />
+          <span class="relative flex min-w-0 flex-1 items-center">
+            <span class="anim-placeholder absolute inset-y-0 left-0 flex items-center truncate text-muted">Filter features… (e.g. owner:john AND lines:&gt;1000)</span>
+            <span class="anim-type overflow-hidden font-mono whitespace-nowrap text-text" style={`--chars:${query.length}`}>
+              <span class="text-indigo">owner:</span>{query.slice('owner:'.length)}
+            </span>
+            <span class="anim-caret ml-px h-2.5 w-px bg-text" />
+          </span>
+        </div>
+        <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-md border border-line text-muted"><Info size={10} /></span>
+      </div>
+
+      <div class="mt-2 overflow-hidden rounded-lg border border-line bg-ink/60 text-[0.6rem]">
+        <div class="grid grid-cols-[0.8fr_2.4fr_0.6fr_0.45fr_1.2fr] gap-1.5 border-b border-line px-2 py-1.5 text-[0.55rem] whitespace-nowrap text-muted">
+          <span>Feature</span>
+          <span>Owner</span>
+          <span class="text-right">Lines</span>
+          <span class="text-right">TODO</span>
+          <span class="pl-1.5">Changes</span>
+        </div>
+        {
+          rows.map((row, index) => (
+            <div
+              class:list={['anim-row grid grid-cols-[0.8fr_2.4fr_0.6fr_0.45fr_1.2fr] items-center gap-1.5 border-b border-line/50 px-2 py-1.5 last:border-b-0', row.match ? 'anim-hit' : 'anim-miss']}
+              style={`--delay:${700 + index * 90}ms`}
+            >
+              <span class="truncate font-semibold">
+                {row.parent && <span class="font-normal text-muted">↳ </span>}
+                {row.name}
+              </span>
+              <span class="flex min-w-0 items-center gap-1 text-muted">
+                <span class="size-1.5 shrink-0 rounded-full" style={`background:${row.color}`} />
+                <span class="truncate">{row.owner}</span>
+                {row.inherited && <span class="rounded bg-orange/15 px-1 text-[0.5rem] leading-3.5 text-orange">inherited</span>}
+              </span>
+              <span class="text-right font-mono">{row.lines}</span>
+              <span class:list={['text-right font-mono', row.todos === 0 && 'text-muted/60']}>{row.todos}</span>
+              <span class="flex items-center gap-1.5 pl-1.5">
+                <span class="anim-grow flex h-1 flex-1 gap-px overflow-hidden rounded-full" style={`--delay:${1000 + index * 90}ms`}>
+                  <span class="rounded-full bg-accent" style={`width:${row.mix[0]}%`} />
+                  <span class="rounded-full bg-accent-2/70" style={`width:${row.mix[1]}%`} />
+                  <span class="rounded-full bg-accent-3/50" style={`width:${row.mix[2]}%`} />
+                </span>
+                <span class="w-5 text-right font-mono text-muted">{row.changes}</span>
+              </span>
+            </div>
+          ))
+        }
+      </div>
+      <p class="mt-2 text-[0.55rem] text-muted">Showing 5 of 18 features</p>
+    </div>
+  </div>
+
+  <!-- Floating toast: a spec linked to the feature -->
+  <div class="card anim-rise absolute -bottom-6 right-0 hidden items-center gap-2 px-3 py-2 text-[0.6rem] shadow-xl shadow-black/60 md:flex" style="--delay:1500ms" aria-hidden="true">
+    <span class="icon-tile inline-flex size-5 items-center justify-center rounded text-violet"><Sparkles size={10} /></span>
+    <span>
+      <span class="font-semibold">002-use-jwt</span>
+      <span class="text-muted"> accepted · linked to </span>
+      <span class="font-mono text-accent">auth</span>
+    </span>
+    <span class="rounded-full border border-green/40 bg-green/10 px-1.5 text-[0.5rem] leading-4 text-green">3/4 tasks</span>
+  </div>
+</div>

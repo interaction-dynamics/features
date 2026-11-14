@@ -8,9 +8,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
   SKIP_PUBLISH: "false"
+# Least privilege by default: jobs that publish ask for more below
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 jobs:
   check:
     name: Check version
@@ -20,7 +20,7 @@ jobs:
       version: ${{ env.version }}
       should_release: ${{ env.should_release }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Get version from Cargo.toml
         id: version
@@ -37,13 +37,14 @@ jobs:
       run:
         working-directory: ./projects/cli
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
-      - uses: actions/cache@v5
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -70,45 +71,38 @@ jobs:
         working-directory: ./projects/web
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      # Setup Node.js and pnpm for web build
+      # Setup Node.js and Bun for web build
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5.0.0
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          version: 10
-          run_install: false
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v5
+          bun-version-file: projects/web/package.json
+      - name: Setup Bun cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-bun-
 
       - name: Install web dependencies 🔧
-        run: pnpm install
+        run: bun install --frozen-lockfile
 
       - name: Build web application 🏗️
         run: |
-          pnpm build
+          bun run build
           rm -rf dist/features.json
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: public
           path: projects/web/dist/
@@ -161,20 +155,22 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
       - name: Install cross-compilation tool
         if: matrix.target != 'x86_64-unknown-linux-gnu' && runner.os == 'Linux'
         run: |
-          cargo install cross --git https://github.com/cross-rs/cross
+          # Pinned to a reviewed commit of cross-rs/cross main (2026-10-31)
+          cargo install cross --git https://github.com/cross-rs/cross --rev a9301e91f72bba3850460512685f6b16062015ff --locked
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: public
           merge-multiple: true
@@ -185,7 +181,7 @@ jobs:
           mv ./public/ projects/cli/public
 
       - name: Setup cache
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -215,7 +211,7 @@ jobs:
           cp projects/cli/target/${{ matrix.target }}/release/features${{ matrix.ext }} ./dist/features-${{ matrix.code-target }}${{ matrix.ext }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cli-${{ matrix.target }}
           path: ./dist/features-*
@@ -231,12 +227,14 @@ jobs:
     environment: crates-publish
     permissions:
       contents: read
+      # Trusted publishing: exchange a GitHub OIDC token for a short-lived crates.io token
+      id-token: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: public
           merge-multiple: true
@@ -247,10 +245,12 @@ jobs:
           mv ./public/ projects/cli/public
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
 
       - name: Setup cache
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -278,15 +278,21 @@ jobs:
       - name: Dry run publish
         working-directory: projects/cli
         if: env.SKIP_PUBLISH == 'false'
-        run: cargo publish --dry-run --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
+        run: cargo publish --dry-run --allow-dirty
         env:
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
+
+      - name: Authenticate with crates.io
+        id: crates-io-auth
+        if: env.SKIP_PUBLISH == 'false'
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
 
       - name: Publish to crates.io
         working-directory: projects/cli
         if: env.SKIP_PUBLISH == 'false'
-        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} --allow-dirty
+        run: cargo publish --allow-dirty
         env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
           FEATURES_VERSION: ${{ needs.check.outputs.version }}
 
       - name: Skip publish notification
@@ -302,13 +308,14 @@ jobs:
       - check
     environment: npm-publish
     permissions:
-      contents: write
+      contents: read
+      # npm trusted publishing and provenance
       id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download all rust artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: cli-*
           merge-multiple: true
@@ -321,7 +328,7 @@ jobs:
           pnpm --version
 
       - name: Install Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
@@ -436,7 +443,7 @@ jobs:
           {
             "name": "features-cli",
             "version": "$VERSION",
-            "description": "A CLI tool for discovering the features in a folder",
+            "description": "Map every feature in your codebase: ownership, test coverage, tech debt and git history, as a CLI and web dashboard. Works with any language.",
             "license": "MIT",
             "bin": {
               "features": "bin/features"
@@ -446,11 +453,20 @@ jobs:
               "url": "https://github.com/interaction-dynamics/features"
             },
             "homepage": "https://github.com/interaction-dynamics/features",
+            "bugs": {
+              "url": "https://github.com/interaction-dynamics/features/issues"
+            },
             "keywords": [
               "features",
-              "cli",
-              "documentation",
-              "analysis"
+              "feature-based-architecture",
+              "codeowners",
+              "code-ownership",
+              "technical-debt",
+              "test-coverage",
+              "architecture",
+              "monorepo",
+              "dashboard",
+              "cli"
             ],
             "files": [
               "bin/features",
@@ -555,26 +571,8 @@ jobs:
 
           chmod +x packages/features-cli/bin/features
 
-          # Create README
-          cat > "packages/features-cli/README.md" << 'EOF'
-          # Features CLI
-
-          A CLI tool for discovering the features in a folder.
-
-          ## Installation
-
-          ```bash
-          pnpm install -g features-cli
-          ```
-
-          ## Usage
-
-          ```bash
-          features [directory] [options]
-          ```
-
-          For more information, see the [GitHub repository](https://github.com/interaction-dynamics/features).
-          EOF
+          # Use the repository README so the npm page matches GitHub
+          cp README.md packages/features-cli/README.md
 
       - name: Publish platform packages
         run: |
@@ -589,25 +587,57 @@ jobs:
   github-release:
     name: Github Release
     runs-on: ubuntu-latest
+    permissions:
+      # Create the release and tag
+      contents: write
     needs:
       - publish-crate
       - publish-npm
       - check
     steps:
+      - name: Download all rust artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: cli-*
+          merge-multiple: true
+          path: ./dist
+
+      - name: Generate checksums
+        working-directory: dist
+        run: |
+          shopt -s nullglob
+          assets=(features-*)
+          if [ ${#assets[@]} -eq 0 ]; then
+            echo "::error::No release binaries found in dist/"
+            exit 1
+          fi
+          sha256sum "${assets[@]}" > checksums.txt
+          for asset in "${assets[@]}"; do
+            sha256sum "$asset" > "$asset.sha256"
+          done
+          cat checksums.txt
+
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           name: CLI v${{ needs.check.outputs.version }}
           draft: false
           tag_name: v${{ needs.check.outputs.version }}
+          fail_on_unmatched_files: true
           files: |
             dist/features-*
+            dist/checksums.txt
           body: |
             ## Installation
 
             ### Via Cargo (Rust)
             ```bash
             cargo install features-cli
+            ```
+
+            ### Via Homebrew (macOS, Linux)
+            ```bash
+            brew install interaction-dynamics/tap/features
             ```
 
             ### Via npm
@@ -618,7 +648,70 @@ jobs:
             ```
 
             ### Download Binary
-            Download the appropriate binary for your platform from the attachments below.
+            Download the appropriate binary for your platform from the attachments below,
+            and verify it against `checksums.txt` (`sha256sum -c checksums.txt --ignore-missing`).
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  homebrew-tap:
+    name: Update Homebrew tap
+    runs-on: ubuntu-latest
+    needs:
+      - github-release
+      - check
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - name: Check for tap token
+        id: token
+        run: |
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "::notice::HOMEBREW_TAP_TOKEN is not set, skipping the Homebrew tap update"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download release checksums
+        if: steps.token.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "v$VERSION" --pattern checksums.txt --dir "$RUNNER_TEMP"
+
+      - name: Render formula
+        if: steps.token.outputs.present == 'true'
+        run: projects/cli/packaging/homebrew/render.sh "$VERSION" "$RUNNER_TEMP/checksums.txt" "$RUNNER_TEMP/features.rb"
+
+      - name: Checkout tap repository
+        if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: interaction-dynamics/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Commit and push formula
+        if: steps.token.outputs.present == 'true'
+        working-directory: homebrew-tap
+        run: |
+          mkdir -p Formula
+          cp "$RUNNER_TEMP/features.rb" Formula/features.rb
+          if git diff --quiet --exit-code -- Formula/features.rb && git ls-files --error-unmatch Formula/features.rb >/dev/null 2>&1; then
+            echo "Formula already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/features.rb
+          git commit -m "features $VERSION"
+          git push

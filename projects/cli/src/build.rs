@@ -8,8 +8,6 @@ use include_dir::{Dir, include_dir};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 
-use crate::models::Feature;
-
 // Embed the public directory at compile time
 static STATIC_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/public");
 
@@ -52,7 +50,8 @@ impl BuildConfig {
 ///
 /// # Arguments
 ///
-/// * `features` - Slice of Feature objects to include in the build
+/// * `features` - Data written to `features.json`: a slice of features, or an
+///   aggregated report (see [`crate::aggregate::AggregatedReport`])
 /// * `config` - Build configuration
 /// * `skip_changes` - Whether changes were skipped during feature computation
 ///
@@ -65,7 +64,7 @@ impl BuildConfig {
 /// The build directory will contain:
 /// * All static files from the embedded public directory
 /// * `features.json` - Generated features data
-/// * `metadata.json` - Generated metadata with version and skipChanges flag
+/// * `metadata.json` - Generated metadata with version, skipChanges flag and data build date
 ///
 /// # Example
 ///
@@ -75,13 +74,13 @@ impl BuildConfig {
 ///
 /// #[tokio::main]
 /// async fn main() -> anyhow::Result<()> {
-///     let features = vec![]; // Your features data
+///     let features: Vec<Feature> = vec![]; // Your features data
 ///     let config = BuildConfig::new("dist");
 ///     create_build(&features, config, false).await
 /// }
 /// ```
-pub async fn create_build(
-    features: &[Feature],
+pub async fn create_build<T: serde::Serialize + ?Sized>(
+    features: &T,
     config: BuildConfig,
     skip_changes: bool,
 ) -> Result<()> {
@@ -161,7 +160,10 @@ fn extract_dir_recursive<'a>(
 }
 
 /// Generates the features.json file
-async fn generate_features_json(features: &[Feature], output_dir: &Path) -> Result<()> {
+async fn generate_features_json<T: serde::Serialize + ?Sized>(
+    features: &T,
+    output_dir: &Path,
+) -> Result<()> {
     println!("Generating features.json...");
 
     let features_json = serde_json::to_string_pretty(features)
@@ -175,13 +177,36 @@ async fn generate_features_json(features: &[Feature], output_dir: &Path) -> Resu
     Ok(())
 }
 
+/// Writes `records.json` (`{ "records": [...] }`) with the project-level
+/// specs and decision records, next to `features.json`
+pub async fn write_records_json(
+    records: &[crate::models::Record],
+    output_dir: &Path,
+) -> Result<()> {
+    let records_json = serde_json::to_string_pretty(&serde_json::json!({ "records": records }))
+        .map_err(|e| anyhow::anyhow!("Failed to serialize records to JSON: {}", e))?;
+
+    let records_path = output_dir.join("records.json");
+    fs::write(&records_path, records_json).await?;
+
+    println!("  Created: {}", records_path.display());
+
+    Ok(())
+}
+
+/// Returns the current time in the format used for `builtAt` in metadata.json
+pub fn current_build_timestamp() -> String {
+    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+}
+
 /// Generates the metadata.json file
 async fn generate_metadata_json(output_dir: &Path, skip_changes: bool) -> Result<()> {
     println!("Generating metadata.json...");
 
     let metadata = serde_json::json!({
         "version": env!("CARGO_PKG_VERSION"),
-        "skipChanges": skip_changes
+        "skipChanges": skip_changes,
+        "builtAt": current_build_timestamp()
     });
 
     let metadata_json = serde_json::to_string_pretty(&metadata)
@@ -193,4 +218,26 @@ async fn generate_metadata_json(output_dir: &Path, skip_changes: bool) -> Result
     println!("  Created: {}", metadata_path.display());
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn metadata_json_contains_data_build_date() {
+        let output_dir = tempfile::tempdir().unwrap();
+
+        generate_metadata_json(output_dir.path(), false)
+            .await
+            .unwrap();
+
+        let content = fs::read_to_string(output_dir.path().join("metadata.json"))
+            .await
+            .unwrap();
+        let metadata: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let built_at = metadata["builtAt"].as_str().unwrap();
+
+        assert!(chrono::DateTime::parse_from_rfc3339(built_at).is_ok());
+    }
 }

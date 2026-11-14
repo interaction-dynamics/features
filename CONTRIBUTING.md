@@ -7,8 +7,8 @@ Thank you for your interest in contributing to the Features CLI project! This do
 ### Prerequisites
 
 - [Rust](https://rustup.rs/) (latest stable version)
-- [Node.js](https://nodejs.org/) (version 14 or higher)
-- [pnpm](https://pnpm.io/) for package management
+- [Node.js](https://nodejs.org/) (version 22 or higher)
+- [Bun](https://bun.sh/) for package management of the web dashboard and website
 - Git
 
 ### Local Development
@@ -62,28 +62,59 @@ When a new version tag (e.g., `v0.5.0`) is pushed, the GitHub Actions workflow a
 2. **Builds binaries** - creates binaries for all supported platforms
 3. **Publishes to crates.io** - publishes the Rust crate
 4. **Publishes to npm** - creates and publishes npm packages for all platforms
-5. **Creates GitHub release** - with release notes and binary attachments
+5. **Creates GitHub release** - with release notes, binary attachments and a `checksums.txt` (SHA256 of every binary)
+6. **Updates the Homebrew tap** - renders `projects/cli/packaging/homebrew/features.rb.tmpl` with the new version and checksums, and pushes it to `Formula/features.rb` in [interaction-dynamics/homebrew-tap](https://github.com/interaction-dynamics/homebrew-tap). This step is skipped when `HOMEBREW_TAP_TOKEN` is not set.
 
-### Required Secrets
+### Publishing credentials (trusted publishing)
 
-For maintainers setting up the release workflow, the following GitHub secrets are required:
+The release workflow does not use long-lived registry tokens. Both registries
+use [trusted publishing](https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect):
+the job exchanges a short-lived GitHub OIDC token for a publish token that
+expires on its own.
 
-#### For crates.io Publishing
-- `CRATES_IO_TOKEN`: API token from [crates.io](https://crates.io/me)
-  - Go to crates.io → Account Settings → API Tokens
-  - Create a new token with publish permissions
-  - Add it as a repository secret
+Maintainers must configure, once:
 
-#### For npm Publishing  
-- `NPM_TOKEN`: API token from [npmjs.com](https://www.npmjs.com/)
-  - Go to npmjs.com → Access Tokens → Generate New Token
-  - Select "Publish" or "Automation" type
-  - Add it as a repository secret
+#### crates.io
+- On [crates.io](https://crates.io/crates/features-cli) → Settings → Trusted Publishing, add a GitHub publisher:
+  - Repository owner: `interaction-dynamics`
+  - Repository name: `features`
+  - Workflow filename: `release.yml`
+  - Environment: `crates-publish`
+- Then delete the old `CRATES_IO_TOKEN` repository secret and revoke the token on crates.io.
+
+#### npm
+- For `features-cli` and every `@features-cli/*` platform package, on npmjs.com → package Settings → Trusted Publisher, add GitHub Actions with
+  workflow `release.yml` and environment `npm-publish`.
+- An `NPM_TOKEN` secret is not needed.
 
 #### GitHub Environments
-The workflow uses these environments (configure in repository settings):
-- `crates-publish`: For crates.io publishing (requires `CRATES_IO_TOKEN`)
-- `npm-publish`: For npm publishing (requires `NPM_TOKEN`)
+The workflow uses these environments (configure in repository settings). Restrict
+both to the `master` branch so only the release workflow on `master` can publish:
+- `crates-publish`: crates.io publishing
+- `npm-publish`: npm publishing
+
+#### Pinned actions
+Third-party actions are pinned to full commit SHAs, with the version in a
+comment. Dependabot (`.github/dependabot.yml`) opens PRs to update them.
+
+### Homebrew tap
+
+The `homebrew-tap` job is the one step that needs a long-lived token, because it
+pushes to another repository. Keep that token scoped to the tap repository only.
+
+- The `interaction-dynamics/homebrew-tap` repository must exist (public, default branch `main` or `master`).
+- `HOMEBREW_TAP_TOKEN`: a fine-grained personal access token
+  - Resource owner: `interaction-dynamics`; repository access: only `interaction-dynamics/homebrew-tap`
+  - Repository permissions: **Contents: Read and write** (nothing else)
+  - Add it as a repository secret of this repository
+- Without this secret, the release still succeeds and the tap update is skipped with a notice.
+
+To render the formula locally (e.g. to fix a release by hand):
+
+```bash
+gh release download vX.Y.Z -p checksums.txt -D /tmp/features
+projects/cli/packaging/homebrew/render.sh X.Y.Z /tmp/features/checksums.txt features.rb
+```
 
 ### Version Management
 
@@ -147,7 +178,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 To update the screenshot in the README, follow these steps:
 
-1. Run the project locally using `features /path/to/project --project-dir ./repository --serve`
+1. Run the project locally using `features serve /path/to/project --project-dir ./repository`
 2. Take a screenshot of the UI
 3. Use https://postspark.app/ to add a frame
 4. Upload the framed screenshot to your GitHub account

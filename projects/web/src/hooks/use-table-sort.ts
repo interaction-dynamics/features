@@ -32,16 +32,21 @@ function getNestedValue(obj: unknown, path: string): unknown {
 }
 
 /**
- * Compare two values for sorting
+ * Compare two values for sorting. Missing values (null/undefined) always go
+ * last, whatever the direction, so sparse columns (e.g. external data) keep
+ * the features that have a value at the top.
  */
-function compareValues(
+export function compareValues(
   a: unknown,
   b: unknown,
   direction: SortDirection,
 ): number {
   // Handle null/undefined
-  if (a === null || a === undefined) return direction === 'asc' ? 1 : -1
-  if (b === null || b === undefined) return direction === 'asc' ? -1 : 1
+  const aMissing = a === null || a === undefined
+  const bMissing = b === null || b === undefined
+  if (aMissing && bMissing) return 0
+  if (aMissing) return 1
+  if (bMissing) return -1
 
   // Handle dates
   if (a instanceof Date && b instanceof Date) {
