@@ -23,7 +23,9 @@ mod skip_dirs;
 use build::{BuildConfig, create_build};
 use checker::run_checks;
 use codeowners::generate_codeowners;
-use http_server::{ServerConfig, parse_allowed_origin, serve_features_with_watching};
+use http_server::{
+    RescanOptions, ServerConfig, parse_allowed_origin, serve_features_with_watching,
+};
 use models::Feature;
 use printer::print_features;
 use scan::{ScanConfig, scan_features};
@@ -124,6 +126,10 @@ struct Cli {
     /// Also scan folders skipped by default (node_modules) for features, stats and imports
     #[arg(long)]
     include_skipped_dirs: bool,
+
+    /// Remove commit author emails from the output (JSON, web dashboard and static build)
+    #[arg(long)]
+    strip_emails: bool,
 }
 
 /// Resolve `--ignore-path` values to canonical absolute paths.
@@ -412,7 +418,8 @@ async fn main() -> Result<()> {
         .with_coverage(should_add_coverage)
         .ignore_paths(ignore_paths.clone())
         .ownership_only(ownership_only)
-        .include_skipped_dirs(args.include_skipped_dirs);
+        .include_skipped_dirs(args.include_skipped_dirs)
+        .strip_emails(args.strip_emails);
 
     if let Some(ref coverage_dir) = args.coverage_dir {
         config = config.coverage_dir(coverage_dir);
@@ -440,6 +447,11 @@ async fn main() -> Result<()> {
     // Handle main actions - these can be combined with generate-codeowners
     if args.serve {
         let server_config = ServerConfig::new(args.port).with_allowed_origins(args.allow_origin);
+        let rescan = RescanOptions {
+            ignore_paths: ignore_paths.clone(),
+            include_skipped_dirs: args.include_skipped_dirs,
+            strip_emails: args.strip_emails,
+        };
         if let Some(pb) = spinner {
             pb.set_message("Server is starting...");
             let pb_clone = pb.clone();
@@ -451,8 +463,7 @@ async fn main() -> Result<()> {
                     pb_clone.finish_and_clear();
                 })),
                 args.skip_changes,
-                ignore_paths.clone(),
-                args.include_skipped_dirs,
+                rescan,
             )
             .await?;
         } else {
@@ -462,8 +473,7 @@ async fn main() -> Result<()> {
                 path.clone(),
                 None,
                 args.skip_changes,
-                ignore_paths.clone(),
-                args.include_skipped_dirs,
+                rescan,
             )
             .await?;
         }
