@@ -1,0 +1,61 @@
+---
+import { figures, type FigureName } from '../lib/figures'
+import { render } from '../lib/iso'
+
+interface Props {
+  name: FigureName
+  class?: string
+}
+
+const { name, class: className = '' } = Astro.props
+const { items, viewBox } = render(figures[name](), 1.5)
+---
+
+<svg viewBox={viewBox} class:list={['iso-figure', className]} fill="none" aria-hidden="true">
+  {
+    items.map((item) => {
+      const classes = [`fill-${item.fill ?? 'none'}`, `stroke-${item.stroke ?? 'base'}`, item.dashed && 'dashed']
+      if (item.kind === 'ellipse') {
+        return <ellipse cx={item.cx.toFixed(2)} cy={item.cy.toFixed(2)} rx={item.rx.toFixed(2)} ry={item.ry.toFixed(2)} class:list={classes} />
+      }
+      if (item.kind === 'polyline') return <polyline points={item.d} class:list={classes} />
+      return <polygon points={item.d} class:list={classes} />
+    })
+  }
+</svg>
+
+<style>
+  .iso-figure {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .iso-figure * {
+    stroke-width: 1;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+  .fill-none {
+    fill: none;
+  }
+  .fill-side {
+    fill: var(--color-ink);
+  }
+  .fill-top {
+    fill: color-mix(in oklab, var(--color-text) 3%, var(--color-ink));
+  }
+  .stroke-base {
+    stroke: color-mix(in oklab, var(--color-text) 42%, transparent);
+  }
+  .stroke-strong {
+    stroke: color-mix(in oklab, var(--color-text) 80%, transparent);
+  }
+  .stroke-faint {
+    stroke: color-mix(in oklab, var(--color-text) 22%, transparent);
+  }
+  .dashed {
+    stroke-dasharray: 1.5 3;
+  }
+</style>

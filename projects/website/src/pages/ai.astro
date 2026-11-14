@@ -1,6 +1,15 @@
 ---
 import { Code } from 'astro:components'
-import { BookOpenCheck, Compass, GitCompare, ShieldCheck } from '@lucide/astro'
+import {
+  BookOpenCheck,
+  Brain,
+  Compass,
+  GitCompare,
+  Layers,
+  ScanEye,
+  ShieldCheck,
+  Sparkles,
+} from '@lucide/astro'
 import CallToAction from '../components/CallToAction.astro'
 import PageHero from '../components/PageHero.astro'
 import Section from '../components/Section.astro'
@@ -10,6 +19,29 @@ import Base from '../layouts/Base.astro'
 
 const description =
   'Use features-cli with Claude Code, Cursor, Copilot and other AI coding agents: give them a map of the codebase by feature, its owners and decisions, and let Claude reorganize a codebase into feature folders.'
+
+const aiEraReasons = [
+  {
+    icon: Sparkles,
+    title: "Lines of code don't mean much",
+    text: 'An agent writes a thousand lines as easily as ten. What matters is what the code does for your users: the features.',
+  },
+  {
+    icon: Layers,
+    title: 'Features pile up fast',
+    text: 'When people and agents ship every day, nobody holds the whole product in their head. Features get duplicated, forgotten or left half-finished.',
+  },
+  {
+    icon: ScanEye,
+    title: 'Reviews get shallower',
+    text: 'The more code is generated, the less of it is read closely. A higher-level view shows where each change lands and whose feature it touches.',
+  },
+  {
+    icon: Brain,
+    title: 'The reasoning gets lost',
+    text: "An agent's reasoning vanishes with its session. Specs and decision records kept next to each feature keep it for the next person, or the next agent.",
+  },
+]
 
 const benefits = [
   {
@@ -117,6 +149,27 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
     title="Give your coding agent a map of the codebase"
     lead="Agents work best when they know where things live. Without a map, they search the repository file by file, spend context on unrelated code and miss the decisions behind it. features-cli gives them that map in one command."
   />
+
+  <Section
+    id="why-now"
+    eyebrow="Why now"
+    title="Features ship in minutes. Keep track of all of them."
+    lead="With Claude Code, Cursor or Copilot, a new feature takes minutes, not weeks. Writing code is no longer the bottleneck. Tracking, documenting and maintaining what you built is."
+  >
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        aiEraReasons.map(({ icon: Icon, title, text }) => (
+          <li class="card p-5">
+            <span class="icon-tile inline-flex size-10 items-center justify-center rounded-lg text-accent-2">
+              <Icon size={20} aria-hidden="true" />
+            </span>
+            <h3 class="mt-4 font-semibold">{title}</h3>
+            <p class="mt-1.5 text-sm text-muted">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
 
   <Section
     id="why"

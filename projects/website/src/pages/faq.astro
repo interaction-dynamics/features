@@ -17,6 +17,13 @@ const faqs = [
       'It organizes code and folders around <strong>features</strong>, the business capabilities of a product, rather than technical layers like components, services or utils. Each feature lives in its own self-contained folder with everything it needs. It is similar to domain-driven design but more recursive and more structured, and it complements other architectures such as hexagonal architecture. <a href="/feature-based-architecture">Read the full explanation</a>.',
   },
   {
+    id: 'which-languages-are-supported',
+    question: 'Which programming languages are supported?',
+    text: 'All of them. Features only reads folders, READMEs, git history and comments, so it works with any language or framework. Feature annotations are recognized in the comments of Rust, TypeScript, JavaScript, Python, Go, Java, Kotlin, Swift, C#, C/C++, Scala, Ruby, Perl, Lua, SQL, Bash, CSS/SCSS, YAML, TOML and HTML/XML.',
+    answer:
+      'All of them. Features only reads folders, READMEs, git history and comments, so it works with any language or framework. <a href="/guidelines#annotations">Feature annotations</a> are recognized in the comments of Rust, TypeScript, JavaScript, Python, Go, Java, Kotlin, Swift, C#, C/C++, Scala, Ruby, Perl, Lua, SQL, Bash, CSS/SCSS, YAML, TOML and HTML/XML.',
+  },
+  {
     id: 'how-can-i-add-a-feature',
     question: 'How can I add a feature?',
     text: 'Create a folder named features anywhere in your source code, it can be in a subdirectory. Inside it, create a folder named after the business feature, in snake_case, camelCase or kebab-case. The feature is detected automatically and displayed in the web interface.',
