@@ -8,8 +8,6 @@ use include_dir::{Dir, include_dir};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 
-use crate::models::Feature;
-
 // Embed the public directory at compile time
 static STATIC_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/public");
 
@@ -52,7 +50,8 @@ impl BuildConfig {
 ///
 /// # Arguments
 ///
-/// * `features` - Slice of Feature objects to include in the build
+/// * `features` - Data written to `features.json`: a slice of features, or an
+///   aggregated report (see [`crate::aggregate::AggregatedReport`])
 /// * `config` - Build configuration
 /// * `skip_changes` - Whether changes were skipped during feature computation
 ///
@@ -75,13 +74,13 @@ impl BuildConfig {
 ///
 /// #[tokio::main]
 /// async fn main() -> anyhow::Result<()> {
-///     let features = vec![]; // Your features data
+///     let features: Vec<Feature> = vec![]; // Your features data
 ///     let config = BuildConfig::new("dist");
 ///     create_build(&features, config, false).await
 /// }
 /// ```
-pub async fn create_build(
-    features: &[Feature],
+pub async fn create_build<T: serde::Serialize + ?Sized>(
+    features: &T,
     config: BuildConfig,
     skip_changes: bool,
 ) -> Result<()> {
@@ -161,7 +160,10 @@ fn extract_dir_recursive<'a>(
 }
 
 /// Generates the features.json file
-async fn generate_features_json(features: &[Feature], output_dir: &Path) -> Result<()> {
+async fn generate_features_json<T: serde::Serialize + ?Sized>(
+    features: &T,
+    output_dir: &Path,
+) -> Result<()> {
     println!("Generating features.json...");
 
     let features_json = serde_json::to_string_pretty(features)

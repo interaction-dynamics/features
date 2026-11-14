@@ -4,7 +4,18 @@ import {
   FeaturesContext,
   type FeaturesContextValue,
 } from '@/lib/features-context'
-import type { Feature } from '@/models/feature'
+import type {
+  AggregatedReport,
+  Feature,
+  ReconciliationError,
+} from '@/models/feature'
+
+type FeaturesData = {
+  features: Feature[]
+  isAggregated: boolean
+  repositories: string[]
+  reconciliationErrors: ReconciliationError[]
+}
 
 const addParentReferences = (
   features: Feature[],
@@ -36,30 +47,57 @@ const buildFeaturesMap = (features: Feature[]): Record<string, Feature> => {
   return map
 }
 
-const fetcher = async (url: string): Promise<Feature[]> => {
+/**
+ * features.json is either a list of features (single repository) or an
+ * aggregated report `{ repositories, features, errors }` (`--aggregate`).
+ */
+export const parseFeaturesData = (
+  data: Feature[] | AggregatedReport,
+): FeaturesData => {
+  if (Array.isArray(data)) {
+    return {
+      features: addParentReferences(data),
+      isAggregated: false,
+      repositories: [],
+      reconciliationErrors: [],
+    }
+  }
+
+  return {
+    features: addParentReferences(data.features ?? []),
+    isAggregated: true,
+    repositories: data.repositories ?? [],
+    reconciliationErrors: data.errors ?? [],
+  }
+}
+
+const fetcher = async (url: string): Promise<FeaturesData> => {
   const response = await fetch(url)
   const data = await response.json()
-  return addParentReferences(data)
+  return parseFeaturesData(data)
 }
 
 export function FeaturesProvider({ children }: { children: React.ReactNode }) {
-  const {
-    data: features,
-    isLoading,
-    isValidating,
-  } = useSWR<Feature[]>('./features.json', fetcher, {
-    suspense: true,
-    refreshInterval: import.meta.env.WATCH === 'on' ? 1000 : undefined,
-  })
+  const { data, isLoading, isValidating } = useSWR<FeaturesData>(
+    './features.json',
+    fetcher,
+    {
+      suspense: true,
+      refreshInterval: import.meta.env.WATCH === 'on' ? 1000 : undefined,
+    },
+  )
 
   const contextValue: FeaturesContextValue = useMemo(
     () => ({
-      features: features ?? [],
-      featuresMap: buildFeaturesMap(features ?? []),
+      features: data?.features ?? [],
+      featuresMap: buildFeaturesMap(data?.features ?? []),
       isLoading: isLoading ?? false,
       isValidating: isValidating ?? false,
+      isAggregated: data?.isAggregated ?? false,
+      repositories: data?.repositories ?? [],
+      reconciliationErrors: data?.reconciliationErrors ?? [],
     }),
-    [features, isLoading, isValidating],
+    [data, isLoading, isValidating],
   )
 
   return (

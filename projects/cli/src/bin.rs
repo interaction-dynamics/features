@@ -4,9 +4,12 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+use features_cli::aggregate;
 use features_cli::build::{BuildConfig, create_build};
 use features_cli::checker::run_checks;
-use features_cli::cli::{Action, Cli, CodeownersOptions, DiffArgs, Invocation, ScanArgs};
+use features_cli::cli::{
+    Action, AggregateArgs, Cli, CodeownersOptions, DiffArgs, Invocation, ScanArgs,
+};
 use features_cli::codeowners::generate_codeowners;
 use features_cli::diff;
 use features_cli::http_server::{ServerConfig, serve_features_with_watching};
@@ -222,6 +225,8 @@ async fn run(invocation: Invocation) -> Result<()> {
 
         Action::Diff(args) => run_diff(&args, &scan, &current_dir)?,
 
+        Action::Aggregate(args) => run_aggregate(args).await?,
+
         Action::Owners { path, json } => {
             let config = scan_config(&scan, &current_dir).ownership_only(true);
             let features = scan_path(&path, &config)?;
@@ -258,6 +263,31 @@ fn write_codeowners(
         options.codeowners_path.as_deref(),
         &options.codeowners_prefix,
     )
+}
+
+/// Aggregate the features reports of several repositories
+async fn run_aggregate(args: AggregateArgs) -> Result<()> {
+    let report = aggregate::aggregate_folder(&args.folder)?;
+
+    eprintln!(
+        "Aggregated {} repositories: {}",
+        report.repositories.len(),
+        report.repositories.join(", ")
+    );
+    if !report.errors.is_empty() {
+        eprintln!("{} reconciliation issue(s):", report.errors.len());
+        for error in &report.errors {
+            eprintln!("  - {}", error.message);
+        }
+    }
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        create_build(&report, BuildConfig::new(args.build_dir), false).await?;
+    }
+
+    Ok(())
 }
 
 /// Diff mode: print the features touched since `args.since`.

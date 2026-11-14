@@ -56,6 +56,7 @@ Most codebases are organized by technical layer (`components/`, `services/`, `ut
 - **CODEOWNERS files drift** out of sync with the code.
 - **Tech debt and missing tests stay invisible** until something breaks.
 - **New joiners struggle** to find where a feature lives and why it was built that way.
+- **Features span several repositories.** The web app, the API and the mobile app each hold a piece of the same feature, and nobody sees the whole of it.
 
 `features-cli` scans your repository, finds every feature and turns it into an interactive dashboard and a JSON report, using the folders, READMEs and git history you already have.
 
@@ -65,6 +66,7 @@ Most codebases are organized by technical layer (`components/`, `services/`, `ut
 - See which team owns each feature, and find the owner of any file or folder
 - Generate and keep a `CODEOWNERS` file in sync automatically
 - See which features and owners a pull request touches, and [ping the right teams automatically](#ping-the-right-teams-on-every-pull-request)
+- See every feature across all your repositories in [one dashboard](#one-dashboard-for-all-your-repositories)
 
 **For tech leads**
 - Spot risky areas with [technical debt per feature](https://github.com/interaction-dynamics/features/blob/master/FAQ.md#what-is-the-technical-debt-of-a-feature)
@@ -91,6 +93,20 @@ features build ./src --build-dir ./dashboard
 Add `--strip-emails` to remove commit author emails before publishing it.
 
 To publish it to GitHub Pages on every push, see the [GitHub Actions setup](#publish-the-dashboard-to-github-pages).
+
+## One dashboard for all your repositories
+
+Does a feature live partly in your web app, partly in your API and partly in your mobile app? Export one report per repository and combine them:
+
+```bash
+features scan ./web/src --json > reports/web.json
+features scan ./api/src --json > reports/api.json
+features aggregate ./reports --build-dir ./dashboard
+```
+
+Features with the same name become one feature that combines the metrics and history of every repository and lists the repositories it lives in. If two repositories disagree on how features are nested, `features-cli` keeps them apart and shows the conflict on a *Reconciliation issues* page instead of guessing.
+
+See how features are merged in the [CLI reference](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md#aggregate-several-repositories).
 
 ## Use it in CI and scripts
 
@@ -292,6 +308,7 @@ Pull requests from forks get a read-only token, so commenting from those needs a
 | Setup | One command, no config | Hand-written file | Hosted platform + YAML per service |
 | Ownership | ✅ (and generates CODEOWNERS) | ✅ | ✅ |
 | Tests, debt and git metrics per feature | ✅ | ❌ | Via plugins |
+| One view across repositories | ✅ | ❌ | ✅ |
 | Works offline / in CI | ✅ | ✅ | ❌ |
 
 ## Learn more about feature-based architecture

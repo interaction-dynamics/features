@@ -16,18 +16,19 @@ Each action is a command. `PATH` is the folder to scan for features and defaults
 | `features owners [PATH]` | Display only the unique list of owners |
 | `features check [PATH]` | Run validation checks on features (e.g., duplicate names) |
 | `features diff [PATH] --since <ref>` | List the features touched since `<ref>`, with their owners. See [Ping the right teams on every pull request](../README.md#ping-the-right-teams-on-every-pull-request) |
+| `features aggregate <FOLDER>` | Aggregate the features JSON reports of several repositories into one dashboard. See [Aggregate several repositories](#aggregate-several-repositories) |
 
 Run `features <command> --help` for the options of a command. The options are:
 
 | Option | Commands | Description |
 | ------ | -------- | ----------- |
-| `--json` | `scan`, `find-owner`, `owners`, `diff` | Output as JSON |
+| `--json` | `scan`, `find-owner`, `owners`, `diff`, `aggregate` | Output as JSON |
 | `--flat` | `scan` | Output features as a flat array instead of nested structure |
 | `--description` | `scan` | Include feature descriptions in the output |
 | `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
 | `--port <port>` | `serve` | Change the port (default: 3000) |
 | `--allow-origin <origin>` | `serve` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]` |
-| `--build-dir <path>` | `build` | Output directory for the static build (default: `build`) |
+| `--build-dir <path>` | `build`, `aggregate` | Output directory for the static build (default: `build`) |
 | `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required) |
 | `--committed-only` | `diff` | Ignore uncommitted and untracked files |
 | `--markdown` | `diff` | Output a markdown table for pull request comments |
@@ -87,3 +88,26 @@ features build ./src --build-dir ./dashboard --strip-emails
 ```
 
 The `dashboard` folder can be deployed to any static host. See the [GitHub Pages example](../README.md#publish-the-dashboard-to-github-pages).
+
+### Aggregate several repositories
+
+Export one JSON report per repository, put them in the same folder, then combine them into a single dashboard:
+
+```bash
+features scan ./repo-a/src --json > reports/repo-a.json
+features scan ./repo-b/src --json > reports/repo-b.json
+
+features aggregate ./reports                  # static build in ./build (index.html + features.json)
+features aggregate ./reports --json           # print the aggregated JSON
+```
+
+A report is either `<repository>.json` or `<repository>/features.json` (e.g. the output of `features build`). The repository is named after the file or the folder.
+
+Reconciliation rules:
+
+- Features with the same name are the same feature and are merged. Each aggregated feature lists, in `repositories`, every repository where it was found and its path there.
+- A merged feature takes the parent it has in the repositories where it is nested, and gets the children it has in every repository.
+- Features found in a single repository keep their place: unmatched root features stay at the root.
+- Features are **not** merged when merging them would create a loop (e.g. `B > C` in one repository and `C > B` in another) or when they have different parents in different repositories. They are kept once per repository, and the issue is listed in the `errors` section of `features.json` and on the *Reconciliation issues* page of the dashboard.
+
+The aggregated `features.json` is an object: `{ "repositories": [...], "features": [...], "errors": [...] }`, where `features` has the same structure as the output of `features scan --json`.
