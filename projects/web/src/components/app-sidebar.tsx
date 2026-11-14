@@ -1,4 +1,4 @@
-import { BarChart3, ScrollText, TriangleAlert } from 'lucide-react'
+import { BarChart3, History, ScrollText, TriangleAlert } from 'lucide-react'
 import type * as React from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { Link, NavLink } from 'react-router'
@@ -181,6 +181,18 @@ export function AppSidebar({
                       isActive={isActive}
                     >
                       <BarChart3 className="h-4 w-4" /> Insights
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/history">
+                  {({ isActive }) => (
+                    <SidebarMenuButton
+                      className="cursor-pointer"
+                      isActive={isActive}
+                    >
+                      <History className="h-4 w-4" /> History
                     </SidebarMenuButton>
                   )}
                 </NavLink>
