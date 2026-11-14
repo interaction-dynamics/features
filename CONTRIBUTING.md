@@ -158,7 +158,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 To update the screenshot in the README, follow these steps:
 
-1. Run the project locally using `features /path/to/project --project-dir ./repository --serve`
+1. Run the project locally using `features serve /path/to/project --project-dir ./repository`
 2. Take a screenshot of the UI
 3. Use https://postspark.app/ to add a frame
 4. Upload the framed screenshot to your GitHub account

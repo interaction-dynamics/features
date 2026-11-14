@@ -89,13 +89,13 @@ Generate or update a CODEOWNERS file based on feature ownership:
 
 ```bash
 # Generate CODEOWNERS in current directory
-features ./src --generate-codeowners
+features codeowners ./src
 
 # Generate CODEOWNERS in project directory with proper relative paths
-features ./src --generate-codeowners --project-dir ./
+features codeowners ./src --project-dir ./
 
-# Can be combined with other commands
-features ./src --generate-codeowners --build --project-dir ./
+# Can be combined with serve, build and check
+features build ./src --generate-codeowners --project-dir ./
 ```
 
 The generated CODEOWNERS file will have a managed section between markers:
@@ -124,7 +124,7 @@ npm install -g @features-cli/feature-cli-linux-x64-musl
 npm install -g @features-cli/feature-cli-linux-arm64-musl
 
 # Note: npx features-cli automatically detects and uses musl on musl-based systems
-npx features-cli@latest /path/to/project --serve
+npx features-cli@latest serve /path/to/project
 
 # Or download the musl binary directly from GitHub releases
 # Look for files: features-linux-x64-musl or features-linux-arm64-musl
@@ -141,7 +141,7 @@ cargo install features-cli
 ### Option 3: Use npx (which should automatically select the right binary)
 
 ```bash
-npx features-cli@latest /path/to/project --serve
+npx features-cli@latest serve /path/to/project
 ```
 
 ### Option 4: Update your system
