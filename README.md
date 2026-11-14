@@ -258,7 +258,7 @@ check:
     missing-owner: error
 ```
 
-Not to be confused with the per-feature `FEATURES.toml` files, which describe a single feature.
+Not to be confused with the per-feature `FEATURES.toml` files, which describe a single feature. See the [configuration guide](./docs/configuration.md) for every setting, the errors and a full example.
 
 ## Checks
 
@@ -282,7 +282,7 @@ features check ./src --list-rules      # rules and their effective severity
 
 Each rule has a severity: `error` findings fail the check, `warn` findings are only reported, and `off` rules don't run. Only `duplicate-names` is an error by default, so upgrading doesn't break existing CI pipelines.
 
-Configure the rules in the `check` section of the [configuration file](#configuration-file):
+Configure the rules in the `check` section of the [configuration file](#configuration-file) (all options are described in the [configuration guide](./docs/configuration.md#check-section)):
 
 ```yaml
 check:

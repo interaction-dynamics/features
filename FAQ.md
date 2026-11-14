@@ -113,7 +113,7 @@ Any content outside these markers is preserved when regenerating.
 
 Run `features check`. It exits with a non-zero code when a rule with the `error` severity finds something. Rules cover duplicate names, missing owners, large features without a README, low test coverage, stale feature flags and imports between sibling features. See the [Checks](./README.md#checks) section of the README for the full list.
 
-Choose which rules fail the build in the `check` section of a `.features.yml` file at the root of your project (or pass another file with `--config <path>`):
+Choose which rules fail the build in the `check` section of a `.features.yml` file at the root of your project (or pass another file with `--config <path>`). The [configuration guide](./docs/configuration.md) describes every rule and option:
 
 ```yaml
 check:
