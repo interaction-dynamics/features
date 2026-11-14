@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { lazy, useContext } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { FeatureRepositories } from '@/features/reconciliation/feature-repositories'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
@@ -35,7 +36,7 @@ interface FeatureDetailsProps {
 }
 
 export function FeatureDetails({ feature }: FeatureDetailsProps) {
-  const { features } = useContext(FeaturesContext)
+  const { features, isAggregated } = useContext(FeaturesContext)
 
   // Extract metadata keys that have array values (e.g., 'flag', 'experiment', 'toggle')
   // Common feature metadata types
@@ -74,15 +75,19 @@ export function FeatureDetails({ feature }: FeatureDetailsProps) {
         </h1>
       </div>
       <div className="flex flex-col gap-3">
-        <div className="flex items-start gap-3">
-          <FolderTree className="h-4 w-4 text-muted-foreground mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground mb-1">Path</p>
-            <p className="text-xs font-mono text-muted-foreground">
-              {feature.path}
-            </p>
+        {isAggregated ? (
+          <FeatureRepositories feature={feature} />
+        ) : (
+          <div className="flex items-start gap-3">
+            <FolderTree className="h-4 w-4 text-muted-foreground mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground mb-1">Path</p>
+              <p className="text-xs font-mono text-muted-foreground">
+                {feature.path}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
         <div className="flex items-start gap-3">
           <User className="h-4 w-4 text-muted-foreground mt-0.5" />
           <div className="flex-1">

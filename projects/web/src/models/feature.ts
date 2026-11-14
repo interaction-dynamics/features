@@ -53,6 +53,13 @@ export type Dependency = {
   type: 'parent' | 'child' | 'sibling'
 }
 
+export type FeatureRepository = {
+  /** Name of the repository where the feature was found */
+  name: string
+  /** Path of the feature inside that repository */
+  path: string
+}
+
 export type Feature = {
   name: string
   path: string
@@ -66,6 +73,33 @@ export type Feature = {
   decisions: string[]
   stats?: Stats
   dependencies: Dependency[]
+  /** Only set on aggregated reports (`features --aggregate`) */
+  repositories?: FeatureRepository[]
+}
+
+export type ReconciliationOccurrence = {
+  feature: string
+  repository: string
+  /** Path of the feature inside its repository */
+  path: string
+  /** Name of the parent feature in that repository */
+  parent?: string
+  /** Path of the unmerged feature in the aggregated report */
+  featurePath: string
+}
+
+export type ReconciliationError = {
+  type: 'cycle' | 'conflicting_parents'
+  message: string
+  features: string[]
+  occurrences: ReconciliationOccurrence[]
+}
+
+/** features.json produced by `features --aggregate` */
+export type AggregatedReport = {
+  repositories: string[]
+  features: Feature[]
+  errors: ReconciliationError[]
 }
 
 export const ChangeSchema: z.ZodType<Change> = z.object({
@@ -135,5 +169,8 @@ export const FeatureSchema: z.ZodType<Feature> = z.lazy(() =>
     decisions: z.array(z.string()),
     stats: StatsSchema.optional(),
     dependencies: z.array(DependencySchema),
+    repositories: z
+      .array(z.object({ name: z.string(), path: z.string() }))
+      .optional(),
   }),
 )

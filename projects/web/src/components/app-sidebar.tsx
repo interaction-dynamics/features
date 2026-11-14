@@ -1,4 +1,4 @@
-import { BarChart3 } from 'lucide-react'
+import { BarChart3, TriangleAlert } from 'lucide-react'
 import type * as React from 'react'
 import { useContext, useMemo, useState } from 'react'
 import { Link, NavLink } from 'react-router'
@@ -52,7 +52,8 @@ export function AppSidebar({
   onFeatureClick,
   ...props
 }: AppSidebarProps) {
-  const { features } = useContext(FeaturesContext)
+  const { features, isAggregated, repositories, reconciliationErrors } =
+    useContext(FeaturesContext)
   const [searchQuery, setSearchQuery] = useState('')
 
   // Filter features based on search query using smart query parser
@@ -90,6 +91,11 @@ export function AppSidebar({
                 />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-medium">Features</span>
+                  {isAggregated && (
+                    <span className="text-xs text-muted-foreground">
+                      {repositories.length} repositories
+                    </span>
+                  )}
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -178,6 +184,30 @@ export function AppSidebar({
                   )}
                 </NavLink>
               </SidebarMenuItem>
+              {isAggregated && (
+                <SidebarMenuItem>
+                  <NavLink to="/reconciliation">
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        className="cursor-pointer"
+                        isActive={isActive}
+                      >
+                        <TriangleAlert
+                          className={
+                            reconciliationErrors.length > 0
+                              ? 'h-4 w-4 text-amber-600 dark:text-amber-400'
+                              : 'h-4 w-4'
+                          }
+                        />
+                        Reconciliation issues
+                        <span className="ml-auto rounded bg-sidebar-accent px-1.5 text-xs tabular-nums">
+                          {reconciliationErrors.length}
+                        </span>
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           )}
         </SidebarGroup>

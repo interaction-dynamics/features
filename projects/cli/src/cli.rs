@@ -116,6 +116,13 @@ pub enum Command {
         scan: ScanArgs,
     },
 
+    /// Aggregate the features JSON reports of several repositories into one
+    /// web dashboard (static build), merging features with the same name
+    Aggregate {
+        #[command(flatten)]
+        aggregate: AggregateArgs,
+    },
+
     /// Run checks on the features (e.g. duplicate names)
     Check {
         /// The folder to scan for features
@@ -205,6 +212,22 @@ pub struct BuildArgs {
     /// Output directory for the static build
     #[arg(long, default_value = DEFAULT_BUILD_DIR)]
     pub build_dir: PathBuf,
+}
+
+#[derive(Args, Debug, Clone, PartialEq)]
+pub struct AggregateArgs {
+    /// Folder with one features JSON report per repository:
+    /// `<repository>.json` (from `features scan --json`) or
+    /// `<repository>/features.json` (from `features build`)
+    pub folder: PathBuf,
+
+    /// Output directory for the static build
+    #[arg(long, default_value = DEFAULT_BUILD_DIR)]
+    pub build_dir: PathBuf,
+
+    /// Print the aggregated JSON instead of creating a static build
+    #[arg(long)]
+    pub json: bool,
 }
 
 #[derive(Args, Debug, Clone, PartialEq)]
@@ -402,6 +425,8 @@ pub enum Action {
     Diff(DiffArgs),
     /// Run checks on the features
     Check { path: PathBuf },
+    /// Aggregate the features reports of several repositories
+    Aggregate(AggregateArgs),
 }
 
 /// A parsed command line
@@ -461,6 +486,9 @@ impl Command {
             } => (Action::FindOwner { target, path, json }, scan, None),
             Command::Owners { path, json, scan } => (Action::Owners { path, json }, scan, None),
             Command::Diff { diff, scan } => (Action::Diff(diff), scan, None),
+            Command::Aggregate { aggregate } => {
+                (Action::Aggregate(aggregate), ScanArgs::default(), None)
+            }
             Command::Check {
                 path,
                 codeowners,
@@ -856,6 +884,29 @@ mod tests {
         for flag in ["--committed-only", "--markdown", "--owners-only"] {
             assert!(parse(&["./src", flag]).is_err(), "{flag}");
         }
+    }
+
+    #[test]
+    fn test_aggregate() {
+        assert_eq!(
+            action(&["aggregate", "./reports"]),
+            Action::Aggregate(AggregateArgs {
+                folder: path("./reports"),
+                build_dir: path(DEFAULT_BUILD_DIR),
+                json: false,
+            })
+        );
+        assert_eq!(
+            action(&["aggregate", "./reports", "--build-dir", "out", "--json"]),
+            Action::Aggregate(AggregateArgs {
+                folder: path("./reports"),
+                build_dir: path("out"),
+                json: true,
+            })
+        );
+
+        // The folder of reports is required
+        assert!(parse(&["aggregate"]).is_err());
     }
 
     #[test]

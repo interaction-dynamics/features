@@ -1,3 +1,4 @@
+pub mod aggregate;
 pub mod build;
 pub mod checker;
 pub mod cli;
