@@ -1,51 +1,48 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FF3DF2"/>
-      <stop offset="55%" stop-color="#2EF2FF"/>
-      <stop offset="100%" stop-color="#E8FF3A"/>
+    <linearGradient id="brand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F9F9F9"/>
+      <stop offset="100%" stop-color="#B3B3B3"/>
     </linearGradient>
-    <radialGradient id="glow1" cx="0.9" cy="0" r="0.7">
-      <stop offset="0%" stop-color="#FF3DF2" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="#FF3DF2" stop-opacity="0"/>
+    <radialGradient id="glow1" cx="0.5" cy="0" r="0.7">
+      <stop offset="0%" stop-color="#F7F8F8" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#F7F8F8" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="glow2" cx="0" cy="0.2" r="0.6">
-      <stop offset="0%" stop-color="#2EF2FF" stop-opacity="0.2"/>
-      <stop offset="100%" stop-color="#2EF2FF" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="logo" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF3DF2"/>
-      <stop offset="0.6" stop-color="#2EF2FF"/>
-      <stop offset="1" stop-color="#E8FF3A"/>
+    <linearGradient id="logo" x1="32" y1="14" x2="32" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F9F9F9"/>
+      <stop offset="1" stop-color="#B3B3B3"/>
+    </linearGradient>
+    <linearGradient id="logo-f" x1="32" y1="-10.86" x2="32" y2="74.86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F9F9F9"/>
+      <stop offset="1" stop-color="#B3B3B3"/>
     </linearGradient>
   </defs>
-  <rect width="1200" height="630" fill="#0B0F17"/>
+  <rect width="1200" height="630" fill="#08090A"/>
   <rect width="1200" height="630" fill="url(#glow1)"/>
-  <rect width="1200" height="630" fill="url(#glow2)"/>
 
   <!-- logo -->
   <g transform="translate(80 80) scale(1.5)">
-    <rect width="64" height="64" rx="16" fill="#0B0F17"/>
+    <rect width="64" height="64" rx="16" fill="#1A1A1D"/>
     <rect x="0.5" y="0.5" width="63" height="63" rx="15.5" stroke="#FFFFFF" stroke-opacity="0.12"/>
     <g stroke="url(#logo)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
       <path d="M20 16c-4 0-5 2-5 5v6c0 3-2 5-4 5 2 0 4 2 4 5v6c0 3 1 5 5 5"/>
       <path d="M44 16c4 0 5 2 5 5v6c0 3 2 5 4 5-2 0-4 2-4 5v6c0 3-1 5-5 5"/>
     </g>
-    <path fill="#E7ECF3" transform="translate(32 32) scale(0.42) translate(-32 -32)" d="M21 14h22a5 5 0 0 1 0 10H26v4h12a5 5 0 0 1 0 10H26v7a5 5 0 0 1-10 0V19a5 5 0 0 1 5-5Z"/>
+    <path fill="url(#logo-f)" transform="translate(32 32) scale(0.42) translate(-32 -32)" d="M21 14h22a5 5 0 0 1 0 10H26v4h12a5 5 0 0 1 0 10H26v7a5 5 0 0 1-10 0V19a5 5 0 0 1 5-5Z"/>
   </g>
-  <text x="200" y="142" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="#E7ECF3">Features</text>
+  <text x="200" y="142" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="#F7F8F8">Features</text>
 
-  <text x="80" y="290" font-family="Helvetica, Arial, sans-serif" font-size="68" font-weight="700" fill="#E7ECF3">Every feature of your codebase,</text>
+  <text x="80" y="290" font-family="Helvetica, Arial, sans-serif" font-size="68" font-weight="700" fill="#F7F8F8">Every feature of your codebase,</text>
   <text x="80" y="372" font-family="Helvetica, Arial, sans-serif" font-size="68" font-weight="700" fill="url(#brand)">mapped.</text>
-  <text x="80" y="440" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="#9AA6B8">Owners, history, coverage and technical debt, for any language.</text>
+  <text x="80" y="440" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="#8A8F98">Owners, history, coverage and technical debt, for any language.</text>
 
-  <rect x="80" y="500" width="560" height="64" rx="12" fill="#121826" stroke="#263044" stroke-width="2"/>
-  <text x="106" y="541" font-family="Menlo, Courier New, monospace" font-size="24" fill="#9AA6B8">$ <tspan fill="#E7ECF3">npx features-cli serve ./src</tspan></text>
+  <rect x="80" y="500" width="560" height="64" rx="12" fill="#0F1011" stroke="#23252A" stroke-width="2"/>
+  <text x="106" y="541" font-family="Menlo, Courier New, monospace" font-size="24" fill="#8A8F98">$ <tspan fill="#F7F8F8">npx features-cli serve ./src</tspan></text>
 
   <!-- feature columns -->
   <g transform="translate(860 470)">
-    <rect x="0" y="0" width="60" height="94" rx="8" fill="#2EF2FF" fill-opacity="0.75"/>
-    <rect x="80" y="-40" width="60" height="134" rx="8" fill="#FF3DF2" fill-opacity="0.75"/>
-    <rect x="160" y="-90" width="60" height="184" rx="8" fill="#E8FF3A" fill-opacity="0.75"/>
+    <rect x="0" y="0" width="60" height="94" rx="8" fill="#80858E"/>
+    <rect x="80" y="-40" width="60" height="134" rx="8" fill="#B4B8C0"/>
+    <rect x="160" y="-90" width="60" height="184" rx="8" fill="url(#brand)"/>
   </g>
 </svg>
