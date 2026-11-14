@@ -1,42 +1,44 @@
 /*
- * Isometric figures of the home page. Each one compares an idea of Features
- * to the real world: features as buildings on a city map, teams as plots of
- * land wired to each other, specs as the blueprint kept next to a building.
- * Each figure builds itself when it scrolls into view (plates rise, blocks
- * drop, lines draw), then loops a small story.
+ * Isometric figures of the home page, in the spirit of Linear's: a few
+ * solid objects with rounded corners, thin lines and almost no text, all
+ * telling the codebase as electronics, each feature a chip. Each figure
+ * builds itself when it scrolls into view, then loops a small story.
  *
- * Times are in milliseconds; the animation classes live in IsoFigure.astro.
+ * x runs to the front right, y to the front left, z up. Times are in
+ * milliseconds; the animation classes live in IsoFigure.astro.
  */
 import {
   box,
   circle,
-  disc,
   dot,
   group,
   line,
   rect,
-  type Fill,
+  slab,
   type Node,
   type Point3,
   type Shape,
   type Stroke,
 } from './iso'
 
-type LineOptions = Parameters<typeof line>[1]
+type Owner = 'a' | 'b' | 'c'
 
-/** Any polygon in space, filled like a face. */
-const face = (
-  points: Point3[],
-  fill: Fill = 'side',
-  stroke: Stroke = 'base',
-  dashed = false,
-): Shape => ({ kind: 'polygon', fill, stroke, dashed, points })
+/** What tells owners apart, printed on a chip: a dot, a ring or a square. */
+const mark = ([x, y, z]: Point3, owner: Owner, size = 0.35): Shape => {
+  if (owner === 'a')
+    return circle([x, y, z], size, { fill: 'solid', stroke: 'strong' })
+  if (owner === 'b')
+    return circle([x, y, z], size, { fill: 'none', stroke: 'strong' })
+  return rect([x - size, y - size, z], [size * 2, size * 2], {
+    stroke: 'strong',
+  })
+}
 
 /** A short horizontal stroke standing for a line of text, on the plane z. */
 const textLine = (
   [x, y, z]: Point3,
   length: number,
-  options: LineOptions = {},
+  options: Parameters<typeof line>[1] = {},
 ): Shape =>
   line(
     [
@@ -46,540 +48,351 @@ const textLine = (
     { stroke: 'faint', ...options },
   )
 
-/** A rectangle standing on the front face (y = constant) of a building. */
-const opening = (
-  x: number,
-  y: number,
-  z: number,
-  [w, h]: [number, number],
-  stroke: Stroke = 'faint',
-): Shape =>
-  face(
-    [
-      [x, y, z],
-      [x + w, y, z],
-      [x + w, y, z + h],
-      [x, y, z + h],
-    ],
-    'none',
-    stroke,
-  )
-
-/** A rectangle standing on the right face (x = constant) of a building. */
-const sideOpening = (
-  x: number,
-  y: number,
-  z: number,
-  [d, h]: [number, number],
-  stroke: Stroke = 'faint',
-): Shape =>
-  face(
-    [
-      [x, y, z],
-      [x, y + d, z],
-      [x, y + d, z + h],
-      [x, y, z + h],
-    ],
-    'none',
-    stroke,
-  )
-
-/** Rows of windows on both visible faces of a building. */
-const windows = (
-  [x, y, z]: Point3,
-  [w, d, h]: Point3,
-  floors: number,
-): Shape[] => {
-  const shapes: Shape[] = []
-  const story = h / floors
-  for (let floor = 0; floor < floors; floor++) {
-    const bottom = z + floor * story + story * 0.3
-    const size = story * 0.4
-    for (let u = 0.4; u + 0.5 <= w - 0.2; u += 0.8)
-      shapes.push(opening(x + u, y + d, bottom, [0.4, size]))
-    for (let v = 0.4; v + 0.5 <= d - 0.2; v += 0.8)
-      shapes.push(sideOpening(x + w, y + v, bottom, [0.4, size]))
-  }
-  return shapes
-}
-
-/** A house: walls, a gable roof with its ridge along x, and a door. */
-const house = (
-  [x, y, z]: Point3,
-  [w, d, h]: Point3,
-  { rise = 0.9, roof = 'base' as Stroke } = {},
-): Shape[] => {
-  const top = z + h
-  const ridge = top + rise
-  return [
-    ...box([x, y, z], [w, d, h]),
-    face(
-      [
-        [x, y, top],
-        [x + w, y, top],
-        [x + w, y + d / 2, ridge],
-        [x, y + d / 2, ridge],
-      ],
-      'top',
-      roof,
-    ),
-    face(
-      [
-        [x, y + d, top],
-        [x + w, y + d, top],
-        [x + w, y + d / 2, ridge],
-        [x, y + d / 2, ridge],
-      ],
-      'top',
-      roof,
-    ),
-    face([
-      [x + w, y, top],
-      [x + w, y + d, top],
-      [x + w, y + d / 2, ridge],
-    ]),
-    opening(x + w * 0.3, y + d, z, [w * 0.22, h * 0.55], 'base'),
-    sideOpening(x + w, y + d * 0.35, z + h * 0.35, [d * 0.3, h * 0.35]),
-  ]
-}
-
-/** The middle of the ridge of a house, where its cables are tied. */
-const ridgeOf = ([x, y, z]: Point3, [w, d, h]: Point3, rise = 0.9): Point3 => [
-  x + w / 2,
-  y + d / 2,
-  z + h + rise,
-]
-
-/** A flag on its pole, the flag waving to the right. */
-const flag = ([x, y, z]: Point3, height: number): Shape[] => [
-  line(
-    [
-      [x, y, z],
-      [x, y, z + height],
-    ],
-    { stroke: 'strong' },
-  ),
-  face(
-    [
-      [x, y, z + height],
-      [x + 1.5, y, z + height - 0.45],
-      [x, y, z + height - 0.9],
-    ],
-    'side',
-    'strong',
-  ),
-]
-
-/** A tree: a trunk and a round crown seen as a short cylinder. */
-const tree = ([x, y, z]: Point3, radius: number): Node[] => [
-  line(
-    [
-      [x, y, z],
-      [x, y, z + 0.5],
-    ],
-    { stroke: 'faint' },
-  ),
-  ...disc([x, y, z + 0.5], radius, radius * 0.9),
-]
-
-/**
- * A map pin standing up and facing the viewer, its tip at (x, y, z). Drawn in
- * the vertical plane that runs across the screen.
- */
-const pin = ([x, y, z]: Point3, radius: number): Shape[] => {
-  // Moving u along the screen is moving (u, -u) on the ground, scaled down
-  // so the pin stays round once projected.
-  const scale = 1 / (2 * Math.cos(Math.PI / 6))
-  const at = (u: number, v: number): Point3 => [
-    x + u * scale,
-    y - u * scale,
-    z + v,
-  ]
-  const head = radius * 2.1
-  const outline: Point3[] = []
-  const from = -Math.PI / 5
-  const to = Math.PI + Math.PI / 5
-  for (let index = 0; index <= 20; index++) {
-    const angle = from + ((to - from) * index) / 20
-    outline.push(at(radius * Math.cos(angle), head + radius * Math.sin(angle)))
-  }
-  outline.reverse()
-  const hole: Point3[] = Array.from({ length: 13 }, (_, index) => {
-    const angle = (Math.PI * 2 * index) / 12
-    return at(
-      radius * 0.4 * Math.cos(angle),
-      head + radius * 0.4 * Math.sin(angle),
-    )
+const ping = (center: Point3, size: number, delay: number) =>
+  circle(center, size, {
+    fill: 'none',
+    stroke: 'strong',
+    anim: 'anim-iso-ping',
+    delay,
   })
-  return [
-    face([...outline, at(0, 0)], 'side', 'strong'),
-    face(hole, 'none', 'strong'),
-  ]
-}
 
 /**
- * Every feature, mapped: a city map where each feature is a building, its
- * height standing for its size. A pin bobs over the feature being looked at.
+ * Every feature, mapped: the layers of a board stacked up, the chip on top
+ * printed with a grid of features. In a loop, features are picked one by
+ * one and stand out of the grid.
  */
 const map = (): Node[] => {
-  const z = 0.25
-  const nodes: Node[] = [
-    group(box([0, 0, 0], [12, 10, z], { stroke: 'base' }), {
-      anim: 'anim-iso-rise',
-    }),
-    // Folds of the paper map, and the roads between the blocks.
-    group(
-      [
-        ...[4, 8].map((x) =>
-          line(
-            [
-              [x, 0, z],
-              [x, 10, z],
-            ],
-            { stroke: 'faint', dashed: true },
-          ),
-        ),
-        ...[4.6, 5.4].map((y) =>
-          line(
-            [
-              [0, y, z],
-              [12, y, z],
-            ],
-            { stroke: 'faint' },
-          ),
-        ),
-        ...[7.6, 8.4].map((x) =>
-          line(
-            [
-              [x, 0, z],
-              [x, 10, z],
-            ],
-            { stroke: 'faint' },
-          ),
-        ),
-        // Dashes down the middle of the main road.
-        ...[0.6, 2.2, 3.8, 5.4, 9.2, 10.8].map((x) => textLine([x, 5, z], 0.8)),
-      ],
-      { anim: 'anim-iso-fade', delay: 250 },
-    ),
-  ]
-
-  // Buildings, back to front.
-  const buildings: { at: Point3; size: Point3; floors: number }[] = [
-    { at: [1, 0.9, z], size: [2.8, 2.8, 3.2], floors: 4 },
-    { at: [4.4, 0.9, z], size: [2.6, 1.4, 1.2], floors: 1 },
-    { at: [9, 0.9, z], size: [2.2, 3, 2], floors: 2 },
-    { at: [4.4, 2.7, z], size: [1.4, 1.3, 0.8], floors: 1 },
-    { at: [4.6, 6.2, z], size: [2.2, 2.8, 1.6], floors: 2 },
-  ]
-  buildings.forEach(({ at, size, floors }, index) => {
-    nodes.push(
-      group([...box(at, size), ...windows(at, size, floors)], {
-        anim: 'anim-iso-drop',
-        delay: 450 + index * 110,
-      }),
-    )
-  })
-
-  // A park in the front-left block.
-  ;[
-    [1.4, 6.6, 0.55],
-    [2.8, 6.4, 0.45],
-    [1.6, 8.2, 0.5],
-    [3.2, 7.8, 0.6],
-  ].forEach(([x, y, radius], index) => {
-    nodes.push(
-      group(tree([x, y, z], radius), {
-        anim: 'anim-iso-pop',
-        delay: 900 + index * 70,
-      }),
-    )
-  })
-
-  // The feature the pin points at, then the pin bobbing over it.
-  const target: Point3 = [9.2, 6.4, z]
-  const targetSize: Point3 = [2, 2.6, 1]
-  const roof: Point3 = [10.2, 7.7, z + targetSize[2]]
-  nodes.push(
-    group(
-      [
-        ...box(target, targetSize, { top: 'strong' }),
-        ...windows(target, targetSize, 1),
-      ],
-      { anim: 'anim-iso-drop', delay: 1000 },
-    ),
-    circle(roof, 0.5, {
-      fill: 'none',
-      stroke: 'strong',
-      anim: 'anim-iso-ping',
-      delay: 2400,
-    }),
-    group(
-      [
-        group(pin([roof[0], roof[1], roof[2] + 0.4], 0.9), {
-          anim: 'anim-iso-bob',
-        }),
-      ],
-      { anim: 'anim-iso-drop', delay: 1300 },
-    ),
-  )
-  return nodes
-}
-
-/**
- * Owned and connected: plots of land, one per team, each with the team's
- * flag and the houses it owns, wired to each other like a power grid. In a
- * loop, one house changes: the change runs down the wires to the houses
- * connected to it, and the flags of their owners light up.
- */
-const owners = (): Node[] => {
-  const plate = 0.35
-  const loop = 2600
-
-  const plots = [
-    { at: [0, 0], size: [6.4, 5.6], flag: [5.7, 0.7] },
-    { at: [8.6, 0.4], size: [4.6, 4.6], flag: [12.6, 1.0] },
-    { at: [2.2, 8.4], size: [5.4, 4.4], flag: [7.0, 9.0] },
-  ] as const
-  const houses: { at: Point3; size: Point3; roof?: Stroke }[] = [
-    { at: [0.8, 0.8, plate], size: [2.2, 2.2, 1.4] },
-    { at: [3.6, 2.8, plate], size: [2, 2, 1.1] },
-    { at: [9.4, 1.4, plate], size: [2.6, 2.6, 1.7], roof: 'strong' },
-    { at: [3.4, 9.2, plate], size: [2.4, 2.4, 1.2] },
-  ]
-  const ridges = houses.map(({ at, size }) => ridgeOf(at, size))
-  const [first, importer, changed, other] = ridges
-
-  const ping = (center: Point3, size: number, delay: number) =>
-    circle(center, size, {
-      fill: 'none',
-      stroke: 'strong',
-      anim: 'anim-iso-ping',
-      delay,
-    })
-  const flagTop = (index: number): Point3 => {
-    const [x, y] = plots[index].flag
-    return [x, y, plate + 2.6]
-  }
-
+  const size = 8
+  const radius = 0.6
+  const layers = 3
+  const gap = 1.0
+  const top = layers * gap
+  const height = 0.7
+  const surface = top + height
   const nodes: Node[] = []
 
-  // Plots, their fences, and their flags.
-  plots.forEach(({ at: [x, y], size: [w, d], flag: [fx, fy] }, index) => {
+  // Dotted guides through the corners of the stack, seen between the layers.
+  const corner = (angle: number, [cx, cy]: [number, number]): Point3 => [
+    cx + radius * Math.cos((angle * Math.PI) / 180),
+    cy + radius * Math.sin((angle * Math.PI) / 180),
+    0.15,
+  ]
+  nodes.push(
+    group(
+      [
+        corner(-45, [size - radius, radius]),
+        corner(45, [size - radius, size - radius]),
+        corner(135, [radius, size - radius]),
+      ].map(([x, y, z]) =>
+        line(
+          [
+            [x, y, z],
+            [x, y, top],
+          ],
+          { stroke: 'faint', dashed: true },
+        ),
+      ),
+      { anim: 'anim-iso-fade', delay: 700 },
+    ),
+  )
+
+  // The layers, bottom up, then the chip.
+  for (let index = 0; index < layers; index++)
+    nodes.push(
+      group(
+        slab([0, 0, index * gap], [size, size, 0.35], {
+          radius,
+          stroke: 'faint',
+        }),
+        {
+          anim: 'anim-iso-drop',
+          delay: 150 + index * 90,
+        },
+      ),
+    )
+  nodes.push(
+    group(slab([0, 0, top], [size, size, height], { radius, pins: true }), {
+      anim: 'anim-iso-drop',
+      delay: 150 + layers * 90,
+    }),
+  )
+
+  // The features, a grid on the chip; three of them get picked in turn.
+  const cell = 1.6
+  const pitch = 2
+  const start = (size - (pitch * 2 + cell)) / 2
+  const picks: Record<string, number> = {
+    '0,0': 2600,
+    '2,1': 5100,
+    '1,2': 7600,
+  }
+  const cells = [0, 1, 2].flatMap((row) =>
+    [0, 1, 2].map((col) => ({ row, col })),
+  )
+  cells.forEach(({ row, col }, index) => {
     nodes.push(
       group(
         [
-          ...box([x, y, 0], [w, d, plate]),
-          rect([x + 0.25, y + 0.25, plate], [w - 0.5, d - 0.5], {
-            stroke: 'faint',
-            dashed: true,
-          }),
+          rect(
+            [start + col * pitch, start + row * pitch, surface],
+            [cell, cell],
+            {
+              stroke: 'faint',
+            },
+          ),
         ],
-        { anim: 'anim-iso-rise', delay: index * 120 },
+        { anim: 'anim-iso-pop', delay: 800 + index * 50 },
       ),
-      group(flag([fx, fy, plate], 2.6), {
-        anim: 'anim-iso-drop',
-        delay: 1200 + index * 120,
-      }),
     )
   })
-
-  // Houses, back to front.
-  houses.forEach(({ at, size, roof }, index) => {
+  cells.forEach(({ row, col }) => {
+    const pick = picks[`${col},${row}`]
+    if (pick === undefined) return
     nodes.push(
-      group(house(at, size, { roof }), {
-        anim: 'anim-iso-drop',
-        delay: 450 + index * 110,
-      }),
+      group(
+        slab(
+          [start + col * pitch, start + row * pitch, surface],
+          [cell, cell, 0.5],
+          {
+            radius: 0.25,
+            stroke: 'strong',
+          },
+        ),
+        { anim: 'anim-iso-select', delay: pick },
+      ),
+    )
+  })
+  return nodes
+}
+
+/**
+ * Owned and connected: features as chips standing side by side, each marked
+ * with its owner. A pull request hovers over the one it changes; in a loop,
+ * the change goes out and the chips importing it light up.
+ */
+const owners = (): Node[] => {
+  const size = 3.2
+  const step = 3.9
+  const loop = 2400
+  const chips: { at: [number, number]; height: number; owner: Owner }[] = [
+    { at: [0, 0], height: 2.6, owner: 'a' },
+    { at: [step, 0], height: 1.3, owner: 'b' },
+    { at: [0, step], height: 1.6, owner: 'c' },
+    { at: [step, step], height: 2.0, owner: 'a' },
+  ]
+  const center = ({ at: [x, y], height }: (typeof chips)[number]): Point3 => [
+    x + size / 2,
+    y + size / 2,
+    height,
+  ]
+  const [importer, changed, , other] = chips
+
+  const nodes: Node[] = []
+  chips.forEach((chip, index) => {
+    const [x, y] = chip.at
+    nodes.push(
+      group(
+        [
+          ...slab([x, y, 0], [size, size, chip.height], { pins: true }),
+          mark(center(chip), chip.owner),
+        ],
+        { anim: 'anim-iso-rise', delay: 150 + index * 120 },
+      ),
+    )
+    if (chip !== changed) return
+
+    // The pull request, hovering over the chip it changes.
+    const lift = chip.height + 1.3
+    const inset = 0.35
+    const [cx, cy] = center(chip)
+    nodes.push(
+      group(
+        [
+          ...[
+            [x + size - inset, y + inset],
+            [x + size - inset, y + size - inset],
+            [x + inset, y + size - inset],
+          ].map(([px, py]) =>
+            line(
+              [
+                [px, py, chip.height],
+                [px, py, lift],
+              ],
+              { stroke: 'faint', dashed: true },
+            ),
+          ),
+          ...slab(
+            [x + inset, y + inset, lift],
+            [size - inset * 2, size - inset * 2, 0.2],
+            {
+              radius: 0.35,
+              stroke: 'strong',
+            },
+          ),
+          // Branch glyph.
+          line(
+            [
+              [cx - 0.6, cy + 0.3, lift + 0.2],
+              [cx + 0.6, cy + 0.3, lift + 0.2],
+            ],
+            { stroke: 'base' },
+          ),
+          line(
+            [
+              [cx - 0.2, cy + 0.3, lift + 0.2],
+              [cx + 0.2, cy - 0.4, lift + 0.2],
+              [cx + 0.6, cy - 0.4, lift + 0.2],
+            ],
+            { stroke: 'base' },
+          ),
+          dot([cx - 0.6, cy + 0.3, lift + 0.2], 0.13, { stroke: 'base' }),
+          dot([cx + 0.6, cy + 0.3, lift + 0.2], 0.13, { stroke: 'base' }),
+          dot([cx + 0.6, cy - 0.4, lift + 0.2], 0.13, { stroke: 'base' }),
+        ],
+        { anim: 'anim-iso-drop', delay: 900 },
+      ),
     )
   })
 
-  // Wires between the houses, over the roofs. The change runs out of the
-  // changed house to the ones wired to it.
+  // The loop: the change, then the chips importing it.
   nodes.push(
-    group([line([first, importer], { stroke: 'base' })], {
-      anim: 'anim-iso-fade',
-      delay: 1000,
-    }),
-    ...[importer, other].map((target, index) =>
-      group(
-        [line([changed, target], { dashed: true, anim: 'anim-iso-flow' })],
-        {
-          anim: 'anim-iso-fade',
-          delay: 1100 + index * 100,
-        },
-      ),
-    ),
-    ping(changed, 0.6, loop),
-    ...[importer, other].flatMap((target) => [
-      dot(changed, 0.32, {
-        travel: target,
-        anim: 'anim-iso-travel',
-        delay: loop + 250,
-      }),
-      ping(target, 0.6, loop + 1700),
-    ]),
-    ...[0, 2].map((index) => ping(flagTop(index), 0.5, loop + 1950)),
+    ping(center(changed), size / 2, loop),
+    ping(center(importer), size / 2, loop + 900),
+    ping(center(other), size / 2, loop + 900),
   )
   return nodes
 }
 
 /**
- * Intent kept in the repository: a building going up, with its blueprint
- * and the site's checklist kept right next to it. The top floor is still
- * planned; in a loop, the next task gets ticked off.
+ * Specs mapped to features: every feature is a chip in its folder,
+ * its own datasheets standing right behind it and wired to it: decision
+ * records, the spec in front, a superseded record dashed at the back. In a
+ * loop, the next task of the middle feature's spec gets done.
  */
 const specs = (): Node[] => {
-  const z = 0.3
-  const nodes: Node[] = [
-    group(box([0, 0, 0], [13, 10, z], { stroke: 'base' }), {
-      anim: 'anim-iso-rise',
-    }),
+  const width = 2.2
+  const thickness = 0.1
+  const spacing = 0.55
+  const pitch = 3.2
+  const chipAt = 2.0
+  type Sheet = { height: number; stroke: Stroke; dashed?: boolean }
+  const features: { owner: Owner; sheets: Sheet[]; focus?: boolean }[] = [
+    {
+      owner: 'b',
+      sheets: [
+        { height: 2.2, stroke: 'base' },
+        { height: 1.7, stroke: 'base' },
+      ],
+    },
+    {
+      owner: 'a',
+      focus: true,
+      sheets: [
+        { height: 2.8, stroke: 'faint', dashed: true },
+        { height: 2.3, stroke: 'base' },
+        { height: 1.8, stroke: 'strong' },
+      ],
+    },
+    {
+      owner: 'c',
+      sheets: [
+        { height: 2.0, stroke: 'base' },
+        { height: 1.6, stroke: 'base' },
+      ],
+    },
   ]
+  const nodes: Node[] = []
 
-  // The building: two floors built, the third one planned.
-  const at: Point3 = [7.6, 0.9, z]
-  const story = 1.5
-  const footprint: [number, number] = [4.2, 4]
-  ;[0, 1].forEach((floor) => {
-    const base: Point3 = [at[0], at[1], z + floor * story]
-    const size: Point3 = [...footprint, story]
+  features.forEach(({ owner, sheets, focus }, column) => {
+    const x = column * pitch
+    const delay = 150 + column * 250
+    const back = chipAt - 0.45 - (sheets.length - 1) * spacing - thickness
+    const front = back + (sheets.length - 1) * spacing + thickness
+
+    // The folder of the feature, around its chip and its datasheets.
     nodes.push(
-      group([...box(base, size), ...windows(base, size, 1)], {
-        anim: 'anim-iso-drop',
-        delay: 400 + floor * 150,
-      }),
-    )
-  })
-  nodes.push(
-    group(
-      box([at[0], at[1], z + 2 * story], [...footprint, story], {
-        stroke: 'faint',
-        dashed: true,
-      }),
-      { anim: 'anim-iso-fade', delay: 800 },
-    ),
-  )
-
-  // The blueprint, lying on the ground: the floor plan of the building.
-  const bp: Point3 = [0.8, 4.4, z]
-  const bpz = z + 0.1
-  const [bx, by] = bp
-  nodes.push(
-    group(
-      [
-        ...box(bp, [5.8, 4.8, 0.1], { top: 'strong' }),
-        // Outer walls, inner walls and a door.
-        rect([bx + 0.7, by + 0.7, bpz], [3.4, 3.2], { stroke: 'strong' }),
-        line(
-          [
-            [bx + 2.3, by + 0.7, bpz],
-            [bx + 2.3, by + 2.4, bpz],
-          ],
-          { stroke: 'base' },
-        ),
-        line(
-          [
-            [bx + 0.7, by + 2.4, bpz],
-            [bx + 1.6, by + 2.4, bpz],
-          ],
-          { stroke: 'base' },
-        ),
-        line(
-          [
-            [bx + 2.3, by + 2.4, bpz],
-            [bx + 4.1, by + 2.4, bpz],
-          ],
-          { stroke: 'base' },
-        ),
-        // Dimension line along the front wall.
-        line(
-          [
-            [bx + 0.7, by + 4.3, bpz],
-            [bx + 4.1, by + 4.3, bpz],
-          ],
-          { stroke: 'faint' },
-        ),
-        ...[0.7, 4.1].map((dx) =>
+      group(
+        [
+          rect(
+            [x - 0.35, back - 0.35, 0],
+            [width + 0.7, chipAt + width + 0.35 - back + 0.35],
+            {
+              stroke: 'faint',
+              dashed: true,
+            },
+          ),
+        ],
+        { anim: 'anim-iso-fade', delay },
+      ),
+      // The trace from the chip to its datasheets.
+      group(
+        [
           line(
             [
-              [bx + dx, by + 4.1, bpz],
-              [bx + dx, by + 4.5, bpz],
+              [x + width / 2, chipAt, 0],
+              [x + width / 2, front, 0],
             ],
-            { stroke: 'faint' },
+            { dashed: true, anim: 'anim-iso-flow' },
           ),
-        ),
-        // Title block in the corner.
-        rect([bx + 4.5, by + 3.5, bpz], [1, 1], { stroke: 'base' }),
-        textLine([bx + 4.6, by + 3.8, bpz], 0.8),
-      ],
-      { anim: 'anim-iso-drop', delay: 950 },
-    ),
-  )
-
-  // Materials waiting for the next floor: bricks on a pallet.
-  const pallet: Point3 = [9, 6.6, z]
-  nodes.push(
-    group(
-      [
-        ...box(pallet, [2.4, 1.8, 0.25]),
-        ...[
-          [0.2, 0.2, 0],
-          [1.2, 0.2, 0],
-          [0.2, 1, 0],
-          [1.2, 1, 0],
-          [0.7, 0.6, 0.5],
-        ].flatMap(([dx, dy, dz]) =>
-          box([pallet[0] + dx, pallet[1] + dy, z + 0.25 + dz], [1, 0.6, 0.5]),
-        ),
-      ],
-      { anim: 'anim-iso-drop', delay: 1050 },
-    ),
-  )
-
-  // The checklist on its clipboard: two tasks done, the third ticked off
-  // in a loop.
-  const cb: Point3 = [1, 0.8, z]
-  const cbz = z + 0.15
-  const [cx, cy] = cb
-  nodes.push(
-    group(
-      [
-        ...box([cx + 1, cy - 0.3, z], [1.4, 0.6, 0.35], { stroke: 'strong' }),
-        ...box(cb, [3.4, 3.2, 0.15], { stroke: 'base' }),
-        ...box([cx + 1, cy - 0.1, cbz], [1.4, 0.4, 0.15], { stroke: 'strong' }),
-      ],
-      { anim: 'anim-iso-drop', delay: 1150 },
-    ),
-  )
-  const tasks = [1.1, 1.9, 2.7]
-  tasks.forEach((row, index) => {
-    const done = index < tasks.length - 1
-    const delay = 1450 + index * 150
-    nodes.push(
-      rect([cx + 0.4, cy + row - 0.3, cbz], [0.6, 0.6], {
-        stroke: done ? 'strong' : 'base',
-        anim: 'anim-iso-pop',
-        delay,
-      }),
-      textLine([cx + 1.3, cy + row, cbz], 1.7 - index * 0.3, {
-        stroke: 'base',
-        draw: true,
-        anim: 'anim-iso-draw',
-        delay: delay + 60,
-      }),
-      line(
-        [
-          [cx + 0.5, cy + row - 0.05, cbz],
-          [cx + 0.72, cy + row + 0.18, cbz],
-          [cx + 0.98, cy + row - 0.45, cbz],
         ],
-        {
+        { anim: 'anim-iso-fade', delay: delay + 700 },
+      ),
+    )
+
+    // The datasheets, back to front.
+    sheets.forEach(({ height, stroke, dashed }, index) =>
+      nodes.push(
+        group(
+          box([x, back + index * spacing, 0], [width, thickness, height], {
+            stroke,
+            dashed,
+          }),
+          {
+            anim: 'anim-iso-drop',
+            delay: delay + 100 + index * 100,
+          },
+        ),
+      ),
+    )
+
+    // On the face of the spec: its title, then its tasks, half done.
+    if (focus) {
+      const progress = 0.45
+      nodes.push(
+        group(
+          [
+            textLine([x + 0.3, front, 1.3], 1.3, { stroke: 'base' }),
+            textLine([x + 0.3, front, 0.95], 1.6),
+            textLine([x + 0.3, front, progress], 1.6),
+          ],
+          { anim: 'anim-iso-fade', delay: delay + 500 },
+        ),
+        textLine([x + 0.3, front, progress], 0.8, {
           stroke: 'strong',
           draw: true,
-          anim: done ? 'anim-iso-draw' : 'anim-iso-tick',
-          delay: done ? 1900 + index * 200 : 2800,
-        },
+          anim: 'anim-iso-draw',
+          delay: delay + 700,
+        }),
+        textLine([x + 1.1, front, progress], 0.4, {
+          stroke: 'strong',
+          draw: true,
+          anim: 'anim-iso-tick',
+          delay: 2600,
+        }),
+      )
+    }
+
+    // The chip, in front of its datasheets.
+    nodes.push(
+      group(
+        [
+          ...slab([x, chipAt, 0], [width, width, 0.6], {
+            pins: true,
+            top: focus ? 'strong' : 'base',
+          }),
+          mark([x + width / 2, chipAt + width / 2, 0.6], owner, 0.28),
+        ],
+        { anim: 'anim-iso-drop', delay: delay + 400 },
       ),
     )
   })
