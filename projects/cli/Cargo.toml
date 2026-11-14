@@ -38,7 +38,7 @@ chrono = "0.4"
 tokio = { version = "1.0", features = ["full"] }
 warp = { version = "0.4", features = ["server"] }
 include_dir = "0.7"
-notify = "6.0"
+notify = "8.2"
 indicatif = "0.18"
 walkdir = "2.0"
 indexmap = { version = "2.0", features = ["serde"] }
