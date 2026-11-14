@@ -99,6 +99,10 @@ const anatomy: TreeNode[] = [
         name: '__docs__',
         children: [
           {
+            name: 'specs',
+            children: [{ name: '001-save-user.md', note: 'what to build' }],
+          },
+          {
             name: 'decisions',
             children: [
               { name: '001-use-jwt-tokens.md', note: 'MADR decision' },
@@ -297,8 +301,8 @@ const article = {
           <dd class="mt-2 text-sm text-muted">The first line after the title becomes the description. The <code>owner</code> front matter property sets the team.</dd>
         </div>
         <div class="card p-5">
-          <dt class="font-mono text-sm text-text">__docs__/decisions/</dt>
-          <dd class="mt-2 text-sm text-muted">Architecture decision records in the MADR format, listed with the feature.</dd>
+          <dt class="font-mono text-sm text-text">__docs__/specs/ + decisions/</dt>
+          <dd class="mt-2 text-sm text-muted">Specs say what to build, MADR decision records say why. Linked together and shown on one timeline with the feature.</dd>
         </div>
         <div class="card p-5">
           <dt class="font-mono text-sm text-text">source files</dt>
@@ -312,7 +316,7 @@ const article = {
     </div>
     <Screenshot
       name="nested-features"
-      alt="Feature page in the Features dashboard: Feature 1 with its path, owner and metadata, its nested features in the sidebar, and tabs for changes, tests, decisions, insights, dependencies and flags"
+      alt="Feature page in the Features dashboard: Feature 1 with its path, owner and metadata, its nested features in the sidebar, and tabs for changes, tests, specs and decisions, insights, dependencies and flags"
       caption="In the dashboard, nested features appear under their parent and every part of the folder gets its own tab."
       class="mt-10"
     />

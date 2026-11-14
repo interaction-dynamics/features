@@ -3,8 +3,9 @@
 // Uses Playwright from the dashboard project (projects/web), so run `bun install`
 // there first. Then, from projects/website:
 //
-//   node scripts/capture-screenshots.mjs [demo-url]
+//   node scripts/capture-screenshots.mjs [demo-url] [view-name...]
 //
+// Pass view names after the URL to capture only those views.
 // Each view is saved as WebP at 1x (1280px wide) and 2x (2560px wide).
 // Views showing commit authors (Changes tab, feature Insights tab) are left out on purpose.
 
@@ -19,6 +20,7 @@ const require = createRequire(join(root, '../web/package.json'))
 const { chromium } = require('@playwright/test')
 
 const demo = process.argv[2] ?? 'https://interaction-dynamics.io/features/'
+const only = process.argv.slice(3)
 const outDir = join(root, 'public/screenshots')
 const tmpDir = join(root, 'node_modules/.cache/screenshots')
 mkdirSync(outDir, { recursive: true })
@@ -41,10 +43,11 @@ const views = [
     height: 560,
   },
   {
-    name: 'decisions',
+    name: 'specs-decisions',
     hash: '#/?feature=libs/features/feature-0',
-    tab: 'Decisions',
-    height: 480,
+    // The tab label ends with the number of records
+    tab: /^Specs & Decisions/,
+    height: 960,
   },
   {
     name: 'flags',
@@ -67,11 +70,20 @@ const page = await browser.newPage({
   colorScheme: 'dark',
 })
 
-for (const view of views) {
+for (const view of views.filter(
+  (v) => only.length === 0 || only.includes(v.name),
+)) {
   await page.setViewportSize({ width, height: view.height })
   await page.goto(new URL(view.hash, demo).href, { waitUntil: 'networkidle' })
   if (view.tab) {
-    await page.getByRole('tab', { name: view.tab, exact: true }).click()
+    await page
+      .getByRole(
+        'tab',
+        typeof view.tab === 'string'
+          ? { name: view.tab, exact: true }
+          : { name: view.tab },
+      )
+      .click()
   }
   await page.waitForTimeout(1000)
   const png = join(tmpDir, `${view.name}.png`)

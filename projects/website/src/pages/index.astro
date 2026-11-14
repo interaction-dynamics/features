@@ -5,6 +5,7 @@ import {
   Brain,
   Braces,
   ChartPie,
+  ClipboardList,
   Construction,
   FileLock,
   Flag,
@@ -14,6 +15,8 @@ import {
   GitPullRequest,
   Layers,
   LayoutDashboard,
+  Link2,
+  ListChecks,
   ScanEye,
   Sparkles,
   Users,
@@ -66,8 +69,8 @@ const capabilities = [
   },
   {
     icon: BookOpen,
-    title: 'Surface the docs',
-    text: 'README descriptions and decision records (ADR) are attached to their feature.',
+    title: 'Specs & decisions',
+    text: 'README, specs and decision records (ADR) sit with their feature, linked together on one timeline.',
   },
   {
     icon: FlaskConical,
@@ -98,6 +101,29 @@ const capabilities = [
     icon: Flag,
     title: 'Map feature flags',
     text: 'Annotate code with comments to track flags, experiments and dependencies.',
+  },
+]
+
+const specsDecisionsPoints = [
+  {
+    icon: ClipboardList,
+    title: 'What was planned, and why',
+    text: 'Specs say what to build, decision records say why it is built that way. Each feature shows both on one timeline, newest first.',
+  },
+  {
+    icon: Link2,
+    title: 'Linked both ways',
+    text: 'List decisions: [002-use-jwt] on a spec or spec: 001-login-flow on a decision. Each record links back to the other, and superseded ones point to their replacement.',
+  },
+  {
+    icon: ListChecks,
+    title: 'Progress at a glance',
+    text: 'Checklists in a spec become a progress bar. features check warns about broken links, missing statuses and implemented specs with open tasks.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Works with what you already have',
+    text: 'Classic MADR files, folder specs with a spec.md and a tasks.md, and project-wide records in docs/ are all picked up.',
   },
 ]
 
@@ -391,6 +417,65 @@ const softwareApplication = {
     <p class="mt-8">
       <a href={site.demo} class="inline-flex items-center gap-1 text-cyan hover:underline">
         Explore the live demo <ArrowRight size={16} aria-hidden="true" />
+      </a>
+    </p>
+  </Section>
+
+  <!-- Specs & decisions -->
+  <Section
+    id="specs-decisions"
+    eyebrow="Specs & decisions"
+    title="Keep the why next to the code"
+    lead="Agents and teammates come and go; the reasoning should stay. Write specs and decision records next to each feature, and Features turns them into a linked timeline in the dashboard and the JSON report."
+  >
+    <div class="grid items-start gap-8 lg:grid-cols-5">
+      <ul class="grid gap-4 lg:col-span-2">
+        {
+          specsDecisionsPoints.map(({ icon: Icon, title, text }) => (
+            <li class="flex gap-4">
+              <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-cyan">
+                <Icon size={20} aria-hidden="true" />
+              </span>
+              <div>
+                <h3 class="font-semibold">{title}</h3>
+                <p class="mt-1 text-sm text-muted">{text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+      <Screenshot
+        name="specs-decisions"
+        alt="Specs & Decisions tab of a feature in the Features dashboard: specs and decision records on one timeline with kind and status badges, task progress bars and links between them"
+        caption="Specs & Decisions: specs and ADRs of a feature on one timeline, with status, task progress and links between them."
+        class="lg:col-span-3"
+      />
+    </div>
+    <div class="mt-8 grid gap-6 md:grid-cols-2">
+      <Terminal title="features new">
+<span class="text-muted">$</span> features new spec auth "Login flow"
+<span class="text-lime">./features/auth/__docs__/specs/001-login-flow.md</span>
+<span class="text-muted">$</span> features new decision auth "Use JWT"
+<span class="text-lime">./features/auth/__docs__/decisions/002-use-jwt.md</span>
+<span class="text-muted">$</span> features check
+<span class="text-magenta">Warning:</span> ADR '001-use-sessions' (feature 'Auth') is superseded
+  but no record supersedes it
+      </Terminal>
+      <div class="card p-5 font-mono text-sm">
+        <p class="text-xs text-muted">__docs__/decisions/002-use-jwt.md</p>
+        <pre class="mt-3 overflow-x-auto"><code><span class="text-muted">---</span>
+<span class="text-cyan">status</span>: accepted
+<span class="text-cyan">date</span>: 2026-01-15
+<span class="text-cyan">spec</span>: 001-login-flow
+<span class="text-cyan">supersedes</span>: 001-use-sessions
+<span class="text-muted">---</span>
+
+# Use JWT</code></pre>
+      </div>
+    </div>
+    <p class="mt-8">
+      <a href="/guidelines#specs-decisions" class="inline-flex items-center gap-1 text-cyan hover:underline">
+        How to write specs and decisions <ArrowRight size={16} aria-hidden="true" />
       </a>
     </p>
   </Section>

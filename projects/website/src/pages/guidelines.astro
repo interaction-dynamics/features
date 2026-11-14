@@ -9,7 +9,7 @@ import { githubUrl } from '../data/site'
 import Base from '../layouts/Base.astro'
 
 const description =
-  'How to structure a project so Features detects every feature: the features folder convention, README front matter, owners, decision records and feature flag annotations.'
+  'How to structure a project so Features detects every feature: the features folder convention, README front matter, owners, specs, decision records and feature flag annotations.'
 
 const featuresFolder: TreeNode[] = [
   {
@@ -131,6 +131,18 @@ const rules = [
     color: 'text-lime border-lime/40 bg-lime/10',
     text: 'Add MADR decision records into the feature decisions folder.',
     example: '__docs__/decisions/001-use-jwt-tokens.md',
+  },
+  {
+    level: 'MAY',
+    color: 'text-lime border-lime/40 bg-lime/10',
+    text: 'Add specs into the feature specs folder, linked to their decisions with front matter.',
+    example: '__docs__/specs/001-login-flow.md',
+  },
+  {
+    level: 'MAY',
+    color: 'text-lime border-lime/40 bg-lime/10',
+    text: 'Add project-wide specs and decisions at the root, in docs/specs, docs/decisions or docs/adr.',
+    example: 'docs/decisions/001-use-a-monorepo.md',
   },
 ]
 
@@ -289,33 +301,73 @@ const howTo = {
     />
   </Section>
 
+  <span id="decisions" class="block scroll-mt-24" aria-hidden="true"></span>
   <Section
-    id="decisions"
-    eyebrow="Decision records"
-    title="Keep decisions next to the code they shaped"
-    lead="Add Markdown files to a __docs__/decisions/ or .docs/decisions/ folder in the feature. They appear under the feature in the dashboard. The template is inspired by MADR."
+    id="specs-decisions"
+    eyebrow="Specs & decisions"
+    title="Keep specs and decisions next to the code they shaped"
+    lead="Specs say what to build, decision records say why it is built that way. Add them to the feature's __docs__/specs/ and __docs__/decisions/ folders (.docs/ works too): they show side by side, linked, in the feature's Specs & Decisions tab."
   >
-    <ol class="grid gap-3 sm:grid-cols-5">
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div class="card p-5">
+        <p class="font-mono text-xs text-muted">__docs__/specs/001-login-flow.md</p>
+        <pre class="mt-3 overflow-x-auto font-mono text-sm"><code>{`${fence}
+status: implemented   # draft, accepted, implemented, superseded
+date: 2026-01-15
+decisions: [002-use-jwt]
+${fence}
+
+# Login flow
+
+## Requirements
+- Users sign in with their email.
+
+## Plan
+- [x] Login form
+- [x] Token endpoint`}</code></pre>
+        <p class="mt-3 text-sm text-muted">
+          Context, Requirements, Out of scope and Plan. Checklists become a progress bar. A large spec can be a folder
+          with a <code>spec.md</code> and a <code>tasks.md</code>.
+        </p>
+      </div>
+      <div class="card p-5">
+        <p class="font-mono text-xs text-muted">__docs__/decisions/002-use-jwt.md</p>
+        <pre class="mt-3 overflow-x-auto font-mono text-sm"><code>{`${fence}
+status: accepted   # proposed, accepted, rejected, deprecated, superseded
+date: 2026-01-15
+spec: 001-login-flow
+supersedes: 001-use-sessions
+${fence}
+
+# Use JWT
+
+## Context and Problem Statement
+## Considered Options
+## Decision Outcome`}</code></pre>
+        <p class="mt-3 text-sm text-muted">
+          Inspired by <a href="https://adr.github.io/madr/" class="text-cyan hover:underline" rel="noopener">MADR</a>.
+          Classic MADR files with a <code>## Status</code> section or a <code>**Status**:</code> line work too.
+        </p>
+      </div>
+    </div>
+    <ul class="mt-6 grid gap-3 sm:grid-cols-3">
       {
         [
-          ['Title', 'A clear, concise description of the decision'],
-          ['Status', 'proposed, accepted, rejected, deprecated or superseded'],
-          ['Context', 'Background and the problem being solved'],
-          ['Decision', 'What was decided'],
-          ['Consequences', 'Expected positive and negative outcomes'],
-        ].map(([name, text], index) => (
-          <li class="card relative p-4">
-            <span class="font-mono text-xs text-muted">{String(index + 1).padStart(2, '0')}</span>
-            <p class="mt-1 font-semibold">{name}</p>
+          ['Linked both ways', 'A spec lists its decisions, a decision names its spec. Each one links back to the other; the number alone (002) is enough.'],
+          ['Project-wide records', 'docs/specs, docs/decisions and docs/adr at the root show on the Project records page, or in a feature with feature: <name>.'],
+          ['Checked', 'features check warns about broken links, missing statuses, superseded records without a replacement and implemented specs with open tasks.'],
+        ].map(([name, text]) => (
+          <li class="card p-4">
+            <p class="font-semibold">{name}</p>
             <p class="mt-1 text-xs text-muted">{text}</p>
           </li>
         ))
       }
-    </ol>
+    </ul>
     <Screenshot
-      name="decisions"
-      alt="Decisions tab of a feature in the Features dashboard listing its decision records"
-      caption="Decision records listed in the Decisions tab of the feature."
+      name="specs-decisions"
+      alt="Specs & Decisions tab of a feature in the Features dashboard: specs and decision records on one timeline with kind and status badges, task progress bars and links between them"
+      caption={'Specs and decisions of a feature on one timeline. features new spec|decision <feature> "<title>" creates the next numbered file.'}
       class="mt-10"
     />
   </Section>

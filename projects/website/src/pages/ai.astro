@@ -20,7 +20,7 @@ const benefits = [
   {
     icon: BookOpenCheck,
     title: 'Respect past decisions',
-    text: 'Each feature comes with its README and decision records, so the agent understands why the code is built that way before changing it.',
+    text: 'Each feature comes with its README, specs and decision records, linked together, so the agent knows what was planned and why the code is built that way before changing it.',
   },
   {
     icon: GitCompare,
@@ -38,7 +38,7 @@ const instructions = `## Finding your way around
 
 This codebase is organized by feature. Before exploring the code:
 
-- Run \`npx features-cli@latest scan ./src --json --skip-changes\` to list the features with their path, description, owner and decision records.
+- Run \`npx features-cli@latest scan ./src --json --skip-changes\` to list the features with their path, description, owner, specs and decision records.
 - Run \`npx features-cli@latest find-owner <file>\` to find who owns a file.
 - Before opening a pull request, run \`npx features-cli@latest diff ./src --since origin/main\` and mention the features and owners touched.`
 
@@ -53,7 +53,7 @@ const loop = [
     step: 'While',
     title: 'Read the feature first',
     command: 'features find-owner src/features/billing',
-    text: 'It reads the feature README and its decision records, and knows who to ask.',
+    text: 'It reads the feature README, its specs and decision records, and knows who to ask.',
   },
   {
     step: 'After',
@@ -76,7 +76,7 @@ const skills = [
   ],
   [
     'explore-features',
-    'Reads the JSON report through a compact index: every feature with its path, owner, description, decision records and imports. Useful on its own before changing any codebase.',
+    'Reads the JSON report through a compact index: every feature with its path, owner, description, specs, decision records and imports. Useful on its own before changing any codebase.',
   ],
   [
     'plan-feature-breakdown',
@@ -88,7 +88,7 @@ const skills = [
   ],
   [
     'document-feature',
-    'Writes the feature README (owner, creation date, title, description) and its decision records. Never invents an owner or a decision.',
+    'Writes the feature README (owner, creation date, title, description), its decision records and its specs. Never invents an owner or a decision.',
   ],
   [
     'validate-features',
@@ -236,7 +236,7 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
     title="Keep the knowledge for the next agent"
     lead="An agent's reasoning vanishes with its session. Write it down next to the feature, and the next person, or the next agent, finds it where the code is."
   >
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-4 md:grid-cols-3">
       <div class="card p-5">
         <p class="font-mono text-xs text-muted">features/billing/README.md</p>
         <h3 class="mt-2 font-semibold">What the feature does and who owns it</h3>
@@ -250,6 +250,14 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
         <p class="mt-1.5 text-sm text-muted">
           Ask the agent to add a decision record when it makes a choice worth keeping, such as a new library or a
           trade-off.
+        </p>
+      </div>
+      <div class="card p-5">
+        <p class="font-mono text-xs text-muted">features/billing/__docs__/specs/</p>
+        <h3 class="mt-2 font-semibold">What it's meant to do</h3>
+        <p class="mt-1.5 text-sm text-muted">
+          Save the plan the agent agreed on as a spec with a task checklist. <code>features new spec</code> picks the
+          next number, and <code>features check</code> flags a spec marked implemented with tasks still open.
         </p>
       </div>
     </div>

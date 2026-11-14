@@ -408,6 +408,18 @@ fn find_record(records: &[Record], target: &str, kind: Option<RecordKind>) -> Op
     by_number(&matches_kind).or_else(|| by_number(&|_| true))
 }
 
+/// [`find_record`] in the first `local_len` records (the feature's own), then
+/// in all of them (the project-level ones too)
+fn find_scoped(
+    records: &[Record],
+    target: &str,
+    kind: Option<RecordKind>,
+    local_len: usize,
+) -> Option<usize> {
+    find_record(&records[..local_len.min(records.len())], target, kind)
+        .or_else(|| find_record(records, target, kind))
+}
+
 /// Leading number of an id: `002` for `002-use-jwt`
 fn record_number(id: &str) -> Option<&str> {
     let end = id.find(|c: char| !c.is_ascii_digit()).unwrap_or(id.len());
@@ -424,6 +436,13 @@ fn push_unique(list: &mut Vec<String>, value: &str) {
 /// record are rewritten to its full id, and every link is mirrored on the
 /// record it points to. Links to unknown records are kept as written.
 pub fn resolve_links(records: &mut [Record]) {
+    let len = records.len();
+    resolve_links_scoped(records, len);
+}
+
+/// [`resolve_links`], looking for link targets in the first `local_len`
+/// records before the others
+fn resolve_links_scoped(records: &mut [Record], local_len: usize) {
     // Rewrite links to the full id of the record they point to
     let snapshot: Vec<Record> = records.to_vec();
     for record in records.iter_mut() {
@@ -432,7 +451,7 @@ pub fn resolve_links(records: &mut [Record]) {
             let resolved: Vec<String> = links
                 .iter()
                 .map(|link| {
-                    find_record(&snapshot, link, kind)
+                    find_scoped(&snapshot, link, kind, local_len)
                         .map(|i| snapshot[i].id.clone())
                         .unwrap_or_else(|| link.clone())
                 })
@@ -455,7 +474,7 @@ pub fn resolve_links(records: &mut [Record]) {
                       target: &str,
                       kind: Option<RecordKind>,
                       field: fn(&mut RecordLinks) -> &mut Vec<String>| {
-            if let Some(i) = find_record(&snapshot, target, kind)
+            if let Some(i) = find_scoped(&snapshot, target, kind, local_len)
                 && (snapshot[i].id != source.id || snapshot[i].kind != source.kind)
             {
                 push_unique(field(&mut records[i].links), &source.id);
@@ -492,7 +511,7 @@ pub fn resolve_links_with(local: &mut Vec<Record>, shared: &[Record]) {
     }
     let count = local.len();
     local.extend(shared.iter().cloned());
-    resolve_links(local);
+    resolve_links_scoped(local, count);
     local.truncate(count);
 }
 
@@ -798,6 +817,31 @@ mod tests {
         assert_eq!(records[1].links.specs, vec!["001-login-flow"]);
         assert_eq!(records[2].links.superseded_by, vec!["002-use-jwt"]);
         assert_eq!(records[3].links.specs, vec!["001-login-flow"]);
+    }
+
+    #[test]
+    fn test_feature_records_win_over_project_records() {
+        let mut local = vec![
+            record(
+                RecordKind::Spec,
+                "001-first-release",
+                "---\ndecisions: [\"001\"]\n---\n",
+            ),
+            record(RecordKind::Decision, "001-use-react", "# React\n"),
+        ];
+        let shared = vec![record(RecordKind::Decision, "001-monorepo", "# Monorepo\n")];
+        resolve_links_with(&mut local, &shared);
+        assert_eq!(local[0].links.decisions, vec!["001-use-react"]);
+        assert_eq!(local[1].links.specs, vec!["001-first-release"]);
+
+        // A link only the project-level records can satisfy still resolves
+        let mut local = vec![record(
+            RecordKind::Spec,
+            "002-x",
+            "---\ndecisions: [001-monorepo]\n---\n",
+        )];
+        resolve_links_with(&mut local, &shared);
+        assert_eq!(local[0].links.decisions, vec!["001-monorepo"]);
     }
 
     #[test]

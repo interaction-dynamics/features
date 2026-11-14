@@ -61,7 +61,8 @@ Each record is serialized as:
   or whose number prefix equals it (`002` matches `002-use-jwt`).
 - Links are resolved in both directions: a spec listing a decision adds the spec to the
   decision's `specs`, and `supersedes` fills the target's `superseded_by`. Links resolve within
-  the feature's records and the project-level records.
+  the feature's records first, then the project-level records (so `001` in a feature points to the
+  feature's own `001-...` even when a project record also starts with `001`).
 - `tasks` counts `- [ ]` / `- [x]` lines (outside code fences) in the main file and the
   sub-files. It is omitted when there are none. `files` is omitted when empty.
 
@@ -111,6 +112,8 @@ name or path. `.` writes in the project-level `docs/specs|decisions/` folder.
   decision?"; the old anchor keeps working.
 - `docs/folder-architecture-guidelines.md`: MAY row for `__docs__/specs`.
 - The `document-feature` skill and `explore-features/scripts/feature_map.py` know about records.
+- The website advertises it: a "Specs & decisions" section on the homepage with a dashboard
+  screenshot (demo data in `examples/demo`), plus the guidelines, CLI, AI and architecture pages.
 
 ## Out of scope
 

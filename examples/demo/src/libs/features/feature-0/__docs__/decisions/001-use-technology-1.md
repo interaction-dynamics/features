@@ -1,3 +1,9 @@
+---
+status: accepted
+date: 2025-03-04
+spec: 001-first-release
+---
+
 # Decision 1 (open to get more details)
 
 You can add decision files in `__docs__/decisions` folder.
