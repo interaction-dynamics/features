@@ -13,6 +13,11 @@ export interface ChangelogEntry {
 /** Newest first. Add new entries at the top. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: 'owner-page',
+    title: 'Owner pages',
+    url: `${REPOSITORY_URL}/pull/200`,
+  },
+  {
     id: 'outside-features',
     title: 'Outside features page',
     url: `${REPOSITORY_URL}/pull/177`,
