@@ -20,10 +20,11 @@ Two hand-maintained lists would drift, so both changelogs must read the same dat
 ## Requirements
 
 - **Single source of truth**: `docs/changelog.json`, a list of releases, newest first. Each release has a `version`, a `date` (`YYYY-MM-DD`), an optional one-line `summary`, an optional `githubRelease: false` for a version published without a GitHub release, and a list of `changes`. Each change has a `type` (`feature`, `fix` or `docs`), a user-facing `title`, an optional `description` (both may mark code with backticks), an optional pull-request number `pr`, and an optional `id`.
-- The dashboard's "What's new" entries are the changes that have an `id`, in file order. Existing ids (`outside-features`, `history-feature-graph`, `feature-history`, `feature-keys-links`, `specs-decisions`) are kept, so users who already saw them are not shown them again.
+- **Unreleased changes**: an optional first entry with `"version": "unreleased"` and no date lists what was merged since the last release. The page shows it first as "Unreleased" (with a compare link from the last tagged release to `master`), the feed leaves it out, and its changes with an `id` already show in the dashboard's "What's new". On release, rename it to the version and add the date.
+- The dashboard's "What's new" entries are the changes that have an `id`, in file order. Existing ids (`owner-page`, `outside-features`, `history-feature-graph`, `feature-history`, `feature-keys-links`, `specs-decisions`) are kept, so users who already saw them are not shown them again.
 - **`/changelog` page** on the website, built at build time from `docs/changelog.json`:
   - Releases newest first: version, date, summary, then changes grouped under Features, Fixes and Docs (empty groups hidden).
-  - Each release has an anchor `#v<version with dots replaced by dashes>` (e.g. `/changelog#v0-15-0`), a link to its GitHub release and a link to the compare view against the previous release. A release with `githubRelease: false` links its npm version page instead and has no compare link.
+  - Each release has an anchor `#v<version with dots replaced by dashes>` (e.g. `/changelog#v0-15-0`), a link to its GitHub release and a link to the compare view against the previous release. A release with `githubRelease: false` links its npm version page instead, and there is no compare link to or from it.
   - Each change links to its pull request when `pr` is set.
   - Ends with a link to the full release history on GitHub for older versions.
 - **Feed**: an RSS 2.0 feed at `/changelog.xml`, one item per release, advertised with `<link rel="alternate" type="application/rss+xml">` on the changelog page.
@@ -42,7 +43,7 @@ Two hand-maintained lists would drift, so both changelogs must read the same dat
 
 ## Plan
 
-1. Add `docs/changelog.json` with releases `0.11.1` → `0.15.0`.
+1. Add `docs/changelog.json` with releases `0.11.1` → `0.15.0` and the unreleased changes merged since.
 2. Website: `src/lib/changelog.ts` reads and validates the JSON at build time; `src/pages/changelog.astro` renders it; `src/pages/changelog.xml.ts` renders the RSS feed.
 3. Add the footer link and the `llms.txt` order; update `vercel.json` `ignoreCommand`.
 4. Web app: derive `CHANGELOG` in `app-menu/changelog.ts` from the JSON (small change, same exports).

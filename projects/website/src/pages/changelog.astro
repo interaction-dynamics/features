@@ -5,12 +5,13 @@ import Base from '../layouts/Base.astro'
 import {
   formatDate,
   groupChanges,
+  publishedReleases,
   pullRequestUrl,
   releases,
   toHtml,
 } from '../lib/changelog'
 
-const latest = releases[0]
+const latest = publishedReleases[0]
 const description = `New features, fixes and docs in every release of features-cli and its web dashboard, newest first. Latest: ${latest.version}, ${formatDate(latest.date)}.`
 const feedUrl = '/changelog.xml'
 ---
@@ -55,14 +56,18 @@ const feedUrl = '/changelog.xml'
         <article id={release.anchor} class="relative grid scroll-mt-24 gap-4 py-12 md:grid-cols-[10rem_1fr] md:gap-10">
           <div class="hairline pointer-events-none absolute inset-x-0 top-0" aria-hidden="true" />
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 md:sticky md:top-24 md:flex-col md:self-start">
-            <time datetime={release.date} class="text-sm text-muted">
-              {formatDate(release.date)}
-            </time>
+            {release.date ? (
+              <time datetime={release.date} class="text-sm text-muted">
+                {formatDate(release.date)}
+              </time>
+            ) : (
+              <span class="text-sm text-muted">Not released yet</span>
+            )}
           </div>
           <div class="min-w-0">
             <h2 class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <a href={`/changelog#${release.anchor}`} class="font-mono text-2xl font-bold tracking-tight hover:text-accent-2">
-                {release.version}
+                {release.unreleased ? 'Unreleased' : release.version}
               </a>
               {release === latest && (
                 <span class="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">Latest</span>
@@ -94,16 +99,20 @@ const feedUrl = '/changelog.xml'
               </section>
             ))}
 
-            <p class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-              <a class="link" href={release.url} rel="noopener">
-                {release.releaseLabel} {release.version}
-              </a>
-              {release.compareUrl && (
-                <a class="link" href={release.compareUrl} rel="noopener">
-                  All changes since the previous release
-                </a>
-              )}
-            </p>
+            {(release.url || release.compareUrl) && (
+              <p class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                {release.url && (
+                  <a class="link" href={release.url} rel="noopener">
+                    {release.releaseLabel}
+                  </a>
+                )}
+                {release.compareUrl && (
+                  <a class="link" href={release.compareUrl} rel="noopener">
+                    All changes since the previous release
+                  </a>
+                )}
+              </p>
+            )}
           </div>
         </article>
       ))

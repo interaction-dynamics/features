@@ -18,7 +18,7 @@ Built with [Astro](https://astro.build) and Tailwind CSS. Hosted on [Vercel](htt
 
 The content mirrors the repository docs. When the README, FAQ or docs change, update the matching page.
 
-To publish a release in the changelog, add it at the top of [`docs/changelog.json`](../../docs/changelog.json) with user-facing wording. Give a change an `id` to also show it in the dashboard's "What's new" menu. See [spec 011](../../docs/specs/011-website-changelog.md).
+To publish a release in the changelog, add it at the top of [`docs/changelog.json`](../../docs/changelog.json) with user-facing wording. Changes merged since the last release go in the `unreleased` entry at the top; on release, give it the version and date. Give a change an `id` to also show it in the dashboard's "What's new" menu. See [spec 012](../../docs/specs/012-website-changelog.md).
 
 ## AI assistants (GEO)
 

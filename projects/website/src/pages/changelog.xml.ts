@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro'
 import { site } from '../data/site'
-import { groupChanges, releases, toPlainText } from '../lib/changelog'
+import { groupChanges, publishedReleases, toPlainText } from '../lib/changelog'
 
 const escapeXml = (text: string) =>
   text
@@ -12,12 +12,12 @@ const escapeXml = (text: string) =>
 
 const rfc822 = (date: string) => new Date(`${date}T00:00:00Z`).toUTCString()
 
-/** RSS 2.0 feed of the changelog, one item per release. */
+/** RSS 2.0 feed of the changelog, one item per published release (unreleased changes are left out). */
 export const GET: APIRoute = ({ site: siteUrl }) => {
   const url = (path: string) => new URL(path, siteUrl).href
   const page = url('/changelog')
 
-  const items = releases.map((release) => {
+  const items = publishedReleases.map((release) => {
     const changes = groupChanges(release.changes)
       .map(
         (group) =>
@@ -43,7 +43,7 @@ export const GET: APIRoute = ({ site: siteUrl }) => {
     <link>${page}</link>
     <description>${escapeXml(`New features, fixes and docs in every release of ${site.name}.`)}</description>
     <language>en</language>
-    <lastBuildDate>${rfc822(releases[0].date)}</lastBuildDate>
+    <lastBuildDate>${rfc822(publishedReleases[0].date)}</lastBuildDate>
     <atom:link href="${url('/changelog.xml')}" rel="self" type="application/rss+xml" />
 ${items.join('\n')}
   </channel>

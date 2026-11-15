@@ -15,6 +15,8 @@ const OutsideFeatures = lazy(async () => import('./routes/outside-features'))
 
 const History = lazy(async () => import('./routes/history'))
 
+const Owner = lazy(async () => import('./routes/owner'))
+
 const root = document.getElementById('root')
 
 if (!root) {
@@ -45,6 +47,14 @@ createRoot(root).render(
                 element={
                   <ExperimentalRoute>
                     <History />
+                  </ExperimentalRoute>
+                }
+              />
+              <Route
+                path="/owners/:owner"
+                element={
+                  <ExperimentalRoute>
+                    <Owner />
                   </ExperimentalRoute>
                 }
               />

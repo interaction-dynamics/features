@@ -15,6 +15,7 @@ pub mod file_watcher;
 pub mod git_helper;
 pub mod http_server;
 pub mod import_detector;
+pub mod mcp_server;
 pub mod models;
 pub mod ownership;
 pub mod printer;

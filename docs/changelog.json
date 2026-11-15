@@ -1,6 +1,31 @@
 {
   "releases": [
     {
+      "version": "unreleased",
+      "summary": "Merged since 0.15.0, coming in the next release.",
+      "changes": [
+        {
+          "type": "feature",
+          "id": "owner-page",
+          "title": "Owner pages",
+          "description": "An experimental page per owner (team or person) gathers their features, totals, `--data` metrics, recent changes, specs and decisions. Enable it with `--experimental`.",
+          "pr": 200
+        },
+        {
+          "type": "feature",
+          "title": "Risk matrix and feature health score",
+          "description": "A Risk matrix tab in Insights plots each feature's untested lines or TODO density against its activity, and a sortable Health column scores every feature.",
+          "pr": 199
+        },
+        {
+          "type": "feature",
+          "title": "`features mcp`, an MCP server",
+          "description": "AI coding agents such as Claude Code or Cursor can query the feature map over stdio: list features, get a feature, find an owner, list touched features and records.",
+          "pr": 198
+        }
+      ]
+    },
+    {
       "version": "0.15.0",
       "date": "2026-11-14",
       "summary": "Specs and decisions, feature history, feature keys and links, multi-repository reports and a new app menu.",

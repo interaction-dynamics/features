@@ -42,9 +42,10 @@ describe('CHANGELOG', () => {
         'feature-history',
         'feature-keys-links',
         'specs-decisions',
+        'owner-page',
       ]),
     )
-    expect(CHANGELOG[0].id).toBe('outside-features')
+    expect(CHANGELOG[0].id).toBe('owner-page')
   })
 
   it('links every entry to its pull request', () => {

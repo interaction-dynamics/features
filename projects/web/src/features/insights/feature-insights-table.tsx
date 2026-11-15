@@ -1,5 +1,5 @@
 import { ArrowUpRight } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { FeatureOwner } from '@/components/feature-owner'
 import { MetadataTooltipContent } from '@/components/metadata-tooltip-content'
@@ -32,9 +32,17 @@ import { formatFeatureName } from '@/lib/format-feature-name'
 import { cn } from '@/lib/utils'
 import type { Feature } from '@/models/feature'
 import { DependenciesCell } from './dependencies-cell'
+import { HealthCell } from './health-cell'
+import { computeHealthScore, type HealthScore } from './health-score'
 
 type FeatureInsightsTableProps = {
   features: Feature[]
+}
+
+/** A feature with its health score, `health` is the sortable number */
+type FeatureRow = Feature & {
+  health: number | undefined
+  healthDetails: HealthScore
 }
 
 // Helper to get metadata array keys and their counts
@@ -84,11 +92,21 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
   // Metrics imported from external tools with `--data`
   const externalKeys = getExternalMetricKeys(features)
 
+  const rows = useMemo<FeatureRow[]>(
+    () =>
+      features.map((feature) => {
+        const healthDetails = computeHealthScore(feature)
+        return { ...feature, health: healthDetails.score, healthDetails }
+      }),
+    [features],
+  )
+
   // Define searchable fields for the smart filter
   const searchableFields = [
     'name',
     'owner',
     'path',
+    'health',
     'stats.files_count',
     'stats.lines_count',
     'stats.todos_count',
@@ -102,7 +120,7 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
 
   // Apply filtering
   const { filteredData, query, setQuery, clearQuery } = useTableFilter(
-    features,
+    rows,
     searchableFields,
   )
 
@@ -114,6 +132,7 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
     'name',
     'owner',
     'path',
+    'health',
     'stats.files_count',
     'stats.lines_count',
     'stats.todos_count',
@@ -181,6 +200,13 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                 label="Owner"
                 sortConfig={sortConfig}
                 onSort={requestSort}
+              />
+              <SortableTableHeader
+                field="health"
+                label="Health"
+                sortConfig={sortConfig}
+                onSort={requestSort}
+                align="right"
               />
               {!skipChanges && (
                 <>
@@ -306,6 +332,9 @@ export function FeatureInsightsTable({ features }: FeatureInsightsTableProps) {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     <FeatureOwner feature={feature} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <HealthCell health={feature.healthDetails} />
                   </TableCell>
                   {!skipChanges && (
                     <>

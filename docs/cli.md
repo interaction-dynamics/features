@@ -18,6 +18,7 @@ Each action is a command. `PATH` is the folder to scan for features and defaults
 | `features records [PATH]` | List the specs and decision records of the project and of every feature. With `--json`, print the project-level records as `{ "records": [...] }` |
 | `features new <spec\|decision> <FEATURE> <TITLE>` | Create the next numbered spec or decision record (`NNN-title.md`) in `<FEATURE>/__docs__/specs` or `/decisions`. `FEATURE` is a feature name or path, `.` for the project-level `docs/` folder. Use `--path` to choose the folder to scan |
 | `features diff [PATH] --since <ref>` | List the features touched since `<ref>`, with their owners. See [Ping the right teams on every pull request](../README.md#ping-the-right-teams-on-every-pull-request) |
+| `features mcp [PATH]` | Run an MCP server over stdio, so AI coding agents (Claude Code, Cursor...) can query the features. See [Give an AI coding agent a map of the codebase (MCP)](#give-an-ai-coding-agent-a-map-of-the-codebase-mcp) |
 | `features aggregate <FOLDER>` | Aggregate the features JSON reports of several repositories into one dashboard. See [Aggregate several repositories](#aggregate-several-repositories) |
 
 Run `features <command> --help` for the options of a command. The options are:
@@ -30,7 +31,7 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
 | `--port <port>` | `serve` | Change the port (default: 3000) |
 | `--allow-origin <origin>` | `serve` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]` |
-| `--experimental` | `serve`, `build` | Enable the experimental parts of the web dashboard (History page, project records in Outside features). They are hidden by default and marked as experimental when enabled |
+| `--experimental` | `serve`, `build` | Enable the experimental parts of the web dashboard (History page, owner pages linked from owner names, project records in Outside features). They are hidden by default and marked as experimental when enabled |
 | `--project-name <name>` | `serve`, `build` | Project name shown at the top left of the web dashboard. Overrides `name` in `features.config.toml` and the name detected from the project manifest. See [Name the dashboard](#name-the-dashboard) |
 | `--build-dir <path>` | `build`, `aggregate` | Output directory for the static build (default: `build`) |
 | `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required) |
@@ -46,7 +47,7 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--include-skipped-dirs` | all | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
 | `--coverage-dir <path>` | all | Specify a custom coverage directory (overrides automatic search) |
 | `--strip-emails` | all | Remove commit author emails from the output (JSON, `serve` and `build`). Useful before publishing a static build. Author names are kept |
-| `--data <file>` | `scan`, `serve`, `build`, `check`, `aggregate` | Merge data from external tools (analytics, errors, issues, ...) into the features, matched by feature key. Can be repeated; later files override earlier ones. See [Import data from external tools](#import-data-from-external-tools) |
+| `--data <file>` | `scan`, `serve`, `build`, `check`, `mcp`, `aggregate` | Merge data from external tools (analytics, errors, issues, ...) into the features, matched by feature key. Can be repeated; later files override earlier ones. See [Import data from external tools](#import-data-from-external-tools) |
 
 > **Legacy flags.** Before commands existed, actions were flags: `features PATH --serve`, `--build`, `--check`, `--list-owners`, `--find-owner <TARGET>` and `--generate-codeowners`. They still work but are deprecated. Combining two actions (e.g. `--serve --build`) is now an error instead of silently running one of them; `--generate-codeowners` can still be combined with `--serve`, `--build`, `--check` and `--list-owners`. `features PATH --since <ref>` also still works, as an alias of `features diff PATH --since <ref>`.
 
@@ -104,6 +105,38 @@ features diff ./src --since origin/master
 ```
 
 Add `--markdown` for a pull request comment or `--owners-only` to request reviews. See the [GitHub Actions example](../README.md#comment-on-pull-requests).
+
+### Give an AI coding agent a map of the codebase (MCP)
+
+```bash
+features mcp ./src
+```
+
+runs a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio (newline-delimited JSON-RPC 2.0). Agents start it themselves; register it once:
+
+```bash
+claude mcp add features -- npx features-cli@latest mcp ./src   # Claude Code
+```
+
+For Cursor, in `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "features": { "command": "npx", "args": ["features-cli@latest", "mcp", "./src"] }
+  }
+}
+```
+
+| Tool | Arguments | Returns |
+| ---- | --------- | ------- |
+| `list_features` | `owner`, `query` (both optional) | `root` (absolute path of the scanned folder) and every feature, flat: `name`, `key`, `path`, `owner`, `parent` (path of the parent feature) and `summary` (first paragraph of the README). `owner` ignores case and a leading `@`; `query` searches the name, key, path and README |
+| `get_feature` | `feature`: key, path, name or folder name | Name, key, path, owner, parent, sub-features, README, `meta`, `links`, `external` (`--data`), stats (files, lines, TODOs, commits, coverage totals), records (summaries with their `path`), dependencies grouped by feature, and the 10 most recent commits |
+| `find_owner` | `path`: absolute, relative to the current directory or to the scanned folder | `owner`, `inherited`, `feature_name`, `feature_key`, `feature_path`. The path does not need to exist |
+| `features_touched` | `since` (git ref), `committed_only` (optional) | The same report as `features diff --json` |
+| `list_records` | `kind` (`spec` or `decision`), `feature` (both optional) | The project-level specs and decision records, or the ones of a feature, without their content |
+
+All tools are read-only and work offline. A tool that fails (unknown feature, unknown git ref) returns an error result the agent can read. The project is scanned on the first tool call, with coverage and git history (unless `--skip-changes`), and rescanned after files that can change the features change or a `--data` file is updated. The scan options (`--skip-changes`, `--ignore-path`, `--data`, `--strip-emails`, `--coverage-dir`, `--project-dir`...) work as for the other commands. stdout only carries protocol messages; logs go to stderr.
 
 ### Export a JSON report
 

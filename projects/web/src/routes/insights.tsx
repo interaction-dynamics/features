@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DependencyGraph } from '@/features/insights/dependency-graph'
 import { FeatureInsightsTable } from '@/features/insights/feature-insights-table'
 import { OwnerInsightsTable } from '@/features/insights/owner-insights-table'
+import { RiskMatrix } from '@/features/insights/risk-matrix'
 import { FeaturesContext } from '@/lib/features-context'
 import { formatFeatureName } from '@/lib/format-feature-name'
 import type { Feature } from '@/models/feature'
@@ -88,11 +89,15 @@ export default function Insights() {
         >
           <TabsList>
             <TabsTrigger value="feature">Features</TabsTrigger>
+            <TabsTrigger value="risk">Risk matrix</TabsTrigger>
             <TabsTrigger value="owner">Ownership</TabsTrigger>
             <TabsTrigger value="dependencies">Dependencies</TabsTrigger>
           </TabsList>
           <TabsContent value="feature" className="mt-1 overflow-auto">
             <FeatureInsightsTable features={allFeatures} />
+          </TabsContent>
+          <TabsContent value="risk" className="mt-1 overflow-auto">
+            <RiskMatrix features={allFeatures} />
           </TabsContent>
           <TabsContent value="owner" className="mt-1 overflow-auto">
             <OwnerInsightsTable features={allFeatures} />
