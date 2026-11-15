@@ -14,6 +14,7 @@ use features_cli::codeowners::generate_codeowners;
 use features_cli::diff;
 use features_cli::external_data::import_external_data;
 use features_cli::http_server::{ServerConfig, serve_features_with_watching};
+use features_cli::mcp_server;
 use features_cli::models::{Feature, Record};
 use features_cli::ownership::find_owner_for_path;
 use features_cli::printer::print_features;
@@ -272,6 +273,12 @@ async fn run(invocation: Invocation) -> Result<()> {
         }
 
         Action::Diff(args) => run_diff(&args, &scan, &current_dir)?,
+
+        Action::Mcp { path } => {
+            // stdout carries the protocol: everything else goes to stderr
+            let config = scan_config(&scan, &current_dir).with_coverage(true);
+            mcp_server::run_stdio(path, config).await?;
+        }
 
         Action::Aggregate(args) => run_aggregate(args).await?,
 

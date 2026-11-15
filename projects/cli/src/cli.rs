@@ -147,6 +147,18 @@ pub enum Command {
         scan: ScanArgs,
     },
 
+    /// Run an MCP server over stdio, so AI coding agents (Claude Code,
+    /// Cursor...) can query the features: list, details, owners, records and
+    /// features touched by a branch
+    Mcp {
+        /// The folder to scan for features
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        #[command(flatten)]
+        scan: ScanArgs,
+    },
+
     /// Run checks on the features (e.g. duplicate names) and warn about
     /// broken specs and decision records
     Check {
@@ -518,6 +530,8 @@ pub enum Action {
     New(NewArgs),
     /// Aggregate the features reports of several repositories
     Aggregate(AggregateArgs),
+    /// Run the MCP server over stdio
+    Mcp { path: PathBuf },
 }
 
 /// A parsed command line
@@ -587,6 +601,7 @@ impl Command {
             } => (Action::Check { path }, scan, codeowners.requested()),
             Command::Records { path, json, scan } => (Action::Records { path, json }, scan, None),
             Command::New { new, scan } => (Action::New(new), scan, None),
+            Command::Mcp { path, scan } => (Action::Mcp { path }, scan, None),
         };
 
         Invocation {
@@ -1091,6 +1106,31 @@ mod tests {
         );
         assert!(parse(&["new", "note", "auth", "x"]).is_err());
         assert!(parse(&["new", "spec", "auth"]).is_err());
+    }
+
+    #[test]
+    fn test_mcp() {
+        assert_eq!(action(&["mcp"]), Action::Mcp { path: path(".") });
+
+        let invocation = parse(&[
+            "mcp",
+            "./src",
+            "--skip-changes",
+            "--data",
+            "usage.json",
+            "--strip-emails",
+        ])
+        .unwrap();
+        assert_eq!(
+            invocation.action,
+            Action::Mcp {
+                path: path("./src")
+            }
+        );
+        assert!(invocation.scan.skip_changes);
+        assert!(invocation.scan.strip_emails);
+        assert_eq!(invocation.scan.data, vec![path("usage.json")]);
+        assert_eq!(invocation.codeowners, None);
     }
 
     #[test]

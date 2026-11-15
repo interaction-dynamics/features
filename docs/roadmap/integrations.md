@@ -80,7 +80,7 @@ This is where integrations pay off.
 | **Risk matrix** | Plot usage against coverage or debt. High usage with low coverage = test it first. No usage with high churn = candidate for removal. | Very high | M |
 | **Feature health score** | One score per feature combining errors, coverage, debt, bugs and usage, with the reasons listed. Sortable in the insights tables. | High | M |
 | **Trends over time** | Keep past reports (for example on the GitHub Pages branch) and show how each metric evolves per feature. | Medium | L |
-| **MCP server** | `features mcp` exposes the feature map and the imported data to Claude Code, Cursor and other agents, so they can check usage and errors of a feature before changing it. | High | M |
+| **MCP server ✅** | `features mcp` exposes the feature map and the imported data to Claude Code, Cursor and other agents, so they can check usage and errors of a feature before changing it. Shipped, see [spec 011](../specs/011-mcp-server.md). | High | M |
 
 ## Suggested order
 
