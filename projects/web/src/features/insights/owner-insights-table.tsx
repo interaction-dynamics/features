@@ -12,8 +12,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { OwnerLink } from '@/features/owners/owner-link'
 import type { Feature } from '@/models/feature'
-import { getOwnerName } from '@/models/owner'
 
 interface OwnerStats {
   owner: string
@@ -146,7 +146,7 @@ export function OwnerInsightsTable({ features }: OwnerInsightsTableProps) {
           {ownerStats.map((stat) => (
             <TableRow key={stat.owner}>
               <TableCell className="font-medium">
-                {getOwnerName(stat.owner)}
+                <OwnerLink owner={stat.owner} />
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 <Tooltip>

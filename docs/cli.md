@@ -30,7 +30,7 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
 | `--port <port>` | `serve` | Change the port (default: 3000) |
 | `--allow-origin <origin>` | `serve` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]` |
-| `--experimental` | `serve`, `build` | Enable the experimental parts of the web dashboard (History page, project records in Outside features). They are hidden by default and marked as experimental when enabled |
+| `--experimental` | `serve`, `build` | Enable the experimental parts of the web dashboard (History page, owner pages linked from owner names, project records in Outside features). They are hidden by default and marked as experimental when enabled |
 | `--project-name <name>` | `serve`, `build` | Project name shown at the top left of the web dashboard. Overrides `name` in `features.config.toml` and the name detected from the project manifest. See [Name the dashboard](#name-the-dashboard) |
 | `--build-dir <path>` | `build`, `aggregate` | Output directory for the static build (default: `build`) |
 | `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required) |
