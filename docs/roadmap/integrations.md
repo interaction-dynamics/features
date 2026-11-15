@@ -77,8 +77,8 @@ This is where integrations pay off.
 
 | Item | What it does | Value | Effort |
 | ---- | ------------ | ----- | ------ |
-| **Risk matrix** | Plot usage against coverage or debt. High usage with low coverage = test it first. No usage with high churn = candidate for removal. | Very high | M |
-| **Feature health score** | One score per feature combining errors, coverage, debt, bugs and usage, with the reasons listed. Sortable in the insights tables. | High | M |
+| **Risk matrix ✅** | Plot usage against coverage or debt. High usage with low coverage = test it first. No usage with high churn = candidate for removal. Shipped as a *Risk matrix* tab on the Insights page: untested lines or TODO density against commits, or any numeric metric imported with `--data`, see [spec 002](../../projects/web/src/features/insights/__docs__/specs/002-risk-matrix.md). | Very high | M |
+| **Feature health score ✅** | One score per feature combining errors, coverage, debt, bugs and usage, with the reasons listed. Sortable in the insights tables. Shipped as a *Health* column in the features table (coverage, TODO density, share of fix commits, imported error and bug metrics); usage is shown on the risk matrix rather than scored. | High | M |
 | **Trends over time** | Keep past reports (for example on the GitHub Pages branch) and show how each metric evolves per feature. | Medium | L |
 | **MCP server ✅** | `features mcp` exposes the feature map and the imported data to Claude Code, Cursor and other agents, so they can check usage and errors of a feature before changing it. Shipped, see [spec 011](../specs/011-mcp-server.md). | High | M |
 
