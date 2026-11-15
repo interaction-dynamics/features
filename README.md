@@ -147,7 +147,44 @@ AI coding agents work best when they know where things live. Without a map, they
 - **Respect past decisions.** Each feature comes with its docs and decision records, so the agent understands why the code is built that way before changing it.
 - **Know the blast radius.** `features diff` shows which features and owners a change touches, so the agent can flag cross-team changes and suggest reviewers.
 - **Stay within the conventions.** `features check` catches invalid features (e.g. duplicate names) the agent may have introduced.
-- **Works with any agent.** It's a plain CLI with JSON output: no plugin, server or API key needed.
+- **Works with any agent.** Plug it in as an MCP server, or call the plain CLI with JSON output. Everything runs locally: no account, network call or API key.
+
+### Connect it as an MCP server
+
+`features mcp ./src` runs an [MCP](https://modelcontextprotocol.io) server over stdio, so the agent can ask focused questions instead of reading a whole report.
+
+Claude Code:
+
+```bash
+claude mcp add features -- npx features-cli@latest mcp ./src
+```
+
+Cursor (`.cursor/mcp.json` at the root of the project):
+
+```json
+{
+  "mcpServers": {
+    "features": {
+      "command": "npx",
+      "args": ["features-cli@latest", "mcp", "./src"]
+    }
+  }
+}
+```
+
+The agent gets these read-only tools:
+
+| Tool | What it answers |
+| ---- | --------------- |
+| `list_features` | Every feature with its key, path, owner and a one-line summary. Filter by owner or text |
+| `get_feature` | Everything about one feature: README, metadata, links, [imported data](#connect-posthog-sentry-and-your-other-tools), coverage, specs and decisions, dependencies, recent commits |
+| `find_owner` | The feature and owner of a file or folder |
+| `features_touched` | The features and owners touched since a git ref, like `features diff` |
+| `list_records` | The project-level specs and decision records, or the ones of a feature |
+
+The project is scanned on the first call and rescanned when files change. The usual options work, e.g. `--skip-changes` to leave out the git history on large repositories or `--data usage.json` to expose data from other tools. See the [CLI reference](https://github.com/interaction-dynamics/features/blob/master/docs/cli.md#give-an-ai-coding-agent-a-map-of-the-codebase-mcp).
+
+### Or tell the agent to use the CLI
 
 Add a few lines to your `AGENTS.md`, `CLAUDE.md` or `.cursor/rules` file:
 
