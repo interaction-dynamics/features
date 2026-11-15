@@ -1,0 +1,257 @@
+{
+  "releases": [
+    {
+      "version": "0.15.0",
+      "date": "2026-11-14",
+      "summary": "Specs and decisions, feature history, feature keys and links, multi-repository reports and a new app menu.",
+      "githubRelease": false,
+      "changes": [
+        {
+          "type": "feature",
+          "id": "outside-features",
+          "title": "Outside features page",
+          "description": "Project-level records and features that could not be merged across repositories now live on one Outside features page.",
+          "pr": 177
+        },
+        {
+          "type": "feature",
+          "id": "history-feature-graph",
+          "title": "Feature graph in History",
+          "description": "A Graph tab on the History page draws each feature as a git-like lane from the commit that created it, so you can see when features and sub-features appeared.",
+          "pr": 174
+        },
+        {
+          "type": "feature",
+          "id": "feature-history",
+          "title": "Feature history from commits",
+          "description": "A History page built from the commit history shows when each feature changed and who changed it.",
+          "pr": 165
+        },
+        {
+          "type": "feature",
+          "id": "feature-keys-links",
+          "title": "Feature keys, links and external data",
+          "description": "Every feature gets a stable key, links to tools like PostHog or Sentry, and `--data` merges external metrics by feature key into the dashboard.",
+          "pr": 163
+        },
+        {
+          "type": "feature",
+          "id": "specs-decisions",
+          "title": "Specs and decisions side by side",
+          "description": "Each feature shows its specs and decision records next to each other, read from `__docs__` folders, `docs/specs` and `docs/decisions`.",
+          "pr": 158
+        },
+        {
+          "type": "feature",
+          "title": "Linear-style app menu and project name in the sidebar",
+          "description": "A new app menu with docs, feedback, theme and a What's new timeline, and the project name at the top of the sidebar.",
+          "pr": 183
+        },
+        {
+          "type": "feature",
+          "title": "Spec Kit and Kiro specs",
+          "description": "Specs written with GitHub Spec Kit (`specs/NNN-name/`) or Kiro (`.kiro/specs/`) are read and attached to their feature.",
+          "pr": 159
+        },
+        {
+          "type": "feature",
+          "title": "Aggregate reports from several repositories",
+          "description": "`features aggregate` merges the reports of several repositories into one feature tree and one dashboard.",
+          "pr": 137
+        },
+        {
+          "type": "feature",
+          "title": "`--since` diff mode",
+          "description": "`--since <ref>` lists the features and owners touched since a branch or commit, handy in pull-request reviews.",
+          "pr": 135
+        },
+        {
+          "type": "feature",
+          "title": "Security hardening and `--strip-emails`",
+          "description": "The local server no longer sends open CORS headers and rejects unknown Host headers, credentials are stripped from remote URLs, and `--strip-emails` removes author emails from reports.",
+          "pr": 136
+        },
+        {
+          "type": "feature",
+          "title": "Claude skills to reorganize a codebase into feature folders",
+          "pr": 149
+        },
+        {
+          "type": "feature",
+          "title": "History and Project records marked as experimental",
+          "pr": 178
+        },
+        {
+          "type": "feature",
+          "title": "Sidebar links grouped under an Insights label",
+          "pr": 182
+        },
+        {
+          "type": "feature",
+          "title": "App-icon style tiles in the dependency graph",
+          "pr": 166
+        },
+        {
+          "type": "feature",
+          "title": "Monochrome palette and a new `{F}` logo",
+          "pr": 160
+        },
+        {
+          "type": "feature",
+          "title": "Homebrew formula and binaries attached to GitHub releases",
+          "pr": 134
+        },
+        {
+          "type": "fix",
+          "title": "Generated `CODEOWNERS` paths no longer start with `./`",
+          "pr": 191
+        },
+        {
+          "type": "fix",
+          "title": "A loader shows while the dependency graph lays out",
+          "pr": 176
+        },
+        {
+          "type": "docs",
+          "title": "New website explaining feature-based architecture, the CLI and AI workflows",
+          "pr": 150
+        },
+        {
+          "type": "docs",
+          "title": "Comparison with Feature-Sliced Design",
+          "pr": 193
+        },
+        {
+          "type": "docs",
+          "title": "Why a feature overview matters for AI coding agents",
+          "pr": 151
+        }
+      ]
+    },
+    {
+      "version": "0.14.0",
+      "date": "2026-11-06",
+      "summary": "See when the data in the dashboard was built.",
+      "changes": [
+        {
+          "type": "feature",
+          "title": "Data build date next to the feedback button",
+          "description": "The dashboard shows when the report was generated, so you know how fresh it is.",
+          "pr": 130
+        }
+      ]
+    },
+    {
+      "version": "0.13.0",
+      "date": "2026-11-04",
+      "summary": "Faster scans on large repositories.",
+      "changes": [
+        {
+          "type": "feature",
+          "title": "Faster full scan that skips `node_modules` by default",
+          "pr": 124
+        }
+      ]
+    },
+    {
+      "version": "0.12.0",
+      "date": "2026-07-29",
+      "summary": "More control over what gets scanned.",
+      "changes": [
+        {
+          "type": "feature",
+          "title": "Skip a folder with `feature: false`",
+          "description": "Set `feature: false` in a README front matter to keep a folder out of the feature tree.",
+          "pr": 122
+        },
+        {
+          "type": "feature",
+          "title": "`--ignore-path` option",
+          "description": "Exclude a folder and all its subfolders from scanning.",
+          "pr": 115
+        }
+      ]
+    },
+    {
+      "version": "0.11.7",
+      "date": "2026-02-28",
+      "summary": "A dependency graph between features.",
+      "changes": [
+        {
+          "type": "feature",
+          "title": "Dependency graph",
+          "description": "See which features import which, as an interactive graph.",
+          "pr": 110
+        }
+      ]
+    },
+    {
+      "version": "0.11.6",
+      "date": "2026-02-20",
+      "changes": [
+        {
+          "type": "fix",
+          "title": "More imports resolved when detecting feature dependencies",
+          "pr": 109
+        }
+      ]
+    },
+    {
+      "version": "0.11.5",
+      "date": "2026-02-20",
+      "changes": [
+        {
+          "type": "fix",
+          "title": "Better resolution of import paths between features",
+          "pr": 108
+        }
+      ]
+    },
+    {
+      "version": "0.11.4",
+      "date": "2026-02-18",
+      "changes": [
+        {
+          "type": "fix",
+          "title": "Dependencies found in more file layouts",
+          "pr": 106
+        }
+      ]
+    },
+    {
+      "version": "0.11.3",
+      "date": "2026-02-18",
+      "changes": [
+        {
+          "type": "fix",
+          "title": "Features retrieved correctly from their dependencies",
+          "pr": 105
+        }
+      ]
+    },
+    {
+      "version": "0.11.2",
+      "date": "2026-02-18",
+      "changes": [
+        {
+          "type": "fix",
+          "title": "Dependencies resolved to the right feature",
+          "pr": 104
+        }
+      ]
+    },
+    {
+      "version": "0.11.1",
+      "date": "2026-02-18",
+      "summary": "Features now know which other features they depend on.",
+      "changes": [
+        {
+          "type": "feature",
+          "title": "Feature dependencies",
+          "description": "The CLI detects imports between features and lists each feature's dependencies.",
+          "pr": 101
+        }
+      ]
+    }
+  ]
+}

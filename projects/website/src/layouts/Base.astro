@@ -95,6 +95,8 @@ const structuredData: Record<string, unknown>[] = [
     <link rel="sitemap" href="/sitemap-index.xml" />
     {!noindex && <link rel="alternate" type="text/markdown" href={markdownPath} title="Markdown version" />}
     <link rel="alternate" type="text/plain" href="/llms.txt" title="Site summary for LLMs" />
+    <!-- Page-specific head tags, such as a feed link. -->
+    <slot name="head" />
     <meta name="generator" content={Astro.generator} />
     <!-- Lets illustrations in a `.reveal` container wait until they scroll into view. -->
     <script is:inline>document.documentElement.classList.add('js')</script>

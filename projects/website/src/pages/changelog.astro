@@ -1,0 +1,118 @@
+---
+import PageHero from '../components/PageHero.astro'
+import { site } from '../data/site'
+import Base from '../layouts/Base.astro'
+import {
+  formatDate,
+  groupChanges,
+  pullRequestUrl,
+  releases,
+  toHtml,
+} from '../lib/changelog'
+
+const latest = releases[0]
+const description = `New features, fixes and docs in every release of features-cli and its web dashboard, newest first. Latest: ${latest.version}, ${formatDate(latest.date)}.`
+const feedUrl = '/changelog.xml'
+---
+
+<Base
+  title="Changelog"
+  description={description}
+  breadcrumbs={[{ name: 'Changelog', path: '/changelog' }]}
+>
+  <link slot="head" rel="alternate" type="application/rss+xml" href={feedUrl} title="Features changelog" />
+
+  <PageHero
+    eyebrow="Changelog"
+    title="What's new in Features"
+    lead="Every release of the CLI and the web dashboard: new features, fixes and docs, newest first."
+  >
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm">
+      <a
+        href={feedUrl}
+        class="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2 text-muted transition hover:border-muted hover:text-text"
+      >
+        <svg class="size-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <circle cx="3" cy="13" r="1.75" />
+          <path d="M1.25 6.5a8.25 8.25 0 0 1 8.25 8.25H7.5A6.25 6.25 0 0 0 1.25 8.5z" />
+          <path d="M1.25 1.5A13.25 13.25 0 0 1 14.5 14.75h-2A11.25 11.25 0 0 0 1.25 3.5z" />
+        </svg>
+        RSS feed
+      </a>
+      <a
+        href={`${site.repository}/releases`}
+        class="inline-flex items-center gap-2 rounded-lg border border-line px-4 py-2 text-muted transition hover:border-muted hover:text-text"
+        rel="noopener"
+      >
+        GitHub releases
+      </a>
+    </div>
+  </PageHero>
+
+  <div class="mx-auto max-w-4xl px-4 sm:px-6">
+    {
+      releases.map((release) => (
+        <article id={release.anchor} class="relative grid scroll-mt-24 gap-4 py-12 md:grid-cols-[10rem_1fr] md:gap-10">
+          <div class="hairline pointer-events-none absolute inset-x-0 top-0" aria-hidden="true" />
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 md:sticky md:top-24 md:flex-col md:self-start">
+            <time datetime={release.date} class="text-sm text-muted">
+              {formatDate(release.date)}
+            </time>
+          </div>
+          <div class="min-w-0">
+            <h2 class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <a href={`/changelog#${release.anchor}`} class="font-mono text-2xl font-bold tracking-tight hover:text-accent-2">
+                {release.version}
+              </a>
+              {release === latest && (
+                <span class="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted">Latest</span>
+              )}
+            </h2>
+            {release.summary && <p class="mt-2 text-pretty text-muted">{release.summary}</p>}
+
+            {groupChanges(release.changes).map((group) => (
+              <section class="mt-6">
+                <h3 class="font-mono text-xs tracking-[0.2em] text-accent-2 uppercase">{group.label}</h3>
+                <ul class="mt-3 space-y-3">
+                  {group.changes.map((change) => (
+                    <li class="relative pl-5 text-sm leading-relaxed break-words before:absolute before:top-[0.6rem] before:left-0 before:size-1.5 before:rounded-full before:bg-line">
+                      <span class="font-medium text-text" set:html={toHtml(change.title)} />
+                      {change.pr && (
+                        <a
+                          href={pullRequestUrl(change.pr)}
+                          class="ml-1.5 font-mono text-xs whitespace-nowrap text-muted hover:text-text"
+                          rel="noopener"
+                          aria-label={`Pull request ${change.pr}`}
+                        >
+                          #{change.pr}
+                        </a>
+                      )}
+                      {change.description && <p class="mt-1 text-pretty text-muted" set:html={toHtml(change.description)} />}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+
+            <p class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <a class="link" href={release.url} rel="noopener">
+                {release.releaseLabel} {release.version}
+              </a>
+              {release.compareUrl && (
+                <a class="link" href={release.compareUrl} rel="noopener">
+                  All changes since the previous release
+                </a>
+              )}
+            </p>
+          </div>
+        </article>
+      ))
+    }
+
+    <div class="relative py-12 text-center text-sm text-muted">
+      <div class="hairline pointer-events-none absolute inset-x-0 top-0" aria-hidden="true"></div>
+      Older versions are listed in the
+      <a class="link" href={`${site.repository}/releases`} rel="noopener">GitHub release history</a>.
+    </div>
+  </div>
+</Base>

@@ -33,4 +33,23 @@ describe('CHANGELOG', () => {
     const ids = CHANGELOG.map((entry) => entry.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  it('keeps the ids users have already seen', () => {
+    expect(CHANGELOG.map((entry) => entry.id)).toEqual(
+      expect.arrayContaining([
+        'outside-features',
+        'history-feature-graph',
+        'feature-history',
+        'feature-keys-links',
+        'specs-decisions',
+      ]),
+    )
+    expect(CHANGELOG[0].id).toBe('outside-features')
+  })
+
+  it('links every entry to its pull request', () => {
+    for (const entry of CHANGELOG) {
+      expect(entry.url).toMatch(/\/pull\/\d+$/)
+    }
+  })
 })
