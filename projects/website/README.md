@@ -14,8 +14,11 @@ Built with [Astro](https://astro.build) and Tailwind CSS. Hosted on [Vercel](htt
 | `/specs-decisions`            | Specs and decision records, Spec Kit and Kiro, `new` and `check` commands | `docs/folder-architecture-guidelines.md`, `FAQ.md`                |
 | `/cli`                        | Install, commands, options, `diff` + GitHub Actions, CODEOWNERS, coverage | `README.md`, `FAQ.md`                                             |
 | `/faq`                        | Frequently asked questions (with `FAQPage` structured data)               | `FAQ.md`                                                          |
+| `/changelog`                  | Releases newest first, plus an RSS feed at `/changelog.xml`               | `docs/changelog.json` (also read by the dashboard's "What's new") |
 
 The content mirrors the repository docs. When the README, FAQ or docs change, update the matching page.
+
+To publish a release in the changelog, add it at the top of [`docs/changelog.json`](../../docs/changelog.json) with user-facing wording. Changes merged since the last release go in the `unreleased` entry at the top; on release, give it the version and date. Give a change an `id` to also show it in the dashboard's "What's new" menu. See [spec 012](../../docs/specs/012-website-changelog.md).
 
 ## AI assistants (GEO)
 

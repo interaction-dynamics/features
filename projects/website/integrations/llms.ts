@@ -198,6 +198,7 @@ ${docs}
 
 - [GitHub repository](${site.repository}): source code, issues and README
 - [Live demo](${site.demo}): the dashboard running on this repository
+- [Changelog feed](${siteUrl}/changelog.xml): RSS feed of every release
 - [npm package](${site.npm}): prebuilt binaries for macOS, Linux and Windows
 - [crates.io](${site.crate}): Rust crate, to build from source
 

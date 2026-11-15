@@ -1,3 +1,5 @@
+import changelog from '../../../../../docs/changelog.json'
+
 export const REPOSITORY_URL = 'https://github.com/interaction-dynamics/features'
 export const DOCS_URL = `${REPOSITORY_URL}#readme`
 export const FEEDBACK_URL = `${REPOSITORY_URL}/issues/new/choose`
@@ -10,39 +12,25 @@ export interface ChangelogEntry {
   url: string
 }
 
-/** Newest first. Add new entries at the top. */
-export const CHANGELOG: ChangelogEntry[] = [
-  {
-    id: 'owner-page',
-    title: 'Owner pages',
-    url: `${REPOSITORY_URL}/pull/200`,
-  },
-  {
-    id: 'outside-features',
-    title: 'Outside features page',
-    url: `${REPOSITORY_URL}/pull/177`,
-  },
-  {
-    id: 'history-feature-graph',
-    title: 'Feature graph in History',
-    url: `${REPOSITORY_URL}/pull/174`,
-  },
-  {
-    id: 'feature-history',
-    title: 'Feature history from commits',
-    url: `${REPOSITORY_URL}/pull/165`,
-  },
-  {
-    id: 'feature-keys-links',
-    title: 'Feature keys, links and external data',
-    url: `${REPOSITORY_URL}/pull/163`,
-  },
-  {
-    id: 'specs-decisions',
-    title: 'Specs and decisions side by side',
-    url: `${REPOSITORY_URL}/pull/158`,
-  },
-]
+/**
+ * Newest first. Built from the changes that have an `id` in
+ * `docs/changelog.json`, the changelog shared with the website's /changelog page:
+ * add new entries there, not here.
+ */
+export const CHANGELOG: ChangelogEntry[] = changelog.releases.flatMap(
+  (release) =>
+    release.changes.flatMap((change) =>
+      'id' in change && change.id
+        ? [
+            {
+              id: change.id,
+              title: change.title,
+              url: `${REPOSITORY_URL}/pull/${change.pr}`,
+            },
+          ]
+        : [],
+    ),
+)
 
 /** Number of entries shown in the "What's new" section of the menu */
 export const CHANGELOG_PREVIEW_SIZE = 3
