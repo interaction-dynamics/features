@@ -6,6 +6,7 @@ import {
   Compass,
   GitCompare,
   Layers,
+  Plug,
   ScanEye,
   ShieldCheck,
   Sparkles,
@@ -18,7 +19,7 @@ import { site } from '../data/site'
 import Base from '../layouts/Base.astro'
 
 const description =
-  'Use features-cli with Claude Code, Cursor, Copilot and other AI coding agents: give them a map of the codebase by feature, its owners and decisions, and let Claude reorganize a codebase into feature folders.'
+  'Use features-cli with Claude Code, Cursor, Copilot and other AI coding agents: connect it as an MCP server or call the CLI to give them a map of the codebase by feature, its owners and decisions, and let Claude reorganize a codebase into feature folders.'
 
 const aiEraReasons = [
   {
@@ -65,6 +66,28 @@ const benefits = [
     text: 'features check catches invalid features, such as duplicate names, that the agent may have introduced.',
   },
 ]
+
+const mcpTools = [
+  ['list_features', 'Every feature with its key, path, owner and a one-line summary. Filter by owner or text.'],
+  [
+    'get_feature',
+    'Everything about one feature: README, metadata, links, imported data, coverage, specs and decisions, dependencies and recent commits.',
+  ],
+  ['find_owner', 'The feature and owner of a file or folder.'],
+  ['features_touched', 'The features and owners touched since a git ref, like features diff.'],
+  ['list_records', 'The project-level specs and decision records, or the ones of a feature.'],
+]
+
+const cursorConfig = `{
+  "mcpServers": {
+    "features": {
+      "command": "npx",
+      "args": ["features-cli@latest", "mcp", "./src"]
+    }
+  }
+}`
+
+const mcpDocsUrl = `${site.repository}/blob/master/docs/cli.md#give-an-ai-coding-agent-a-map-of-the-codebase-mcp`
 
 const instructions = `## Finding your way around
 
@@ -147,7 +170,7 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
   <PageHero
     eyebrow="AI coding agents"
     title="Give your coding agent a map of the codebase"
-    lead="Agents work best when they know where things live. Without a map, they search the repository file by file, spend context on unrelated code and miss the decisions behind it. features-cli gives them that map in one command."
+    lead="Agents work best when they know where things live. Without a map, they search the repository file by file, spend context on unrelated code and miss the decisions behind it. features-cli gives them that map, as an MCP server or in one command."
   />
 
   <Section
@@ -175,7 +198,7 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
     id="why"
     eyebrow="Why it helps"
     title="Less searching, fewer surprises"
-    lead="It's a plain CLI with JSON output: no plugin, server or API key needed. Any agent that can run a shell command can use it."
+    lead="Plug it in as an MCP server, or let the agent call the plain CLI with JSON output. Everything runs locally: no account, network call or API key."
   >
     <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {
@@ -193,10 +216,49 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
   </Section>
 
   <Section
+    id="mcp"
+    eyebrow="MCP server"
+    title="Connect it as an MCP server"
+    lead="features mcp runs a Model Context Protocol server over stdio, so the agent asks focused questions instead of reading a whole report. Register it once; the agent starts it when it needs it."
+  >
+    <div class="grid items-start gap-6 lg:grid-cols-[1.2fr_1fr]">
+      <div class="space-y-6">
+        <Terminal title="Claude Code">
+<span class="select-none text-muted">$ </span>claude mcp add features -- \
+    npx features-cli@latest mcp ./src</Terminal>
+        <figure>
+          <figcaption class="mb-2 font-mono text-xs text-muted">Cursor: .cursor/mcp.json</figcaption>
+          <Code code={cursorConfig} lang="json" theme="github-dark-default" />
+        </figure>
+        <p class="text-sm text-muted">
+          The project is scanned on the first call and rescanned when files change. The usual options work, such as
+          <code>--skip-changes</code> on large repositories or <code>--data usage.json</code> to expose data from other
+          tools. <a class="link" href={mcpDocsUrl} rel="noopener">MCP reference on GitHub</a>.
+        </p>
+      </div>
+      <div class="card overflow-hidden">
+        <h3 class="flex items-center gap-2 border-b border-line bg-surface-2 px-5 py-3 text-sm font-semibold">
+          <Plug size={16} class="text-accent" aria-hidden="true" /> Five read-only tools
+        </h3>
+        <dl class="divide-y divide-line/60">
+          {
+            mcpTools.map(([name, text]) => (
+              <div class="grid gap-1 px-5 py-3">
+                <dt><code class="!text-xs">{name}</code></dt>
+                <dd class="text-sm text-muted">{text}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </div>
+  </Section>
+
+  <Section
     id="setup"
-    eyebrow="Setup"
-    title="Tell your agent the map exists"
-    lead="Add a few lines to the instructions file your agent reads at the start of every session."
+    eyebrow="CLI"
+    title="Or tell your agent to use the CLI"
+    lead="No MCP support? Any agent that can run a shell command can use it. Add a few lines to the instructions file your agent reads at the start of every session."
   >
     <div class="grid items-start gap-6 lg:grid-cols-[1.4fr_1fr]">
       <figure>
