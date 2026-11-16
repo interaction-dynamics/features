@@ -1,5 +1,6 @@
 import changelog from '../../../../../docs/changelog.json'
 
+export const WEBSITE_URL = 'https://features.interaction-dynamics.io'
 export const REPOSITORY_URL = 'https://github.com/interaction-dynamics/features'
 export const DOCS_URL = `${REPOSITORY_URL}#readme`
 export const FEEDBACK_URL = `${REPOSITORY_URL}/issues/new/choose`
