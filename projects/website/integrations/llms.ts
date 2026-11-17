@@ -186,7 +186,7 @@ const llmsTxt = (pages: Page[], siteUrl: string) => {
 
 - Name of the CLI: \`features-cli\`, a single binary written in Rust.
 - Try it without installing: \`npx features-cli@latest serve ./src\` opens the dashboard.
-- Install: \`npm install -g features-cli\`, \`brew install interaction-dynamics/tap/features\` or \`cargo install features-cli\`.
+- Install: \`npm install -g features-cli\`, \`curl -fsSL ${siteUrl}/install.sh | sh\`, \`brew install interaction-dynamics/tap/features\` or \`cargo install features-cli\`.
 - Free and open source under the ${site.license} license, maintained by ${site.organization} (${site.organizationUrl}).
 - Every page below is also available as HTML at the same URL without \`.md\`.
 

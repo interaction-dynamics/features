@@ -6,6 +6,11 @@
       "changes": [
         {
           "type": "feature",
+          "title": "Install with a shell script",
+          "description": "`curl -fsSL <website>/install.sh | sh` downloads the prebuilt binary for macOS or Linux from the GitHub release, verifies its checksum and installs it in `~/.local/bin`. The command is in the install picker of the CLI page."
+        },
+        {
+          "type": "feature",
           "id": "owner-page",
           "title": "Owner pages",
           "description": "An experimental page per owner (team or person) gathers their features, totals, `--data` metrics, recent changes, specs and decisions. Enable it with `--experimental`.",

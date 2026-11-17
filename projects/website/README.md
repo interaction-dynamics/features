@@ -30,6 +30,10 @@ To be read and cited by ChatGPT, Claude, Perplexity, Gemini and other answer eng
 
 Check the output in `dist/*.md` and `dist/llms.txt` after `bun run build`.
 
+## Install script
+
+[`public/install.sh`](./public/install.sh) is served at `/install.sh` (as `text/plain`, see [`vercel.json`](./vercel.json)) and shown in the install picker of `/cli` as `curl -fsSL <site>/install.sh | sh`. It is a POSIX `sh` script: it picks the binary for the OS and CPU (`darwin-x64`, `darwin-arm64`, or the musl `linux-x64-musl` / `linux-arm64-musl` builds), downloads it with its `.sha256` from the GitHub release, verifies the checksum and installs it as `~/.local/bin/features`. `FEATURES_VERSION` pins a version and `FEATURES_INSTALL_DIR` changes the folder. It relies on the release assets uploaded by [`release.yml`](../../.github/workflows/release.yml): keep the asset names in sync. See [spec 013](../../docs/specs/013-cli-install-script.md).
+
 ## Getting started
 
 ```bash
