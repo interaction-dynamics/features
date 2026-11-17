@@ -1,6 +1,7 @@
 import {
   BookOpen,
   ChevronsUpDown,
+  Globe,
   MessageSquareMore,
   SunMoon,
 } from 'lucide-react'
@@ -33,6 +34,7 @@ import {
   DOCS_URL,
   FEEDBACK_URL,
   REPOSITORY_URL,
+  WEBSITE_URL,
 } from './changelog'
 import { useChangelogSeen } from './use-changelog-seen'
 
@@ -43,7 +45,7 @@ const THEMES = [
 ] as const
 
 /**
- * App menu at the bottom of the sidebar: help links, theme and the latest
+ * App menu at the bottom of the sidebar: website and help links, theme and the latest
  * changes ("What's new"), opened from the Features logo.
  */
 export function AppMenu() {
@@ -97,6 +99,9 @@ export function AppMenu() {
             className="w-(--radix-dropdown-menu-trigger-width) min-w-60 rounded-lg"
           >
             <DropdownMenuGroup>
+              <ExternalItem href={WEBSITE_URL} icon={<Globe />}>
+                Website
+              </ExternalItem>
               <ExternalItem href={DOCS_URL} icon={<BookOpen />}>
                 Docs
               </ExternalItem>
