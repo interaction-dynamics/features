@@ -7,7 +7,8 @@
         {
           "type": "feature",
           "title": "Install with a shell script",
-          "description": "`curl -fsSL <website>/install.sh | sh` downloads the prebuilt binary for macOS or Linux from the GitHub release, verifies its checksum and installs it in `~/.local/bin`. The command is in the install picker of the CLI page."
+          "description": "`curl -fsSL <website>/install.sh | sh` downloads the prebuilt binary for macOS or Linux from the GitHub release, verifies its checksum and installs it in `~/.local/bin`. The command is in the install picker of the CLI page.",
+          "pr": 203
         },
         {
           "type": "feature",
