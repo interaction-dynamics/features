@@ -6,17 +6,24 @@ Built with [Astro](https://astro.build) and Tailwind CSS. Hosted on [Vercel](htt
 
 ## Pages
 
-| Path                          | Content                                                                   | Source                                                            |
-| ----------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `/`                           | What Features does, how it works, capabilities, dashboard, specs teaser   | `README.md`                                                       |
-| `/feature-based-architecture` | The concept, layered vs feature-based, anatomy of a feature               | `FAQ.md`, `README.md`                                             |
-| `/guidelines`                 | Folder structure, README front matter, specs and decisions, annotations   | `docs/folder-architecture-guidelines.md`, `docs/readme-format.md` |
-| `/specs-decisions`            | Specs and decision records, Spec Kit and Kiro, `new` and `check` commands | `docs/folder-architecture-guidelines.md`, `FAQ.md`                |
-| `/cli`                        | Install, commands, options, `diff` + GitHub Actions, CODEOWNERS, coverage | `README.md`, `FAQ.md`                                             |
-| `/faq`                        | Frequently asked questions (with `FAQPage` structured data)               | `FAQ.md`                                                          |
-| `/changelog`                  | Releases newest first, plus an RSS feed at `/changelog.xml`               | `docs/changelog.json` (also read by the dashboard's "What's new") |
+| Path                          | Content                                                                                                             | Source                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `/`                           | What Features does, how it works, capabilities, dashboard, specs teaser                                             | `README.md`                                                                                |
+| `/feature-based-architecture` | The concept, layered vs feature-based, anatomy of a feature                                                         | `FAQ.md`, `README.md`                                                                      |
+| `/guidelines`                 | Folder structure, README front matter, specs and decisions, annotations                                             | `docs/folder-architecture-guidelines.md`, `docs/readme-format.md`                          |
+| `/specs-decisions`            | Specs and decision records, Spec Kit and Kiro, `new` and `check` commands                                           | `docs/folder-architecture-guidelines.md`, `FAQ.md`                                         |
+| `/cli`                        | Install, commands, options, `diff` + GitHub Actions, CODEOWNERS, coverage                                           | `README.md`, `FAQ.md`                                                                      |
+| `/docs`, `/docs/*`            | Technical documentation: commands, options, configuration file, check rules, conventions and guides, with a sidebar | `docs/cli.md`, `docs/readme-format.md`, `docs/folder-architecture-guidelines.md`, `FAQ.md` |
+| `/faq`                        | Frequently asked questions (with `FAQPage` structured data)                                                         | `FAQ.md`                                                                                   |
+| `/changelog`                  | Releases newest first, plus an RSS feed at `/changelog.xml`                                                         | `docs/changelog.json` (also read by the dashboard's "What's new")                          |
 
 The content mirrors the repository docs. When the README, FAQ or docs change, update the matching page.
+
+### Documentation pages
+
+The `/docs` pages are Markdown files in [`src/content/docs/`](./src/content/docs/) (a content collection, see [`src/content.config.ts`](./src/content.config.ts)), rendered by [`src/pages/docs/[...slug].astro`](./src/pages/docs/[...slug].astro) in the [`Docs` layout](./src/layouts/Docs.astro): sidebar (a drawer on mobile), "On this page" list, edit link and previous/next links. Each file has a `title` and a `description` in its front matter; `index.md` is `/docs`.
+
+To add a page, create `src/content/docs/<slug>.md` and add `<slug>` to a group of [`src/data/docs.ts`](./src/data/docs.ts), which sets the sidebar and the previous/next order. The build fails when a file is missing from the sidebar or the other way around.
 
 To publish a release in the changelog, add it at the top of [`docs/changelog.json`](../../docs/changelog.json) with user-facing wording. Changes merged since the last release go in the `unreleased` entry at the top; on release, give it the version and date. Give a change an `id` to also show it in the dashboard's "What's new" menu. See [spec 012](../../docs/specs/012-website-changelog.md).
 

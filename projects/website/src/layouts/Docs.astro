@@ -1,0 +1,215 @@
+---
+import { ArrowLeft, ArrowRight, PanelLeft, SquarePen, X } from '@lucide/astro'
+import DocsNav from '../components/DocsNav.astro'
+import { docsPages } from '../data/docs'
+import { githubUrl } from '../data/site'
+import Base from './Base.astro'
+
+interface Heading {
+  depth: number
+  slug: string
+  text: string
+}
+
+interface Props {
+  title: string
+  description: string
+  /** Slug of the page in the docs sidebar (`index` for /docs). */
+  slug: string
+  /** Headings of the page, for the "On this page" list. */
+  headings?: Heading[]
+}
+
+const { title, description, slug, headings = [] } = Astro.props
+
+const index = docsPages.findIndex((page) => page.slug === slug)
+if (index === -1) {
+  throw new Error(`Docs page "${slug}" is missing from src/data/docs.ts`)
+}
+const page = docsPages[index]
+const previous = docsPages[index - 1]
+const next = docsPages[index + 1]
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3)
+
+const breadcrumbs = [
+  { name: 'Docs', path: '/docs' },
+  ...(slug === 'index' ? [] : [{ name: page.label, path: page.href }]),
+]
+const sourceUrl = githubUrl(`projects/website/src/content/docs/${slug}.md`)
+---
+
+<Base title={slug === 'index' ? 'Documentation' : `${title} · Docs`} description={description} breadcrumbs={breadcrumbs}>
+  <div
+    class="sticky top-(--header-height) z-30 border-b border-line/70 bg-ink/85 backdrop-blur lg:hidden"
+    data-markdown-ignore
+  >
+    <div class="mx-auto flex max-w-7xl items-center px-4 sm:px-6">
+      <button
+        type="button"
+        class="-ml-2 flex min-w-0 items-center gap-2 rounded-md px-2 py-2.5 text-sm text-muted transition hover:text-text"
+        aria-controls="docs-drawer"
+        aria-expanded="false"
+        data-docs-open
+      >
+        <PanelLeft size={16} class="shrink-0" aria-hidden="true" />
+        <span class="shrink-0">Docs</span>
+        <span class="text-line" aria-hidden="true">/</span>
+        <span class="truncate text-text">{page.label}</span>
+      </button>
+    </div>
+  </div>
+
+  <dialog
+    id="docs-drawer"
+    aria-label="Documentation pages"
+    class="docs-drawer m-0 h-dvh max-h-none w-[min(20rem,85vw)] max-w-none border-r border-line bg-surface p-0 text-text"
+    data-docs-drawer
+    data-markdown-ignore
+  >
+    <div class="flex items-center justify-between border-b border-line px-4 py-3">
+      <p class="text-sm font-semibold">Documentation</p>
+      <button
+        type="button"
+        class="inline-flex size-8 items-center justify-center rounded-md border border-line text-muted transition hover:border-muted hover:text-text"
+        aria-label="Close the documentation menu"
+        data-docs-close
+      >
+        <X size={16} aria-hidden="true" />
+      </button>
+    </div>
+    <nav aria-label="Documentation" class="px-3 py-6">
+      <DocsNav current={slug} />
+    </nav>
+  </dialog>
+
+  <div
+    class="mx-auto max-w-7xl px-4 sm:px-6 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-12 xl:grid-cols-[14rem_minmax(0,1fr)_12rem]"
+  >
+    <aside class="hidden lg:block" data-markdown-ignore>
+      <nav
+        aria-label="Documentation"
+        class="sticky top-(--header-height) -ml-3 max-h-[calc(100dvh-var(--header-height))] overflow-y-auto py-10 pr-2"
+      >
+        <DocsNav current={slug} />
+      </nav>
+    </aside>
+
+    <article class="min-w-0 py-10 lg:py-12">
+      <!-- The Markdown twin already starts with the title and the description. -->
+      <header data-markdown-ignore>
+        <p class="font-mono text-xs tracking-[0.2em] text-accent-2 uppercase">{page.group}</p>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{title}</h1>
+        <p class="mt-4 max-w-2xl text-lg text-pretty text-muted">{description}</p>
+      </header>
+
+      <div class="prose-docs mt-10 max-w-3xl">
+        <slot />
+      </div>
+
+      <div class="mt-14 max-w-3xl" data-markdown-ignore>
+        <a
+          href={sourceUrl}
+          rel="noopener"
+          class="inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text"
+        >
+          <SquarePen size={14} aria-hidden="true" />
+          Edit this page on GitHub
+        </a>
+        <nav aria-label="Previous and next pages" class="mt-6 grid gap-4 sm:grid-cols-2">
+          {
+            previous && (
+              <a href={previous.href} class="card group block p-4 transition hover:brightness-125">
+                <span class="flex items-center gap-1.5 text-xs text-muted">
+                  <ArrowLeft size={13} aria-hidden="true" /> Previous
+                </span>
+                <span class="mt-1 block font-medium">{previous.label}</span>
+              </a>
+            )
+          }
+          {
+            next && (
+              <a href={next.href} class="card group block p-4 text-right transition hover:brightness-125 sm:col-start-2">
+                <span class="flex items-center justify-end gap-1.5 text-xs text-muted">
+                  Next <ArrowRight size={13} aria-hidden="true" />
+                </span>
+                <span class="mt-1 block font-medium">{next.label}</span>
+              </a>
+            )
+          }
+        </nav>
+      </div>
+    </article>
+
+    {
+      toc.length > 0 && (
+        <aside class="hidden xl:block" data-markdown-ignore>
+          <nav aria-label="On this page" class="sticky top-(--header-height) max-h-[calc(100dvh-var(--header-height))] overflow-y-auto py-12 text-sm">
+            <p class="font-mono text-[0.7rem] tracking-[0.18em] text-accent-3 uppercase">On this page</p>
+            <ul class="mt-3 space-y-2" data-docs-toc>
+              {toc.map((heading) => (
+                <li class:list={[heading.depth === 3 && 'pl-3']}>
+                  <a
+                    href={`#${heading.slug}`}
+                    class="block text-muted transition hover:text-text aria-[current=true]:text-text"
+                  >
+                    {heading.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </aside>
+      )
+    }
+  </div>
+</Base>
+
+<script>
+  const drawer = document.querySelector<HTMLDialogElement>('[data-docs-drawer]')
+  const open = document.querySelector<HTMLButtonElement>('[data-docs-open]')
+
+  if (drawer && open) {
+    const close = () => drawer.close()
+    open.addEventListener('click', () => {
+      drawer.showModal()
+      open.setAttribute('aria-expanded', 'true')
+    })
+    drawer.addEventListener('close', () => open.setAttribute('aria-expanded', 'false'))
+    drawer.querySelector('[data-docs-close]')?.addEventListener('click', close)
+    // A click on the backdrop lands on the dialog itself.
+    drawer.addEventListener('click', (event) => {
+      if (event.target === drawer) close()
+    })
+    window.matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {
+      if (event.matches) close()
+    })
+  }
+
+  // Highlight the section being read in "On this page".
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-docs-toc] a')]
+  const sections = links
+    .map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1))))
+    .filter((element): element is HTMLElement => element !== null)
+
+  if (sections.length > 0 && 'IntersectionObserver' in window) {
+    const visible = new Set<Element>()
+    const update = () => {
+      const current = sections.find((section) => visible.has(section)) ?? null
+      if (!current) return
+      for (const link of links) {
+        link.setAttribute('aria-current', String(link.hash === `#${current.id}`))
+      }
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visible.add(entry.target)
+          else visible.delete(entry.target)
+        }
+        update()
+      },
+      { rootMargin: '-80px 0px -60% 0px' },
+    )
+    for (const section of sections) observer.observe(section)
+  }
+</script>

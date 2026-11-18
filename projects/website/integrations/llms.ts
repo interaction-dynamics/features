@@ -1,7 +1,9 @@
 import { readFile, readdir, writeFile } from 'node:fs/promises'
+import { sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AstroIntegration } from 'astro'
 import TurndownService from 'turndown'
+import { docsPages } from '../src/data/docs'
 import { nav, site } from '../src/data/site'
 
 /**
@@ -25,9 +27,10 @@ export default function llms(): AstroIntegration {
       },
       'astro:build:done': async ({ dir, logger }) => {
         const outDir = fileURLToPath(dir)
-        const files = (await readdir(outDir)).filter((file) =>
-          file.endsWith('.html'),
-        )
+        // Recursive, for the pages in folders such as /docs/commands.
+        const files = (await readdir(outDir, { recursive: true }))
+          .map((file) => file.split(sep).join('/'))
+          .filter((file) => file.endsWith('.html'))
 
         const pages: Page[] = []
         for (const file of files) {
@@ -60,11 +63,14 @@ interface Page {
   markdown: string
 }
 
-/** Home page first, then the navigation order. */
+/** Home page first, then the navigation order, docs pages in the order of their sidebar. */
 const order = (slug: string) => {
   if (slug === 'index') return -1
-  const index = nav.findIndex((item) => item.href === `/${slug}`)
-  return index === -1 ? nav.length : index
+  const docsPage = docsPages.findIndex((page) => page.href === `/${slug}`)
+  const href = docsPage === -1 ? `/${slug}` : '/docs'
+  const index = nav.findIndex((item) => item.href === href)
+  const position = index === -1 ? nav.length : index
+  return docsPage === -1 ? position : position + (docsPage + 1) / 1000
 }
 
 const decode = (text: string) =>
@@ -119,7 +125,9 @@ const ignoredTags = new Set(['SVG', 'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'])
 turndown.addRule('decorative', {
   filter: (node) =>
     ignoredTags.has(node.nodeName.toUpperCase()) ||
-    node.getAttribute('aria-hidden') === 'true',
+    node.getAttribute('aria-hidden') === 'true' ||
+    // Navigation repeated on every page, such as the docs sidebar.
+    node.hasAttribute('data-markdown-ignore'),
   replacement: () => '',
 })
 
@@ -162,6 +170,50 @@ turndown.addRule('markdown-code', {
     const lang = element.getAttribute('data-markdown-lang') ?? 'text'
     const code = element.getAttribute('data-markdown-code')
     return `\n\n\`\`\`${lang}\n${code}\n\`\`\`\n\n`
+  },
+})
+
+// GFM splits a table row on the pipes that aren't escaped, reading backslashes
+// in pairs: a pipe after an even run of backslashes (none, `\\`) ends the cell,
+// after an odd run (`\`, `\\\`) it is already escaped. Text from turndown has
+// its backslashes escaped, but code spans keep theirs raw.
+const escapePipe = (_match: string, backslashes: string) =>
+  `${backslashes}${backslashes.length % 2 === 0 ? '\\' : ''}|`
+
+// Tables become GFM tables: turndown alone flattens them into one cell per line.
+turndown.addRule('table', {
+  filter: 'table',
+  replacement: (_content, node) => {
+    // The DOM of turndown has array-like lists, not iterable ones.
+    const rows = Array.from(node.getElementsByTagName('tr'), (row) =>
+      Array.from(row.childNodes)
+        .filter((cell) => cell.nodeName === 'TH' || cell.nodeName === 'TD')
+        .map((cell) =>
+          turndown
+            .turndown((cell as HTMLElement).innerHTML)
+            .replace(/\s*\n+\s*/g, ' ')
+            .replace(/(\\*)\|/g, escapePipe)
+            .trim(),
+        ),
+    )
+    if (rows.length === 0) return ''
+    const line = (cells: string[]) => `| ${cells.join(' | ')} |`
+    const separator = line(rows[0].map(() => '---'))
+    return `\n\n${[line(rows[0]), separator, ...rows.slice(1).map(line)].join('\n')}\n\n`
+  },
+})
+
+// Highlighted code blocks (Shiki) name their language in `data-language`.
+turndown.addRule('highlighted-code', {
+  filter: (node) =>
+    node.nodeName === 'PRE' &&
+    node.hasAttribute('data-language') &&
+    node.firstElementChild?.nodeName === 'CODE',
+  replacement: (_content, node) => {
+    const lang = (node as HTMLElement).getAttribute('data-language')
+    const fenceLang = lang === 'plaintext' ? 'text' : lang
+    const code = (node.textContent ?? '').replace(/\n+$/, '')
+    return `\n\n\`\`\`${fenceLang}\n${code}\n\`\`\`\n\n`
   },
 })
 

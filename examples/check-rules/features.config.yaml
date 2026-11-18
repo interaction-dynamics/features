@@ -1,0 +1,24 @@
+# Configuration of `features` for this example.
+# Used by projects/cli/tests/check_rules_test.rs: every rule is on, with tight options.
+# Options given on the command line win over this file.
+path: src
+skip-changes: true
+check:
+  rules:
+    duplicate-names: error
+    missing-owner:
+      severity: warn
+      allow-inherited: false
+    missing-readme:
+      severity: warn
+      max-files-without-readme: 1
+    min-coverage:
+      severity: error
+      threshold: 50
+    stale-flag:
+      severity: warn
+      max-age-days: 90
+    cross-feature-import:
+      severity: error
+      allow:
+        - features/shared

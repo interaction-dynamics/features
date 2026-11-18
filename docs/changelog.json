@@ -11,6 +11,21 @@
         },
         {
           "type": "feature",
+          "title": "Documentation on the website",
+          "description": "A `/docs` section with a sidebar: commands, options, the configuration file, check rules, README format, specs and decisions, and guides for the dashboard, CI, the MCP server, external data and aggregation."
+        },
+        {
+          "type": "feature",
+          "title": "Every option in features.config.yaml",
+          "description": "Any command line option can be set in `features.config.yaml`: shared options at the top level, options of one command in a section named after it (`serve: { port: 4000 }`, `diff: { since: origin/main }`). The command line wins over the file. `--config <file>` reads another file and `--no-config` ignores it. `features.config.toml` is no longer read: move its `name` to the YAML file."
+        },
+        {
+          "type": "feature",
+          "title": "Configurable check rules",
+          "description": "`features check` runs rules with a severity (`error`, `warn` or `off`): duplicate names and keys, record issues, missing owners and stale feature flags by default, plus opt-in `missing-readme`, `min-coverage` and `cross-feature-import`. Set them in `check.rules` of `features.config.yaml` or with `--rule`, `--enable-rule` and `--disable-rule`. `--format github` prints GitHub Actions annotations, `--list-rules` shows the effective severities."
+        },
+        {
+          "type": "feature",
           "title": "Install with a shell script",
           "description": "`curl -fsSL <website>/install.sh | sh` downloads the prebuilt binary for macOS or Linux from the GitHub release, verifies its checksum and installs it in `~/.local/bin`. The command is in the install picker of the CLI page.",
           "pr": 203

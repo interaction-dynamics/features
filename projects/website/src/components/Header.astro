@@ -2,21 +2,24 @@
 import { nav, site } from '../data/site'
 
 const current = Astro.url.pathname.replace(/\.html$/, '')
+// Sections with sub-pages (/docs/commands) keep their menu entry highlighted.
+const isCurrent = (href: string) =>
+  current === href || current.startsWith(`${href}/`)
 ---
 
 <header class="sticky top-0 z-40 border-b border-line/70 bg-ink/80 backdrop-blur">
-  <div class="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3 sm:px-6">
+  <div class="mx-auto flex h-15 max-w-6xl items-center gap-6 px-4 sm:px-6">
     <a href="/" class="flex items-center gap-2 font-semibold tracking-tight" aria-label="Features home">
       <img src="/favicon.svg" alt="" width="28" height="28" />
       <span>Features</span>
     </a>
-    <nav aria-label="Main" class="ml-auto hidden items-center gap-1 text-sm md:flex">
+    <nav aria-label="Main" class="ml-auto hidden items-center gap-1 text-sm lg:flex">
       {
         nav.map((item) => (
           <a
             href={item.href}
-            aria-current={current === item.href ? 'page' : undefined}
-            class="rounded-md px-3 py-1.5 text-muted transition hover:text-text aria-[current=page]:bg-surface-2 aria-[current=page]:text-text"
+            aria-current={isCurrent(item.href) ? 'page' : undefined}
+            class="rounded-md px-3 py-1.5 whitespace-nowrap text-muted transition hover:text-text aria-[current=page]:bg-surface-2 aria-[current=page]:text-text"
           >
             {item.label}
           </a>
@@ -25,7 +28,7 @@ const current = Astro.url.pathname.replace(/\.html$/, '')
     </nav>
     <a
       href={site.repository}
-      class="ml-auto inline-flex items-center gap-2 rounded-md border border-line px-3 py-1.5 text-sm text-muted transition hover:border-muted hover:text-text md:ml-0"
+      class="ml-auto inline-flex items-center gap-2 rounded-md border border-line px-3 py-1.5 text-sm text-muted transition hover:border-muted hover:text-text lg:ml-0"
       rel="noopener"
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -35,7 +38,7 @@ const current = Astro.url.pathname.replace(/\.html$/, '')
     </a>
     <button
       type="button"
-      class="inline-flex size-9 items-center justify-center rounded-md border border-line text-muted transition hover:border-muted hover:text-text md:hidden"
+      class="inline-flex size-9 items-center justify-center rounded-md border border-line text-muted transition hover:border-muted hover:text-text lg:hidden"
       aria-controls="mobile-menu"
       aria-expanded="false"
       aria-label="Open menu"
@@ -50,7 +53,7 @@ const current = Astro.url.pathname.replace(/\.html$/, '')
   <nav
     id="mobile-menu"
     aria-label="Main mobile"
-    class="hidden border-t border-line/70 px-4 py-2 text-sm md:hidden"
+    class="hidden border-t border-line/70 px-4 py-2 text-sm lg:hidden"
     data-mobile-menu
   >
     <ul class="flex flex-col gap-1">
@@ -59,7 +62,7 @@ const current = Astro.url.pathname.replace(/\.html$/, '')
           <li>
             <a
               href={item.href}
-              aria-current={current === item.href ? 'page' : undefined}
+              aria-current={isCurrent(item.href) ? 'page' : undefined}
               class="block rounded-md px-3 py-2.5 text-muted transition hover:bg-surface-2 hover:text-text aria-[current=page]:bg-surface-2 aria-[current=page]:text-text"
             >
               {item.label}
@@ -103,7 +106,7 @@ const current = Astro.url.pathname.replace(/\.html$/, '')
       if (!toggle.contains(target) && !menu.contains(target)) setOpen(false)
     })
 
-    window.matchMedia('(min-width: 48rem)').addEventListener('change', (event) => {
+    window.matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {
       if (event.matches) setOpen(false)
     })
   }

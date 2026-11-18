@@ -17,6 +17,7 @@ export const nav = [
   { href: '/guidelines', label: 'Guidelines' },
   { href: '/specs-decisions', label: 'Specs & decisions' },
   { href: '/cli', label: 'CLI' },
+  { href: '/docs', label: 'Docs' },
   { href: '/ai', label: 'AI' },
   { href: '/faq', label: 'FAQ' },
 ]
