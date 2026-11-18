@@ -20,6 +20,10 @@ export default defineConfig({
     format: 'file',
   },
   integrations: [sitemap(), llms()],
+  // Same theme as the <Code> blocks of the other pages, for the Markdown docs.
+  markdown: {
+    shikiConfig: { theme: 'github-dark-default' },
+  },
   vite: {
     plugins: [tailwindcss()],
   },

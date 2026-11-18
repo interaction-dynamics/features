@@ -1,0 +1,45 @@
+---
+import type { GetStaticPaths } from 'astro'
+import { getCollection, render } from 'astro:content'
+import { docsPages } from '../../data/docs'
+import Docs from '../../layouts/Docs.astro'
+
+export const getStaticPaths = (async () => {
+  const entries = await getCollection('docs')
+
+  // Every Markdown page must be in the sidebar, and every sidebar entry must exist.
+  const ids = new Set(entries.map((entry) => entry.id))
+  const listed = new Set(docsPages.map((page) => page.slug))
+  const unlisted = [...ids].filter((id) => !listed.has(id))
+  const missing = [...listed].filter((slug) => !ids.has(slug))
+  if (unlisted.length > 0 || missing.length > 0) {
+    throw new Error(
+      [
+        unlisted.length > 0 &&
+          `Add these docs pages to src/data/docs.ts: ${unlisted.join(', ')}`,
+        missing.length > 0 &&
+          `These docs pages have no file in src/content/docs: ${missing.join(', ')}`,
+      ]
+        .filter(Boolean)
+        .join('. '),
+    )
+  }
+
+  return entries.map((entry) => ({
+    params: { slug: entry.id === 'index' ? undefined : entry.id },
+    props: { entry },
+  }))
+}) satisfies GetStaticPaths
+
+const { entry } = Astro.props
+const { Content, headings } = await render(entry)
+---
+
+<Docs
+  title={entry.data.title}
+  description={entry.data.description}
+  slug={entry.id}
+  headings={headings}
+>
+  <Content />
+</Docs>

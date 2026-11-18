@@ -34,6 +34,8 @@
 
 :root {
   color-scheme: dark;
+  /* Height of the sticky site header (h-15 + its bottom border), for sticky docs panels. */
+  --header-height: calc(3.75rem + 1px);
 }
 
 html {
@@ -542,6 +544,166 @@ code:not(pre code) {
   min-width: 0;
 }
 
+/*
+ * Technical documentation (/docs), written in Markdown: the styles apply to
+ * the plain HTML it renders to.
+ */
+.prose-docs {
+  color: var(--color-muted);
+  line-height: 1.75;
+}
+
+.prose-docs > :first-child {
+  margin-top: 0;
+}
+
+.prose-docs :is(h2, h3, h4) {
+  color: var(--color-text);
+  scroll-margin-top: calc(var(--header-height) + 3.5rem);
+  text-wrap: balance;
+}
+
+.prose-docs h2 {
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+.prose-docs h3 {
+  margin-top: 2.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.prose-docs h4 {
+  margin-top: 1.75rem;
+  font-weight: 600;
+}
+
+.prose-docs h2 + *,
+.prose-docs h3 + *,
+.prose-docs h4 + * {
+  margin-top: 0.75rem;
+}
+
+.prose-docs :is(p, ul, ol, pre, table, blockquote) {
+  margin-top: 1.25rem;
+}
+
+.prose-docs strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.prose-docs a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(
+    in oklab,
+    var(--color-accent) 40%,
+    transparent
+  );
+}
+
+.prose-docs a:hover {
+  text-decoration-color: var(--color-accent);
+}
+
+.prose-docs ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+.prose-docs ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+.prose-docs li + li {
+  margin-top: 0.5rem;
+}
+
+.prose-docs li > :is(ul, ol) {
+  margin-top: 0.5rem;
+}
+
+.prose-docs li::marker {
+  color: var(--color-accent-3);
+}
+
+/* Tables scroll on their own instead of widening the page. */
+.prose-docs table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.prose-docs th {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.prose-docs :is(th, td) {
+  padding: 0.625rem 1rem;
+  vertical-align: top;
+}
+
+.prose-docs td {
+  border-top: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
+}
+
+.prose-docs td:first-child code {
+  white-space: nowrap;
+}
+
+.prose-docs blockquote {
+  border: 1px solid var(--color-line);
+  border-left: 2px solid var(--color-accent-2);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  padding: 0.75rem 1rem;
+}
+
+.prose-docs blockquote > :first-child {
+  margin-top: 0;
+}
+
+.prose-docs hr {
+  margin: 2.5rem 0;
+  border-color: var(--color-line);
+}
+
+/* Mobile menu of the docs: a panel sliding in from the left. */
+.docs-drawer[open] {
+  animation: drawer-in 0.2s ease-out;
+}
+
+.docs-drawer::backdrop {
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(2px);
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
 pre.astro-code {
   padding: 1.25rem;
   border-radius: 0.75rem;
@@ -564,6 +726,7 @@ pre.astro-code {
 
   .beam,
   .tilt,
+  .docs-drawer,
   [class*='anim-'] {
     animation: none !important;
   }

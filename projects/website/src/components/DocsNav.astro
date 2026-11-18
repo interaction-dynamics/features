@@ -1,0 +1,33 @@
+---
+import { docsGroups, docsHref } from '../data/docs'
+
+interface Props {
+  /** Slug of the current page, highlighted in the list. */
+  current: string
+}
+
+const { current } = Astro.props
+---
+
+<ul class="space-y-7 text-sm">
+  {
+    docsGroups.map((group) => (
+      <li>
+        <p class="px-3 font-mono text-[0.7rem] tracking-[0.18em] text-accent-3 uppercase">{group.title}</p>
+        <ul class="mt-2 space-y-0.5 border-l border-line/70">
+          {group.pages.map((page) => (
+            <li>
+              <a
+                href={docsHref(page.slug)}
+                aria-current={page.slug === current ? 'page' : undefined}
+                class="-ml-px block border-l border-transparent py-1.5 pr-2 pl-3 text-muted transition hover:border-muted hover:text-text aria-[current=page]:border-accent aria-[current=page]:bg-gradient-to-r aria-[current=page]:from-surface-2 aria-[current=page]:to-transparent aria-[current=page]:font-medium aria-[current=page]:text-text"
+              >
+                {page.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </li>
+    ))
+  }
+</ul>
