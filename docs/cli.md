@@ -19,6 +19,7 @@ Each action is a command. `PATH` is the folder to scan for features and defaults
 | `features new <spec\|decision> <FEATURE> <TITLE>` | Create the next numbered spec or decision record (`NNN-title.md`) in `<FEATURE>/__docs__/specs` or `/decisions`. `FEATURE` is a feature name or path, `.` for the project-level `docs/` folder. Use `--path` to choose the folder to scan |
 | `features diff [PATH] --since <ref>` | List the features touched since `<ref>`, with their owners. See [Ping the right teams on every pull request](../README.md#ping-the-right-teams-on-every-pull-request) |
 | `features mcp [PATH]` | Run an MCP server over stdio, so AI coding agents (Claude Code, Cursor...) can query the features. See [Give an AI coding agent a map of the codebase (MCP)](#give-an-ai-coding-agent-a-map-of-the-codebase-mcp) |
+| `features skills <list\|install>` | List or install the Claude skills bundled with the CLI (create, document, organize and validate features). See [Install the Claude skills](#install-the-claude-skills) |
 | `features aggregate <FOLDER>` | Aggregate the features JSON reports of several repositories into one dashboard. See [Aggregate several repositories](#aggregate-several-repositories) |
 
 Run `features <command> --help` for the options of a command. The options are:
@@ -47,6 +48,10 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--include-skipped-dirs` | all | Also scan folders that are skipped by default (`node_modules`) for features, stats and imports |
 | `--coverage-dir <path>` | all | Specify a custom coverage directory (overrides automatic search) |
 | `--strip-emails` | all | Remove commit author emails from the output (JSON, `serve` and `build`). Useful before publishing a static build. Author names are kept |
+| `--dir <path>` | `skills install` | Skills folder to install into (default: `.claude/skills` in the current directory) |
+| `--global` | `skills install` | Install into `~/.claude/skills`, for every project |
+| `--force` | `skills install` | Overwrite the files of skills that are already installed |
+| `--dry-run` | `skills install` | Print what would be installed without writing anything |
 | `--data <file>` | `scan`, `serve`, `build`, `check`, `mcp`, `aggregate` | Merge data from external tools (analytics, errors, issues, ...) into the features, matched by feature key. Can be repeated; later files override earlier ones. See [Import data from external tools](#import-data-from-external-tools) |
 | `--rule <id>=<severity>` | `check` | Set the severity of a [check rule](#check-rules): `error`, `warn` or `off`. Can be repeated |
 | `--enable-rule <id>` | `check` | Turn on a rule that is off (as `error`). Can be repeated |
@@ -260,6 +265,18 @@ For Cursor, in `.cursor/mcp.json`:
 | `list_records` | `kind` (`spec` or `decision`), `feature` (both optional) | The project-level specs and decision records, or the ones of a feature, without their content |
 
 All tools are read-only and work offline. A tool that fails (unknown feature, unknown git ref) returns an error result the agent can read. The project is scanned on the first tool call, with coverage and git history (unless `--skip-changes`), and rescanned after files that can change the features change or a `--data` file is updated. The scan options (`--skip-changes`, `--ignore-path`, `--data`, `--strip-emails`, `--coverage-dir`, `--project-dir`...) work as for the other commands. stdout only carries protocol messages; logs go to stderr.
+
+### Install the Claude skills
+
+```bash
+features skills list              # the bundled skills and what they do
+features skills install           # into ./.claude/skills, shared with your team through git
+features skills install --global  # into ~/.claude/skills, for every project
+```
+
+The [Claude skills](../projects/skills/README.md) (`create-feature`, `organize-by-feature`, `document-feature`, `validate-features`...) are embedded in the binary, so the installed skills always match the commands and JSON fields of your version of the CLI. All the skills are installed together, since they refer to each other by name. Nothing is downloaded.
+
+A skill folder that already exists is left untouched; `--force` overwrites its files (other files in it are kept), e.g. after upgrading the CLI. The CLI version is written to `.features-version` in the skills folder. `--dir <path>` installs into another folder, for agents that read the Agent Skills format. `--dry-run` lists what would be installed, skipped or overwritten.
 
 ### Export a JSON report
 

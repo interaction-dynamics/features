@@ -10,7 +10,7 @@
     {
       "name": "features",
       "source": "./projects/skills",
-      "description": "Skills that help Claude reorganize a codebase into readable feature folders, documented and validated with features-cli."
+      "description": "Skills that help Claude reorganize a codebase into readable feature folders and create new features, documented and validated with features-cli."
     }
   ]
 }

@@ -263,6 +263,11 @@ jobs:
       - name: Prepare public folder
         run: mkdir -p projects/cli/public
 
+      # The crate can't reach outside projects/cli: package a copy of the skills
+      # embedded by `features skills install` (see projects/cli/build.rs)
+      - name: Bundle the Claude skills
+        run: cp -R projects/skills/skills projects/cli/skills
+
       - name: Check if version already exists on crates.io
         working-directory: projects/cli
         run: |

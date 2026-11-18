@@ -11,7 +11,7 @@ readme = "../../README.md"
 keywords = ["codeowners", "architecture", "technical-debt", "ownership", "feature-based"]
 categories = ["command-line-utilities", "development-tools"]
 authors = ["Interaction Dynamics <thibault.friedrich@interaction-dynamics.io>"]
-include = ["src", "public", "!public/features.json"]
+include = ["build.rs", "src", "public", "!public/features.json", "skills"]
 
 [lib]
 name = "features_cli"

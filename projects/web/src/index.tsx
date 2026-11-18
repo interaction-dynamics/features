@@ -6,6 +6,7 @@ import { ExperimentalRoute } from './components/experimental-route'
 import { FeaturesProvider } from './components/features-provider'
 import { MainLayout } from './components/main-layout'
 import { ThemeProvider } from './components/theme-provider'
+import { LaunchGate } from './features/launch-screen'
 
 const Features = lazy(async () => import('./routes/features'))
 
@@ -26,42 +27,44 @@ if (!root) {
 createRoot(root).render(
   <StrictMode>
     <ThemeProvider>
-      <FeaturesProvider>
-        <HashRouter>
-          <Routes>
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Features />} />
-              <Route path="/insights" element={<Insights />} />
-              <Route path="/outside-features" element={<OutsideFeatures />} />
-              {/* Former pages, merged into Outside features */}
-              <Route
-                path="/reconciliation"
-                element={<Navigate to="/outside-features" replace />}
-              />
-              <Route
-                path="/records"
-                element={<Navigate to="/outside-features" replace />}
-              />
-              <Route
-                path="/history"
-                element={
-                  <ExperimentalRoute>
-                    <History />
-                  </ExperimentalRoute>
-                }
-              />
-              <Route
-                path="/owners/:owner"
-                element={
-                  <ExperimentalRoute>
-                    <Owner />
-                  </ExperimentalRoute>
-                }
-              />
-            </Route>
-          </Routes>
-        </HashRouter>
-      </FeaturesProvider>
+      <LaunchGate>
+        <FeaturesProvider>
+          <HashRouter>
+            <Routes>
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<Features />} />
+                <Route path="/insights" element={<Insights />} />
+                <Route path="/outside-features" element={<OutsideFeatures />} />
+                {/* Former pages, merged into Outside features */}
+                <Route
+                  path="/reconciliation"
+                  element={<Navigate to="/outside-features" replace />}
+                />
+                <Route
+                  path="/records"
+                  element={<Navigate to="/outside-features" replace />}
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <ExperimentalRoute>
+                      <History />
+                    </ExperimentalRoute>
+                  }
+                />
+                <Route
+                  path="/owners/:owner"
+                  element={
+                    <ExperimentalRoute>
+                      <Owner />
+                    </ExperimentalRoute>
+                  }
+                />
+              </Route>
+            </Routes>
+          </HashRouter>
+        </FeaturesProvider>
+      </LaunchGate>
     </ThemeProvider>
   </StrictMode>,
 )

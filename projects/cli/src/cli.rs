@@ -174,6 +174,13 @@ pub enum Command {
         scan: ScanArgs,
     },
 
+    /// List or install the Claude skills bundled with the CLI (create,
+    /// document, organize and validate features)
+    Skills {
+        #[command(subcommand)]
+        command: SkillsCommand,
+    },
+
     /// Run the check rules on the features (duplicate names, missing owners,
     /// broken specs and decision records...). Fails on `error` findings
     Check {
@@ -193,6 +200,34 @@ pub enum Command {
         #[command(flatten)]
         scan: ScanArgs,
     },
+}
+
+/// Subcommands of `features skills`
+#[derive(Subcommand, Debug)]
+pub enum SkillsCommand {
+    /// List the bundled skills with their description
+    List,
+    /// Copy the bundled skills into a skills folder (default: ./.claude/skills)
+    Install(SkillsInstallArgs),
+}
+
+#[derive(Args, Debug, Clone, PartialEq)]
+pub struct SkillsInstallArgs {
+    /// Skills folder to install into, for agents other than Claude Code
+    #[arg(long, value_name = "DIR", conflicts_with = "global")]
+    pub dir: Option<PathBuf>,
+
+    /// Install into ~/.claude/skills, for every project
+    #[arg(long)]
+    pub global: bool,
+
+    /// Overwrite the files of skills that are already installed
+    #[arg(long)]
+    pub force: bool,
+
+    /// Print what would be installed without writing anything
+    #[arg(long)]
+    pub dry_run: bool,
 }
 
 /// Options for how features are scanned, shared by every action
@@ -553,6 +588,10 @@ pub enum Action {
     Aggregate(AggregateArgs),
     /// Run the MCP server over stdio
     Mcp { path: PathBuf },
+    /// List the bundled Claude skills
+    SkillsList,
+    /// Install the bundled Claude skills
+    SkillsInstall(SkillsInstallArgs),
 }
 
 impl Action {
@@ -570,7 +609,10 @@ impl Action {
             | Action::Check { path, .. }
             | Action::Records { path, .. }
             | Action::Mcp { path } => Some(path),
-            Action::Version | Action::Aggregate(_) => None,
+            Action::Version
+            | Action::Aggregate(_)
+            | Action::SkillsList
+            | Action::SkillsInstall(_) => None,
         }
     }
 }
@@ -717,6 +759,13 @@ impl Command {
             }
             Command::New { new, scan } => (Action::New(new), scan, not_requested),
             Command::Mcp { path, scan } => (Action::Mcp { path }, scan, not_requested),
+            Command::Skills { command } => {
+                let action = match command {
+                    SkillsCommand::List => Action::SkillsList,
+                    SkillsCommand::Install(args) => Action::SkillsInstall(args),
+                };
+                (action, ScanArgs::default(), not_requested)
+            }
         };
 
         Invocation {
@@ -1349,6 +1398,47 @@ mod tests {
         assert_eq!(config(&["./src", "--no-config"]), ConfigSource::Disabled);
         assert_eq!(config(&["serve", "--no-config"]), ConfigSource::Disabled);
         assert!(try_parse_args_from(["features", "scan", "--config", "a", "--no-config"]).is_err());
+    }
+
+    #[test]
+    fn test_skills() {
+        assert_eq!(action(&["skills", "list"]), Action::SkillsList);
+        assert_eq!(
+            action(&["skills", "install"]),
+            Action::SkillsInstall(SkillsInstallArgs {
+                dir: None,
+                global: false,
+                force: false,
+                dry_run: false,
+            })
+        );
+        assert_eq!(
+            action(&[
+                "skills",
+                "install",
+                "--dir",
+                "agents/skills",
+                "--force",
+                "--dry-run"
+            ]),
+            Action::SkillsInstall(SkillsInstallArgs {
+                dir: Some(path("agents/skills")),
+                global: false,
+                force: true,
+                dry_run: true,
+            })
+        );
+        assert_eq!(
+            action(&["skills", "install", "--global"]),
+            Action::SkillsInstall(SkillsInstallArgs {
+                dir: None,
+                global: true,
+                force: false,
+                dry_run: false,
+            })
+        );
+        assert!(parse(&["skills", "install", "--global", "--dir", "x"]).is_err());
+        assert!(parse(&["skills"]).is_err());
     }
 
     #[test]

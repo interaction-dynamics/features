@@ -13,6 +13,7 @@ import {
   NotebookText,
   Plug,
   ShieldCheck,
+  Sparkles,
   Users,
 } from '@lucide/astro'
 import CallToAction from '../components/CallToAction.astro'
@@ -127,6 +128,12 @@ const commands = [
     name: 'mcp',
     usage: 'features mcp [PATH]',
     text: 'Run an MCP server over stdio, so AI coding agents (Claude Code, Cursor...) can query the features.',
+  },
+  {
+    icon: Sparkles,
+    name: 'skills',
+    usage: 'features skills <list|install>',
+    text: 'List or install the Claude skills bundled with the CLI into .claude/skills (--global for ~/.claude/skills): create, document, organize and validate features.',
   },
 ]
 

@@ -126,6 +126,10 @@ const loop = [
 
 const skills = [
   [
+    'create-feature',
+    'Starts a new feature: checks that no feature already covers it, picks its folder, writes its README and first spec, and builds the code inside the folder without reaching into other features.',
+  ],
+  [
     'organize-by-feature',
     'Entry point. Runs the whole refactor: checks the baseline, plans the breakdown, then extracts, documents, validates and commits one feature at a time.',
   ],
@@ -156,6 +160,7 @@ const prompts = [
   'Map the features of this repository before we start.',
   'Which features does this codebase have? Propose a breakdown, don’t move anything yet.',
   'Document the billing feature and record why we use Stripe.',
+  'Add a feature that lets customers download their invoices.',
   'Check that our features follow the guidelines.',
 ]
 
@@ -310,7 +315,7 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
     id="skills"
     eyebrow="Claude skills"
     title="Let Claude reorganize your codebase by feature"
-    lead="Not organized by feature yet? The Claude skills teach Claude to plan a feature breakdown, move the code one feature at a time with your tests passing, write each feature's README and decision records, and check the result with features check."
+    lead="Not organized by feature yet? The Claude skills teach Claude to plan a feature breakdown, move the code one feature at a time with your tests passing, write each feature's README and decision records, and check the result with features check. Then they start every new feature the same way."
   >
     <div class="grid items-start gap-6 lg:grid-cols-[1fr_1.2fr]">
       <div class="space-y-6">
@@ -324,13 +329,14 @@ const skillsUrl = `${site.repository}/tree/master/projects/skills`
             {prompts.map((prompt) => <li>“{prompt}”</li>)}
           </ul>
           <p class="mt-4 text-xs text-muted">
+            Without the plugin, <code>features skills install</code> copies them into <code>.claude/skills</code>.
             Other agents can use the skill folders as they are, or take the content of a <code>SKILL.md</code> as
             instructions. <a class="link" href={skillsUrl} rel="noopener">Install guide on GitHub</a>.
           </p>
         </div>
       </div>
       <div class="card overflow-hidden">
-        <h3 class="border-b border-line bg-surface-2 px-5 py-3 text-sm font-semibold">Six skills</h3>
+        <h3 class="border-b border-line bg-surface-2 px-5 py-3 text-sm font-semibold">Seven skills</h3>
         <dl class="divide-y divide-line/60">
           {
             skills.map(([name, text]) => (

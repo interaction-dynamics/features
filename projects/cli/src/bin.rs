@@ -21,6 +21,7 @@ use features_cli::printer::print_features;
 use features_cli::project_name::resolve_project_name;
 use features_cli::records::{create_record, project_records};
 use features_cli::scan::{ScanConfig, scan_features_with};
+use features_cli::skills::{self, InstallReport, InstallStatus};
 
 /// Resolve `--ignore-path` values to canonical absolute paths.
 ///
@@ -140,6 +141,48 @@ fn serve_spinner() -> ProgressBar {
     ));
     pb.enable_steady_tick(std::time::Duration::from_millis(100));
     pb
+}
+
+fn print_skills_install(report: &InstallReport, current_dir: &Path, dry_run: bool) {
+    let target = report
+        .target
+        .strip_prefix(current_dir)
+        .unwrap_or(&report.target);
+    if dry_run {
+        println!(
+            "Would install the skills into {} (dry run):",
+            target.display()
+        );
+    } else {
+        println!("Skills folder: {}", target.display());
+    }
+    for (name, status) in &report.skills {
+        println!("  {name}: {}", status.label());
+    }
+
+    let overwritten = report
+        .skills
+        .iter()
+        .any(|(_, status)| *status == InstallStatus::Overwritten);
+    if let Some(version) = report
+        .previous_version
+        .as_deref()
+        .filter(|version| overwritten && *version != env!("CARGO_PKG_VERSION"))
+    {
+        println!(
+            "Replaced skills installed by features-cli {version} with version {}.",
+            env!("CARGO_PKG_VERSION")
+        );
+    }
+    let written = report
+        .skills
+        .iter()
+        .any(|(_, status)| *status != InstallStatus::Skipped);
+    if written && !dry_run {
+        println!(
+            "Start a new Claude Code session to use them, e.g. \"Create a feature for invoices\" or /create-feature."
+        );
+    }
 }
 
 async fn run(invocation: Invocation) -> Result<()> {
@@ -284,6 +327,18 @@ async fn run(invocation: Invocation) -> Result<()> {
         }
 
         Action::Diff(args) => run_diff(&args, &scan, &current_dir)?,
+
+        Action::SkillsList => {
+            for skill in skills::bundled_skills() {
+                println!("{}\n    {}\n", skill.name, skill.description);
+            }
+        }
+
+        Action::SkillsInstall(args) => {
+            let target = skills::target_dir(args.dir.as_deref(), args.global, &current_dir)?;
+            let report = skills::install(&target, args.force, args.dry_run)?;
+            print_skills_install(&report, &current_dir, args.dry_run);
+        }
 
         Action::Mcp { path } => {
             // stdout carries the protocol: everything else goes to stderr

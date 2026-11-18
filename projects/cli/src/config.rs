@@ -227,7 +227,12 @@ pub fn resolve(parsed: ParsedArgs, current_dir: &Path) -> Result<Invocation> {
         explicit,
     } = parsed;
 
-    if invocation.action != Action::Version {
+    // The actions that don't scan don't read the file, so a broken file never blocks them
+    let scans = !matches!(
+        invocation.action,
+        Action::Version | Action::SkillsList | Action::SkillsInstall(_)
+    );
+    if scans {
         let file = match config {
             ConfigSource::Disabled => None,
             ConfigSource::File(file) => Some(file),
@@ -296,7 +301,7 @@ pub fn apply(
     let path = config.path.clone();
     let name = config.name.clone().map(Some);
     match &mut invocation.action {
-        Action::Version => {}
+        Action::Version | Action::SkillsList | Action::SkillsInstall(_) => {}
         Action::List(args) => {
             fill.set(&mut args.path, "path", path);
             fill.set(&mut args.json, "json", config.scan.json);

@@ -6,6 +6,11 @@
       "changes": [
         {
           "type": "feature",
+          "title": "`create-feature` skill and `features skills install`",
+          "description": "A new Claude skill starts each feature in its own folder, with an owner, a README and a first spec, after checking that no feature already covers it. `features skills install` copies the skills bundled with the CLI into `.claude/skills` (or `~/.claude/skills` with `--global`)."
+        },
+        {
+          "type": "feature",
           "title": "Documentation on the website",
           "description": "A `/docs` section with a sidebar: commands, options, the configuration file, check rules, README format, specs and decisions, and guides for the dashboard, CI, the MCP server, external data and aggregation."
         },
