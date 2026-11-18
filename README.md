@@ -98,6 +98,7 @@ You need one place to overview all your features: what exists, who owns it, how 
 - Give Claude Code, Cursor, Copilot and other agents a [map of the codebase by feature](#give-your-ai-coding-agent-a-map-of-the-codebase), so they find the right files without grepping the whole repository
 - Let them read each feature's description, docs and decision records before changing it
 - Check which features and owners their change touches before opening a pull request
+- Start new features in their own folder, with an owner, a README and a spec, using the [`create-feature` skill](#let-claude-reorganize-your-codebase-by-feature)
 
 > Have another use case? [Open an issue](https://github.com/interaction-dynamics/features/issues). We'd love to hear about it.
 
@@ -333,7 +334,15 @@ Links show up on the feature page, and the imported metrics on the feature page 
 
 ## Let Claude reorganize your codebase by feature
 
-Not organized by feature yet? The [Claude skills](https://github.com/interaction-dynamics/features/tree/master/projects/skills) in this repository teach Claude to map the features from the JSON report, plan a feature breakdown, move the code one feature at a time with your tests passing, write each feature's README and decision records, and check the result with `features check`. In Claude Code:
+Not organized by feature yet? The [Claude skills](https://github.com/interaction-dynamics/features/tree/master/projects/skills) in this repository teach Claude to map the features from the JSON report, plan a feature breakdown, move the code one feature at a time with your tests passing, write each feature's README and decision records, and check the result with `features check`. Once you're organized by feature, the `create-feature` skill starts each new feature the same way: it checks that no feature already covers it, picks its folder, writes its README and first spec, and keeps its code inside the folder.
+
+Install them from the CLI, into `.claude/skills` (or `~/.claude/skills` with `--global`):
+
+```bash
+features skills install
+```
+
+Or, in Claude Code, as a plugin:
 
 ```
 /plugin marketplace add interaction-dynamics/features

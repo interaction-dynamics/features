@@ -59,6 +59,7 @@ Stop and ask the user when a file clearly belongs to several features, when a mo
 2. If the repository has a `CODEOWNERS` file, or the user wants one, offer to run `features codeowners PATH --project-dir .`. It only rewrites the section between its markers.
 3. Offer to add a "Finding your way around" section to `AGENTS.md` or `CLAUDE.md` so future agent sessions use the feature map (see the root README of features-cli, section "Give your AI coding agent a map of the codebase").
 4. Summarize for the user: features created, files left in shared folders and why, owners or decisions still marked `TODO`, and the commits made. Suggest `features serve PATH` to browse the result.
+5. For features added after the refactor, point the user to the **create-feature** skill, so new code starts in its own feature folder instead of drifting back into technical folders.
 
 ## Rules
 

@@ -23,4 +23,5 @@ pub mod project_name;
 pub mod readme_parser;
 pub mod records;
 pub mod scan;
+pub mod skills;
 pub mod skip_dirs;

@@ -35,6 +35,8 @@ jobs:
             cli:
               - *workflow
               - 'projects/cli/**'
+              # The Claude skills are embedded in the binary (features skills install)
+              - 'projects/skills/**'
               # CLI unit and integration tests read fixtures from examples/
               - 'examples/**'
             cli-deps:

@@ -23,6 +23,8 @@ target
 node_modules/
 
 projects/cli/public
+# Copy of projects/skills/skills made by the release workflow for the crates.io package
+projects/cli/skills
 projects/cli/*.js
 projects/cli/package.json
 projects/cli/build
