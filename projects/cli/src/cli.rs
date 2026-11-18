@@ -5,15 +5,21 @@
 //! deprecated aliases: both forms are parsed into the same [`Invocation`].
 
 use clap::error::ErrorKind;
-use clap::{ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
-use std::path::PathBuf;
+use clap::parser::ValueSource;
+use clap::{
+    ArgGroup, ArgMatches, Args, CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum,
+};
+use std::collections::HashSet;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 
+use crate::checker::CheckArgs;
 use crate::http_server::parse_allowed_origin;
 use crate::models::RecordKind;
 
-const DEFAULT_PORT: u16 = 3000;
-const DEFAULT_BUILD_DIR: &str = "build";
-const DEFAULT_CODEOWNERS_PREFIX: &str = "@";
+pub(crate) const DEFAULT_PORT: u16 = 3000;
+pub(crate) const DEFAULT_BUILD_DIR: &str = "build";
+pub(crate) const DEFAULT_CODEOWNERS_PREFIX: &str = "@";
 const DEPRECATED_HEADING: &str = "Deprecated actions (use the commands above)";
 
 /// A CLI tool for discovering features in a folder by reading README.md or README.mdx files,
@@ -36,6 +42,15 @@ pub struct Cli {
     /// Print version information
     #[arg(short = 'V', long)]
     pub version: bool,
+
+    /// Read the default options from this file instead of the
+    /// features.config.yaml found in the scanned folder or its parents
+    #[arg(long, global = true, value_name = "FILE")]
+    pub config: Option<PathBuf>,
+
+    /// Ignore features.config.yaml: only use the options of the command line
+    #[arg(long, global = true, conflicts_with = "config")]
+    pub no_config: bool,
 
     #[command(flatten)]
     pub legacy: LegacyArgs,
@@ -159,12 +174,19 @@ pub enum Command {
         scan: ScanArgs,
     },
 
-    /// Run checks on the features (e.g. duplicate names) and warn about
-    /// broken specs and decision records
+    /// Run the check rules on the features (duplicate names, missing owners,
+    /// broken specs and decision records...). Fails on `error` findings
     Check {
         /// The folder to scan for features
         #[arg(default_value = ".")]
         path: PathBuf,
+
+        /// Output the report as JSON (same as --format json)
+        #[arg(long)]
+        json: bool,
+
+        #[command(flatten)]
+        check: CheckArgs,
 
         #[command(flatten)]
         codeowners: OptionalCodeownersArgs,
@@ -249,7 +271,7 @@ pub struct ServerArgs {
     pub experimental: bool,
 
     /// Project name shown in the web dashboard. Defaults to `name` in
-    /// features.config.toml, then to the name in the project manifest
+    /// features.config.yaml, then to the name in the project manifest
     /// (package.json, Cargo.toml, pyproject.toml, go.mod...)
     #[arg(long, value_name = "NAME")]
     pub project_name: Option<String>,
@@ -270,7 +292,7 @@ pub struct BuildArgs {
     pub experimental: bool,
 
     /// Project name shown in the web dashboard. Defaults to `name` in
-    /// features.config.toml, then to the name in the project manifest
+    /// features.config.yaml, then to the name in the project manifest
     /// (package.json, Cargo.toml, pyproject.toml, go.mod...)
     #[arg(long, value_name = "NAME")]
     pub project_name: Option<String>,
@@ -335,9 +357,10 @@ pub struct DiffArgs {
     pub path: Option<PathBuf>,
 
     /// List the features touched since the merge base of this git ref and HEAD,
-    /// including uncommitted changes (e.g. --since origin/master)
+    /// including uncommitted changes (e.g. --since origin/master). Required,
+    /// unless `since` is set in the `diff` section of features.config.yaml
     #[arg(long, value_name = "REF")]
-    pub since: String,
+    pub since: Option<String>,
 
     /// Only compare committed changes, ignoring the working tree
     #[arg(long)]
@@ -401,12 +424,6 @@ pub struct OptionalCodeownersArgs {
 
     #[command(flatten)]
     pub options: CodeownersOptions,
-}
-
-impl OptionalCodeownersArgs {
-    fn requested(self) -> Option<CodeownersOptions> {
-        self.generate_codeowners.then_some(self.options)
-    }
 }
 
 /// The flags of the command line from before subcommands existed
@@ -522,8 +539,12 @@ pub enum Action {
     Owners { path: PathBuf, json: bool },
     /// List the features touched since a git ref
     Diff(DiffArgs),
-    /// Run checks on the features
-    Check { path: PathBuf },
+    /// Run the check rules
+    Check {
+        path: PathBuf,
+        json: bool,
+        check: CheckArgs,
+    },
     /// List the specs and decision records
     Records { path: PathBuf, json: bool },
     /// Create a spec or decision record
@@ -534,13 +555,87 @@ pub enum Action {
     Mcp { path: PathBuf },
 }
 
+impl Action {
+    /// The folder to scan, when the action scans one
+    pub fn scan_path(&self) -> Option<&Path> {
+        match self {
+            Action::List(args) => Some(&args.path),
+            Action::Serve(args) => Some(&args.path),
+            Action::Build(args) => Some(&args.path),
+            Action::New(args) => Some(&args.path),
+            Action::Diff(args) => args.path.as_deref(),
+            Action::FindOwner { path, .. } => path.as_deref(),
+            Action::Codeowners { path }
+            | Action::Owners { path, .. }
+            | Action::Check { path, .. }
+            | Action::Records { path, .. }
+            | Action::Mcp { path } => Some(path),
+            Action::Version | Action::Aggregate(_) => None,
+        }
+    }
+}
+
 /// A parsed command line
 #[derive(Debug, Clone, PartialEq)]
 pub struct Invocation {
     pub action: Action,
     pub scan: ScanArgs,
-    /// Generate CODEOWNERS too, with these options
-    pub codeowners: Option<CodeownersOptions>,
+    /// Generate or update the CODEOWNERS file too
+    pub generate_codeowners: bool,
+    /// Where and how the CODEOWNERS file is written
+    pub codeowners: CodeownersOptions,
+}
+
+/// Where the default options come from
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConfigSource {
+    /// The features.config.yaml of the scanned folder or of its parents
+    Lookup,
+    /// The file given with `--config`
+    File(PathBuf),
+    /// None (`--no-config`)
+    Disabled,
+}
+
+/// A command line before the configuration file is applied
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParsedArgs {
+    pub invocation: Invocation,
+    pub config: ConfigSource,
+    /// Ids of the arguments given on the command line (rather than defaulted),
+    /// e.g. `port` or `ignore_path`: the configuration file doesn't override them
+    pub explicit: HashSet<String>,
+}
+
+/// Parse a command line, in either form
+pub fn try_parse_args_from<I, T>(args: I) -> Result<ParsedArgs, clap::Error>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<OsString> + Clone,
+{
+    let matches = Cli::command().try_get_matches_from(args)?;
+    let explicit = explicit_ids(&matches);
+    let cli = Cli::from_arg_matches(&matches).map_err(|err| err.format(&mut Cli::command()))?;
+    let config = match (&cli.config, cli.no_config) {
+        (_, true) => ConfigSource::Disabled,
+        (Some(file), false) => ConfigSource::File(file.clone()),
+        (None, false) => ConfigSource::Lookup,
+    };
+    Ok(ParsedArgs {
+        invocation: cli.into_invocation()?,
+        config,
+        explicit,
+    })
+}
+
+/// Ids of the arguments of the command (or of the legacy form) given on the
+/// command line
+fn explicit_ids(matches: &ArgMatches) -> HashSet<String> {
+    let leaf = matches.subcommand().map_or(matches, |(_, sub)| sub);
+    leaf.ids()
+        .filter(|id| leaf.value_source(id.as_str()) == Some(ValueSource::CommandLine))
+        .map(|id| id.as_str().to_string())
+        .collect()
 }
 
 impl Cli {
@@ -550,7 +645,8 @@ impl Cli {
             return Ok(Invocation {
                 action: Action::Version,
                 scan: ScanArgs::default(),
-                codeowners: None,
+                generate_codeowners: false,
+                codeowners: CodeownersOptions::default(),
             });
         }
 
@@ -564,50 +660,70 @@ impl Cli {
 
 impl Command {
     fn into_invocation(self) -> Invocation {
+        let not_requested = OptionalCodeownersArgs {
+            generate_codeowners: false,
+            options: CodeownersOptions::default(),
+        };
         let (action, scan, codeowners) = match self {
-            Command::Scan { output, scan } => (Action::List(output), scan, None),
+            Command::Scan { output, scan } => (Action::List(output), scan, not_requested),
             Command::Serve {
                 server,
                 codeowners,
                 scan,
-            } => (Action::Serve(server), scan, codeowners.requested()),
+            } => (Action::Serve(server), scan, codeowners),
             Command::Build {
                 build,
                 codeowners,
                 scan,
-            } => (Action::Build(build), scan, codeowners.requested()),
+            } => (Action::Build(build), scan, codeowners),
             Command::Codeowners { codeowners, scan } => (
                 Action::Codeowners {
                     path: codeowners.path,
                 },
                 scan,
-                Some(codeowners.options),
+                OptionalCodeownersArgs {
+                    generate_codeowners: true,
+                    options: codeowners.options,
+                },
             ),
             Command::FindOwner {
                 target,
                 path,
                 json,
                 scan,
-            } => (Action::FindOwner { target, path, json }, scan, None),
-            Command::Owners { path, json, scan } => (Action::Owners { path, json }, scan, None),
-            Command::Diff { diff, scan } => (Action::Diff(diff), scan, None),
-            Command::Aggregate { aggregate } => {
-                (Action::Aggregate(aggregate), ScanArgs::default(), None)
+            } => (
+                Action::FindOwner { target, path, json },
+                scan,
+                not_requested,
+            ),
+            Command::Owners { path, json, scan } => {
+                (Action::Owners { path, json }, scan, not_requested)
             }
+            Command::Diff { diff, scan } => (Action::Diff(diff), scan, not_requested),
+            Command::Aggregate { aggregate } => (
+                Action::Aggregate(aggregate),
+                ScanArgs::default(),
+                not_requested,
+            ),
             Command::Check {
                 path,
+                json,
+                check,
                 codeowners,
                 scan,
-            } => (Action::Check { path }, scan, codeowners.requested()),
-            Command::Records { path, json, scan } => (Action::Records { path, json }, scan, None),
-            Command::New { new, scan } => (Action::New(new), scan, None),
-            Command::Mcp { path, scan } => (Action::Mcp { path }, scan, None),
+            } => (Action::Check { path, json, check }, scan, codeowners),
+            Command::Records { path, json, scan } => {
+                (Action::Records { path, json }, scan, not_requested)
+            }
+            Command::New { new, scan } => (Action::New(new), scan, not_requested),
+            Command::Mcp { path, scan } => (Action::Mcp { path }, scan, not_requested),
         };
 
         Invocation {
             action,
             scan,
-            codeowners,
+            generate_codeowners: codeowners.generate_codeowners,
+            codeowners: codeowners.options,
         }
     }
 }
@@ -618,19 +734,18 @@ impl LegacyArgs {
             return Ok(Invocation {
                 action: Action::Diff(DiffArgs {
                     path: self.path,
-                    since,
+                    since: Some(since),
                     committed_only: self.committed_only,
                     json: self.json,
                     markdown: self.markdown,
                     owners_only: self.owners_only,
-                    codeowners_prefix: self.codeowners.codeowners_prefix,
+                    codeowners_prefix: self.codeowners.codeowners_prefix.clone(),
                 }),
                 scan: self.scan,
-                codeowners: None,
+                generate_codeowners: false,
+                codeowners: self.codeowners,
             });
         }
-
-        let codeowners = self.generate_codeowners.then_some(self.codeowners);
 
         if let Some(target) = self.find_owner {
             return Ok(Invocation {
@@ -640,7 +755,8 @@ impl LegacyArgs {
                     json: self.json,
                 },
                 scan: self.scan,
-                codeowners: None,
+                generate_codeowners: false,
+                codeowners: self.codeowners,
             });
         }
 
@@ -667,13 +783,17 @@ impl LegacyArgs {
                 project_name: None,
             })
         } else if self.check {
-            Action::Check { path }
+            Action::Check {
+                path,
+                json: self.json,
+                check: CheckArgs::default(),
+            }
         } else if self.list_owners {
             Action::Owners {
                 path,
                 json: self.json,
             }
-        } else if codeowners.is_some() {
+        } else if self.generate_codeowners {
             Action::Codeowners { path }
         } else {
             Action::List(ListArgs {
@@ -688,7 +808,8 @@ impl LegacyArgs {
         Ok(Invocation {
             action,
             scan: self.scan,
-            codeowners,
+            generate_codeowners: self.generate_codeowners,
+            codeowners: self.codeowners,
         })
     }
 }
@@ -846,10 +967,11 @@ mod tests {
                 project_dir: Some(path("..")),
                 ..ScanArgs::default()
             },
-            codeowners: Some(CodeownersOptions {
+            generate_codeowners: true,
+            codeowners: CodeownersOptions {
                 codeowners_path: Some(path(".github/CODEOWNERS")),
                 codeowners_prefix: "@org/".to_string(),
-            }),
+            },
         };
         let flags = [
             "--project-dir",
@@ -879,14 +1001,15 @@ mod tests {
             vec!["check", "./src", "--generate-codeowners"],
         ] {
             let invocation = parse(&args).unwrap();
+            assert!(invocation.generate_codeowners, "{args:?}");
             assert_eq!(
                 invocation.codeowners,
-                Some(CodeownersOptions::default()),
+                CodeownersOptions::default(),
                 "{args:?}"
             );
         }
 
-        assert_eq!(parse(&["serve", "./src"]).unwrap().codeowners, None);
+        assert!(!parse(&["serve", "./src"]).unwrap().generate_codeowners);
     }
 
     #[test]
@@ -926,6 +1049,8 @@ mod tests {
 
         let check = Action::Check {
             path: path("./src"),
+            json: false,
+            check: CheckArgs::default(),
         };
         assert_eq!(action(&["./src", "--check"]), check);
         assert_eq!(action(&["check", "./src"]), check);
@@ -985,7 +1110,7 @@ mod tests {
     fn test_diff() {
         let expected = Action::Diff(DiffArgs {
             path: Some(path("./src")),
-            since: "origin/master".to_string(),
+            since: Some("origin/master".to_string()),
             committed_only: true,
             json: false,
             markdown: false,
@@ -1008,7 +1133,7 @@ mod tests {
         // The folder to scan defaults to the current directory
         let expected = Action::Diff(DiffArgs {
             path: None,
-            since: "main".to_string(),
+            since: Some("main".to_string()),
             committed_only: false,
             json: true,
             markdown: false,
@@ -1018,8 +1143,19 @@ mod tests {
         assert_eq!(action(&["--since", "main", "--json"]), expected);
         assert_eq!(action(&["diff", "--since", "main", "--json"]), expected);
 
-        // `features diff` needs a ref
-        assert!(parse(&["diff", "./src"]).is_err());
+        // The ref can come from the configuration file instead
+        assert_eq!(
+            action(&["diff", "./src"]),
+            Action::Diff(DiffArgs {
+                path: Some(path("./src")),
+                since: None,
+                committed_only: false,
+                json: false,
+                markdown: false,
+                owners_only: false,
+                codeowners_prefix: DEFAULT_CODEOWNERS_PREFIX.to_string(),
+            })
+        );
     }
 
     #[test]
@@ -1130,7 +1266,89 @@ mod tests {
         assert!(invocation.scan.skip_changes);
         assert!(invocation.scan.strip_emails);
         assert_eq!(invocation.scan.data, vec![path("usage.json")]);
-        assert_eq!(invocation.codeowners, None);
+        assert!(!invocation.generate_codeowners);
+    }
+
+    #[test]
+    fn test_check_options() {
+        use crate::checker::{OutputFormat, Severity};
+        let Action::Check { json, check, .. } = action(&[
+            "check",
+            "--json",
+            "--rule",
+            "min-coverage=error",
+            "--enable-rule",
+            "missing-readme",
+            "--disable-rule",
+            "stale-flag",
+            "--format",
+            "github",
+            "--list-rules",
+        ]) else {
+            panic!()
+        };
+        assert!(json);
+        assert_eq!(
+            check.rules,
+            vec![("min-coverage".to_string(), Severity::Error)]
+        );
+        assert_eq!(check.enable_rule, vec!["missing-readme"]);
+        assert_eq!(check.disable_rule, vec!["stale-flag"]);
+        assert_eq!(check.format, Some(OutputFormat::Github));
+        assert!(check.list_rules);
+
+        assert!(parse(&["check", "--rule", "min-coverage"]).is_err());
+    }
+
+    #[test]
+    fn test_explicit_arguments() {
+        let parsed = try_parse_args_from([
+            "features",
+            "serve",
+            "./src",
+            "--port",
+            "4000",
+            "--ignore-path",
+            "a",
+        ])
+        .unwrap();
+        for id in ["path", "port", "ignore_path"] {
+            assert!(parsed.explicit.contains(id), "{id}");
+        }
+        for id in ["experimental", "allow_origin", "skip_changes"] {
+            assert!(!parsed.explicit.contains(id), "{id}");
+        }
+
+        // Defaulted values are not explicit
+        let parsed = try_parse_args_from(["features", "serve"]).unwrap();
+        assert!(!parsed.explicit.contains("path"));
+        assert!(!parsed.explicit.contains("port"));
+
+        // The legacy form too
+        let parsed = try_parse_args_from(["features", "./src", "--serve", "--port", "1"]).unwrap();
+        assert!(parsed.explicit.contains("port"));
+        assert!(!parsed.explicit.contains("build_dir"));
+    }
+
+    #[test]
+    fn test_config_source() {
+        let config = |args: &[&str]| {
+            let args = std::iter::once("features").chain(args.iter().copied());
+            try_parse_args_from(args).unwrap().config
+        };
+        assert_eq!(config(&["scan"]), ConfigSource::Lookup);
+        assert_eq!(
+            config(&["scan", "--config", "ci.toml"]),
+            ConfigSource::File(path("ci.toml"))
+        );
+        // Before the command too
+        assert_eq!(
+            config(&["--config", "ci.toml", "serve"]),
+            ConfigSource::File(path("ci.toml"))
+        );
+        assert_eq!(config(&["./src", "--no-config"]), ConfigSource::Disabled);
+        assert_eq!(config(&["serve", "--no-config"]), ConfigSource::Disabled);
+        assert!(try_parse_args_from(["features", "scan", "--config", "a", "--no-config"]).is_err());
     }
 
     #[test]

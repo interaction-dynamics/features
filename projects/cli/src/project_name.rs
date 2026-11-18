@@ -1,67 +1,34 @@
 //! Resolves the project name shown in the web dashboard.
 //!
 //! In order of priority:
-//! 1. `--project-name` on `features serve` and `features build`
-//! 2. `name` in a `features.config.toml`
-//! 3. The name declared by the manifest of the main technology of the project
-//!    (`package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, ...)
-//!
-//! Both files are looked up in the scanned folder, then in its parents up to
-//! the root of the git repository (`features serve ./src` finds the
-//! `package.json` at the root of the repository). The nearest one wins.
+//! 1. `--project-name` on `features serve` and `features build`, or `name` in
+//!    `features.config.yaml` (applied by [`crate::config`] as the same option)
+//! 2. The name declared by the manifest of the main technology of the project
+//!    (`package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, ...), looked
+//!    up in the scanned folder, then in its parents up to the root of the git
+//!    repository (`features serve ./src` finds the `package.json` at the root
+//!    of the repository). The nearest one wins.
 //!
 //! When none is found, no name is written to `metadata.json` and the dashboard
 //! shows "Features".
 
-use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Name of the project configuration file, usually at the root of the repository
-pub const CONFIG_FILE_NAME: &str = "features.config.toml";
-
-/// Project configuration read from `features.config.toml`
-#[derive(Debug, Default, Deserialize)]
-pub struct ProjectConfig {
-    /// Project name shown in the web dashboard
-    pub name: Option<String>,
-}
-
-/// Reads `features.config.toml` in `dir`. A missing file is an empty config;
-/// an invalid one is reported and ignored, so it never blocks a scan.
-pub fn read_project_config(dir: &Path) -> ProjectConfig {
-    let path = dir.join(CONFIG_FILE_NAME);
-    let Ok(content) = fs::read_to_string(&path) else {
-        return ProjectConfig::default();
-    };
-    match toml::from_str(&content) {
-        Ok(config) => config,
-        Err(err) => {
-            eprintln!(
-                "Warning: could not parse {}: {}",
-                path.display(),
-                err.message()
-            );
-            ProjectConfig::default()
-        }
-    }
-}
-
-/// Resolves the project name: the override, then the config file, then the
-/// manifests, looked up from `dir` up to the root of its git repository.
+/// Resolves the project name: the override, then the manifests, looked up
+/// from `dir` up to the root of its git repository.
 pub fn resolve_project_name(dir: &Path, cli_override: Option<&str>) -> Option<String> {
     if let Some(name) = non_empty(cli_override.map(str::to_string)) {
         return Some(name);
     }
-    let dirs = lookup_dirs(dir);
-    dirs.iter()
-        .find_map(|dir| non_empty(read_project_config(dir).name))
-        .or_else(|| dirs.iter().find_map(|dir| detect_project_name(dir)))
+    lookup_dirs(dir)
+        .iter()
+        .find_map(|dir| detect_project_name(dir))
 }
 
 /// `dir` and its parents up to the root of its git repository (the first one
 /// containing `.git`). Outside a git repository, only `dir`.
-fn lookup_dirs(dir: &Path) -> Vec<PathBuf> {
+pub(crate) fn lookup_dirs(dir: &Path) -> Vec<PathBuf> {
     let dir = fs::canonicalize(dir).unwrap_or_else(|_| dir.to_path_buf());
     let mut dirs = Vec::new();
     for ancestor in dir.ancestors() {
@@ -250,23 +217,13 @@ mod tests {
 
     #[test]
     fn looks_up_parents_up_to_the_git_root() {
-        let repo = dir_with(&[
-            ("package.json", r#"{ "name": "web-app" }"#),
-            (CONFIG_FILE_NAME, "name = \"Acme Store\"\n"),
-        ]);
+        let repo = dir_with(&[("package.json", r#"{ "name": "web-app" }"#)]);
         fs::create_dir(repo.path().join(".git")).unwrap();
         let src = repo.path().join("src");
         fs::create_dir(&src).unwrap();
         fs::write(src.join("package.json"), r#"{ "name": "nested" }"#).unwrap();
 
-        // The config file anywhere up to the git root wins over manifests
-        assert_eq!(
-            resolve_project_name(&src, None).as_deref(),
-            Some("Acme Store")
-        );
-
-        // Without config file, the nearest manifest wins
-        fs::remove_file(repo.path().join(CONFIG_FILE_NAME)).unwrap();
+        // The nearest manifest wins
         assert_eq!(resolve_project_name(&src, None).as_deref(), Some("nested"));
         fs::remove_file(src.join("package.json")).unwrap();
         assert_eq!(resolve_project_name(&src, None).as_deref(), Some("web-app"));
@@ -287,23 +244,8 @@ mod tests {
     }
 
     #[test]
-    fn config_file_overrides_manifests() {
-        let dir = dir_with(&[
-            ("package.json", r#"{ "name": "web-app" }"#),
-            (CONFIG_FILE_NAME, "name = \"Acme Store\"\n"),
-        ]);
-        assert_eq!(
-            resolve_project_name(dir.path(), None).as_deref(),
-            Some("Acme Store")
-        );
-    }
-
-    #[test]
-    fn cli_override_wins() {
-        let dir = dir_with(&[
-            ("package.json", r#"{ "name": "web-app" }"#),
-            (CONFIG_FILE_NAME, "name = \"Acme Store\"\n"),
-        ]);
+    fn override_wins() {
+        let dir = dir_with(&[("package.json", r#"{ "name": "web-app" }"#)]);
         assert_eq!(
             resolve_project_name(dir.path(), Some("Acme")).as_deref(),
             Some("Acme")
@@ -311,22 +253,19 @@ mod tests {
     }
 
     #[test]
-    fn blank_values_are_ignored() {
-        let dir = dir_with(&[
-            ("package.json", r#"{ "name": "web-app" }"#),
-            (CONFIG_FILE_NAME, "name = \"  \"\n"),
-        ]);
+    fn blank_override_is_ignored() {
+        let dir = dir_with(&[("package.json", r#"{ "name": "web-app" }"#)]);
         assert_eq!(
-            resolve_project_name(dir.path(), Some("")).as_deref(),
+            resolve_project_name(dir.path(), Some("  ")).as_deref(),
             Some("web-app")
         );
     }
 
     #[test]
-    fn invalid_config_file_is_ignored() {
+    fn toml_config_file_is_not_read() {
         let dir = dir_with(&[
             ("package.json", r#"{ "name": "web-app" }"#),
-            (CONFIG_FILE_NAME, "name = "),
+            ("features.config.toml", "name = \"Acme Store\"\n"),
         ]);
         assert_eq!(
             resolve_project_name(dir.path(), None).as_deref(),

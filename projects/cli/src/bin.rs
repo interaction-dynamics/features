@@ -1,16 +1,16 @@
-use anyhow::Result;
-use clap::Parser;
+use anyhow::{Context, Result};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use features_cli::aggregate;
 use features_cli::build::{BuildConfig, create_build, write_records_json};
-use features_cli::checker::run_checks;
+use features_cli::checker::{CheckContext, print_rules, run_checks};
 use features_cli::cli::{
-    Action, AggregateArgs, Cli, CodeownersOptions, DiffArgs, Invocation, ScanArgs,
+    Action, AggregateArgs, CodeownersOptions, DiffArgs, Invocation, ScanArgs, try_parse_args_from,
 };
 use features_cli::codeowners::generate_codeowners;
+use features_cli::config;
 use features_cli::diff;
 use features_cli::external_data::import_external_data;
 use features_cli::http_server::{ServerConfig, serve_features_with_watching};
@@ -102,10 +102,8 @@ fn extract_unique_owners(features: &[Feature]) -> Vec<String> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let invocation = match Cli::parse().into_invocation() {
-        Ok(invocation) => invocation,
-        Err(err) => err.exit(),
-    };
+    let parsed = try_parse_args_from(std::env::args_os()).unwrap_or_else(|err| err.exit());
+    let invocation = config::resolve(parsed, &std::env::current_dir()?)?;
     run(invocation).await
 }
 
@@ -148,6 +146,7 @@ async fn run(invocation: Invocation) -> Result<()> {
     let Invocation {
         action,
         scan,
+        generate_codeowners,
         codeowners,
     } = invocation;
     let current_dir = std::env::current_dir()?;
@@ -155,8 +154,8 @@ async fn run(invocation: Invocation) -> Result<()> {
     // Scan the features, then generate CODEOWNERS if requested alongside the action
     let scan_path = |path: &Path, config: &ScanConfig| -> Result<Vec<Feature>> {
         let features = scan_features_with(path, config)?;
-        if let Some(options) = &codeowners {
-            write_codeowners(&features, path, &scan, options, &current_dir)?;
+        if generate_codeowners {
+            write_codeowners(&features, path, &scan, &codeowners, &current_dir)?;
         }
         Ok(features)
     };
@@ -233,9 +232,21 @@ async fn run(invocation: Invocation) -> Result<()> {
             write_records_json(&records, &args.build_dir).await?;
         }
 
-        Action::Check { path } => {
-            let features = scan_path(&path, &scan_config(&scan, &current_dir))?;
-            run_checks(&features, &project_records(&features, &path))?;
+        Action::Check { path, json, check } => {
+            let check = check.with_json(json);
+            let rules = check.resolve_config()?;
+            let format = check.output_format();
+            if check.list_rules {
+                print_rules(&rules, format)?;
+                return Ok(());
+            }
+
+            // Coverage is only needed by min-coverage
+            let config =
+                scan_config(&scan, &current_dir).with_coverage(rules.is_enabled("min-coverage"));
+            let features = scan_path(&path, &config)?;
+            let ctx = CheckContext::new(&path, project_records(&features, &path));
+            run_checks(&features, &rules, &ctx, format)?;
         }
 
         Action::Records { path, json } => {
@@ -406,9 +417,13 @@ fn run_diff(args: &DiffArgs, scan: &ScanArgs, current_dir: &Path) -> Result<()> 
     let config = scan_config(scan, current_dir).ownership_only(true);
     let features = scan_features_with(&base_path, &config)?;
 
+    let since = args
+        .since
+        .as_deref()
+        .context("`features diff` needs --since <REF>")?;
     let include_uncommitted = !args.committed_only;
-    let changes = diff::collect_changes(&base_path, &args.since, include_uncommitted)?;
-    let report = diff::build_report(&args.since, include_uncommitted, &changes, &features);
+    let changes = diff::collect_changes(&base_path, since, include_uncommitted)?;
+    let report = diff::build_report(since, include_uncommitted, &changes, &features);
 
     if args.owners_only {
         for owner in diff::unique_owners(&report, &args.codeowners_prefix) {

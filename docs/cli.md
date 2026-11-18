@@ -14,7 +14,7 @@ Each action is a command. `PATH` is the folder to scan for features and defaults
 | `features codeowners [PATH]` | Generate or update a CODEOWNERS file with feature ownership information |
 | `features find-owner <TARGET> [PATH]` | Find the owner of a specific file or folder |
 | `features owners [PATH]` | Display only the unique list of owners |
-| `features check [PATH]` | Run validation checks on features (e.g., duplicate names). Also warns about broken links between specs and decisions, records without a status, superseded records without a replacement and implemented specs with open tasks |
+| `features check [PATH]` | Run the [check rules](#check-rules) on the features: duplicate names and keys, missing owners, broken specs and decision records, and opt-in rules (coverage, imports between features, stale feature flags...). Fails when a rule set to `error` finds something |
 | `features records [PATH]` | List the specs and decision records of the project and of every feature. With `--json`, print the project-level records as `{ "records": [...] }` |
 | `features new <spec\|decision> <FEATURE> <TITLE>` | Create the next numbered spec or decision record (`NNN-title.md`) in `<FEATURE>/__docs__/specs` or `/decisions`. `FEATURE` is a feature name or path, `.` for the project-level `docs/` folder. Use `--path` to choose the folder to scan |
 | `features diff [PATH] --since <ref>` | List the features touched since `<ref>`, with their owners. See [Ping the right teams on every pull request](../README.md#ping-the-right-teams-on-every-pull-request) |
@@ -25,16 +25,16 @@ Run `features <command> --help` for the options of a command. The options are:
 
 | Option | Commands | Description |
 | ------ | -------- | ----------- |
-| `--json` | `scan`, `find-owner`, `owners`, `diff`, `aggregate`, `records` | Output as JSON |
+| `--json` | `scan`, `find-owner`, `owners`, `diff`, `aggregate`, `records`, `check` | Output as JSON |
 | `--flat` | `scan` | Output features as a flat array instead of nested structure |
 | `--description` | `scan` | Include feature descriptions in the output |
 | `--coverage` | `scan` | Include coverage information in the output (always on with `--json`, `serve` and `build`) |
 | `--port <port>` | `serve` | Change the port (default: 3000) |
 | `--allow-origin <origin>` | `serve` | Allow another origin (e.g. `http://localhost:5173`) to read the server's data via CORS. Can be repeated; `*` allows any origin. By default no cross-origin access is allowed and the server only answers requests addressed to `localhost`, `127.0.0.1` or `[::1]` |
 | `--experimental` | `serve`, `build` | Enable the experimental parts of the web dashboard (History page, owner pages linked from owner names, project records in Outside features). They are hidden by default and marked as experimental when enabled |
-| `--project-name <name>` | `serve`, `build` | Project name shown at the top left of the web dashboard. Overrides `name` in `features.config.toml` and the name detected from the project manifest. See [Name the dashboard](#name-the-dashboard) |
+| `--project-name <name>` | `serve`, `build` | Project name shown at the top left of the web dashboard. Overrides `name` in `features.config.yaml` and the name detected from the project manifest. See [Name the dashboard](#name-the-dashboard) |
 | `--build-dir <path>` | `build`, `aggregate` | Output directory for the static build (default: `build`) |
-| `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required) |
+| `--since <ref>` | `diff` | Compare with the merge base of `<ref>` and `HEAD`, including uncommitted changes (required, unless `since` is set in the [configuration file](#configuration-file)) |
 | `--committed-only` | `diff` | Ignore uncommitted and untracked files |
 | `--markdown` | `diff` | Output a markdown table for pull request comments |
 | `--owners-only` | `diff` | Print only the unique owners of the touched features, one per line |
@@ -48,8 +48,129 @@ Run `features <command> --help` for the options of a command. The options are:
 | `--coverage-dir <path>` | all | Specify a custom coverage directory (overrides automatic search) |
 | `--strip-emails` | all | Remove commit author emails from the output (JSON, `serve` and `build`). Useful before publishing a static build. Author names are kept |
 | `--data <file>` | `scan`, `serve`, `build`, `check`, `mcp`, `aggregate` | Merge data from external tools (analytics, errors, issues, ...) into the features, matched by feature key. Can be repeated; later files override earlier ones. See [Import data from external tools](#import-data-from-external-tools) |
+| `--rule <id>=<severity>` | `check` | Set the severity of a [check rule](#check-rules): `error`, `warn` or `off`. Can be repeated |
+| `--enable-rule <id>` | `check` | Turn on a rule that is off (as `error`). Can be repeated |
+| `--disable-rule <id>` | `check` | Turn off a rule. Can be repeated |
+| `--format <format>` | `check` | Output of the check report: `text` (default), `json` or `github` (GitHub Actions annotations) |
+| `--list-rules` | `check` | List the check rules with their effective severity, then exit |
+| `--config <file>` | all | Read the default options from this file (YAML) instead of the `features.config.yaml` found in the scanned folder or its parents. See [Configuration file](#configuration-file) |
+| `--no-config` | all | Ignore `features.config.yaml`: only use the options of the command line |
 
 > **Legacy flags.** Before commands existed, actions were flags: `features PATH --serve`, `--build`, `--check`, `--list-owners`, `--find-owner <TARGET>` and `--generate-codeowners`. They still work but are deprecated. Combining two actions (e.g. `--serve --build`) is now an error instead of silently running one of them; `--generate-codeowners` can still be combined with `--serve`, `--build`, `--check` and `--list-owners`. `features PATH --since <ref>` also still works, as an alias of `features diff PATH --since <ref>`.
+
+## Configuration file
+
+Every option can also be set in `features.config.yaml`, usually at the root of the repository, so a team shares the same settings and commands stay short. Keys are the option names without `--`. Options used by every command go at the top level; options of a single command go in a section named after it:
+
+```yaml
+name: Acme Store                 # --project-name
+path: src                        # folder to scan when the command line gives none
+skip-changes: false
+strip-emails: true
+ignore-path:
+  - src/legacy
+  - src/generated
+include-skipped-dirs: false
+coverage-dir: coverage
+project-dir: .
+data: [reports/usage.json]
+codeowners-path: .github/CODEOWNERS
+codeowners-prefix: "@acme/"      # quoted: YAML reserves a leading @
+
+scan:
+  json: false
+  flat: false
+  description: true
+  coverage: true
+
+serve:
+  port: 4000
+  allow-origin: ["http://localhost:5173"]
+  experimental: true
+  generate-codeowners: false
+
+build:
+  build-dir: dashboard
+  experimental: true
+  generate-codeowners: true
+
+check:
+  generate-codeowners: true
+  format: github                 # text, json or github
+  rules:                         # see Check rules
+    missing-owner: error
+    min-coverage:
+      severity: error
+      threshold: 85
+
+diff:
+  since: origin/main
+  committed-only: false
+  markdown: true                 # or json, or owners-only
+
+find-owner:
+  json: true
+
+owners:
+  json: true
+
+records:
+  json: true
+
+aggregate:
+  build-dir: build
+  json: false
+  data: [reports/usage.json]
+```
+
+With this file, `features serve` scans `./src` on port 4000, and `features diff` compares with `origin/main`.
+
+- **The command line wins.** An option given on the command line overrides the file, which overrides the built-in default. `features serve --port 3000` uses port 3000 whatever the file says.
+- **Lists are combined.** `ignore-path`, `data` and `allow-origin` take the values of the file, then those of the command line.
+- **Paths are relative to the file.** `path: src` means the `src` folder next to `features.config.yaml`, wherever the command runs from.
+- **Lookup.** The file is looked up in the scanned folder (the current directory when none is given), then in its parents up to the root of the git repository. The nearest one wins. `--config <file>` reads another file (for example a CI-specific one) and `--no-config` ignores it, which is also the way to turn off a flag the file turns on.
+- **Strict.** An unknown key or a value of the wrong type is an error with its line, so a typo doesn't silently do nothing.
+
+The arguments that name what to act on (the `TARGET` of `find-owner`, the kind, feature and title of `new`, the `FOLDER` of `aggregate`) and `--list-rules` stay on the command line. `--rule`, `--enable-rule` and `--disable-rule` are written as `check.rules`.
+
+> Earlier versions read the dashboard name from `name = "..."` in a `features.config.toml`. That file is no longer read (a warning says so): move the name to `features.config.yaml` as `name: ...`.
+
+## Check rules
+
+`features check` runs a set of rules. Each has an id and a severity: `error` findings make the check fail (exit code 1), `warn` findings are only printed, `off` rules don't run.
+
+| Rule | Default | Finds | Options (default) |
+| ---- | ------- | ----- | ----------------- |
+| `duplicate-names` | `error` | Two features with the same name | |
+| `duplicate-keys` | `warn` | Several features with the same [feature key](readme-format.md#key-and-links), so `--data` goes to all of them | |
+| `record-issues` | `warn` | Specs and decision records with a broken link, no status, superseded without a replacement, or implemented with open tasks | |
+| `missing-owner` | `warn` | A feature without owner | `allow-inherited` (`true`): an owner inherited from a parent feature is enough |
+| `stale-flag` | `warn` | A feature flag annotation (`// --feature-flag name: new-login, introduced_on: 2025-01-01`) older than the allowed age | `max-age-days` (`90`), `metadata-keys` (`[flag]`) |
+| `missing-readme` | `off` | A large feature without `README.md`, `README.mdx` or `FEATURES.toml` | `max-files-without-readme` (`10`) |
+| `min-coverage` | `off` | A feature whose line coverage is below the threshold (features with coverage data only) | `threshold` (`80`, percent) |
+| `cross-feature-import` | `off` | A feature importing code from a sibling feature | `allow` (`[]`): feature paths any feature may import from, e.g. `features/shared` |
+
+Set the severity and options in `features.config.yaml`, by rule id, then override them on the command line:
+
+```yaml
+check:
+  rules:
+    missing-owner: error              # severity only
+    cross-feature-import:             # severity and options
+      severity: error
+      allow: [features/shared]
+```
+
+```bash
+features check --rule stale-flag=error --enable-rule missing-readme --disable-rule duplicate-keys
+features check --list-rules           # effective severity of every rule
+```
+
+`features check --format github` prints [GitHub Actions annotations](https://docs.github.com/actions/reference/workflow-commands-for-github-actions), so findings show up on the lines of the pull request:
+
+```yaml
+- run: npx features-cli@latest check --format github
+```
 
 ## Recipes
 
@@ -70,8 +191,10 @@ See the [FAQ](../FAQ.md#how-can-i-generate-codeowners-file) for more options.
 ### Validate features in CI
 
 ```bash
-features check ./src
+features check ./src --format github
 ```
+
+See [Check rules](#check-rules) to choose what fails the build.
 
 ### Read specs and decisions
 
@@ -156,10 +279,10 @@ The `dashboard` folder can be deployed to any static host. See the [GitHub Pages
 
 The dashboard shows the project name at the top left. By default it comes from the manifest of the project (`package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `composer.json`, `pom.xml`, `settings.gradle(.kts)`, `pubspec.yaml` or `deno.json`), looked up in the scanned folder then in its parents up to the root of the git repository. Without one, it shows "Features".
 
-To choose another name, add a `features.config.toml` at the root of the repository:
+To choose another name, add a [`features.config.yaml`](#configuration-file) at the root of the repository:
 
-```toml
-name = "Acme Store"
+```yaml
+name: Acme Store
 ```
 
 or pass it to `serve` or `build`, which wins over the file:
