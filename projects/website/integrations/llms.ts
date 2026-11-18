@@ -173,6 +173,13 @@ turndown.addRule('markdown-code', {
   },
 })
 
+// GFM splits a table row on the pipes that aren't escaped, reading backslashes
+// in pairs: a pipe after an even run of backslashes (none, `\\`) ends the cell,
+// after an odd run (`\`, `\\\`) it is already escaped. Text from turndown has
+// its backslashes escaped, but code spans keep theirs raw.
+const escapePipe = (_match: string, backslashes: string) =>
+  `${backslashes}${backslashes.length % 2 === 0 ? '\\' : ''}|`
+
 // Tables become GFM tables: turndown alone flattens them into one cell per line.
 turndown.addRule('table', {
   filter: 'table',
@@ -185,7 +192,7 @@ turndown.addRule('table', {
           turndown
             .turndown((cell as HTMLElement).innerHTML)
             .replace(/\s*\n+\s*/g, ' ')
-            .replace(/\|/g, '\\|')
+            .replace(/(\\*)\|/g, escapePipe)
             .trim(),
         ),
     )
