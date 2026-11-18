@@ -12,4 +12,8 @@ ignore = [
     # unsafe-libyaml is unmaintained; it comes from serde_yaml (also deprecated),
     # used to parse README front matter. Replacing serde_yaml is a separate change.
     { id = "RUSTSEC-2024-0449", reason = "needs serde_yaml replacement" },
+    # chrono is unmaintained (no fixed version; jiff or time are recommended).
+    # It only formats and parses commit and record dates. Replacing it is a
+    # separate change.
+    { id = "RUSTSEC-2026-0543", reason = "needs chrono replacement (jiff or time)" },
 ]

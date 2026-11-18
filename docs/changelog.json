@@ -6,6 +6,11 @@
       "changes": [
         {
           "type": "feature",
+          "title": "`create-feature` skill and `features skills install`",
+          "description": "A new Claude skill starts each feature in its own folder, with an owner, a README and a first spec, after checking that no feature already covers it. `features skills install` copies the skills bundled with the CLI into `.claude/skills` (or `~/.claude/skills` with `--global`)."
+        },
+        {
+          "type": "feature",
           "title": "Install with a shell script",
           "description": "`curl -fsSL <website>/install.sh | sh` downloads the prebuilt binary for macOS or Linux from the GitHub release, verifies its checksum and installs it in `~/.local/bin`. The command is in the install picker of the CLI page.",
           "pr": 203

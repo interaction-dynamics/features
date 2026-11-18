@@ -1,6 +1,6 @@
 # Features skills for Claude
 
-[Agent Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) that teach Claude how to reorganize an existing codebase into feature folders, so each feature can be read on its own: its code in one folder, a README that says what it does and who owns it, and decision records that explain why it's built that way.
+[Agent Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) that teach Claude how to reorganize an existing codebase into feature folders, and to start new features the same way, so each feature can be read on its own: its code in one folder, a README that says what it does and who owns it, and decision records that explain why it's built that way.
 
 The skills follow the conventions of [features-cli](https://github.com/interaction-dynamics/features) ([folder architecture guidelines](../../docs/folder-architecture-guidelines.md), [README format](../../docs/readme-format.md), [FAQ](../../FAQ.md)) and use the CLI to check their work.
 
@@ -13,11 +13,20 @@ The skills follow the conventions of [features-cli](https://github.com/interacti
 | [`plan-feature-breakdown`](skills/plan-feature-breakdown/SKILL.md) | Analyzes the codebase (`features scan`, entry points, domain words, files that change together, `CODEOWNERS`) and writes a breakdown plan for you to approve: features, target paths, files to move, shared code, owners and migration order. Read-only. |
 | [`extract-feature`](skills/extract-feature/SKILL.md) | Moves one feature's files into `features/<name>/` with `git mv`, updates imports and other path references, and runs your build and tests. No behavior change. |
 | [`document-feature`](skills/document-feature/SKILL.md) | Writes or fixes the feature's `README.md` (owner, creation date, title, description) and its decision records in `__docs__/decisions/`. Never invents an owner or a decision. |
+| [`create-feature`](skills/create-feature/SKILL.md) | Starts a new feature: checks that no existing feature already covers it, picks its folder (top-level or sub-feature), writes its README and first spec, builds the code inside the folder without reaching into other features, records decisions and validates the result. Asks before writing when the location or the owner is unclear. |
 | [`validate-features`](skills/validate-features/SKILL.md) | Runs `features check` and `features scan`, plus a report script that flags features without description or owner, imports between sibling features, oversized features and code left outside any feature. |
 
 ## Install
 
 The skills need [features-cli](https://github.com/interaction-dynamics/features#quick-start). They use `features` when it's installed and `npx features-cli@latest` otherwise. The scripts need Python 3.
+
+### With the CLI
+
+`features skills install` copies the skills bundled with your version of features-cli into `.claude/skills/` (shared with your team through git), or `~/.claude/skills/` with `--global`. Use `--force` to update them after upgrading the CLI, and `--dir <path>` for another agent's skills folder.
+
+```bash
+npx features-cli@latest skills install
+```
 
 ### As a Claude Code plugin
 
@@ -55,6 +64,7 @@ Ask Claude in your own words, for example:
 - "Which features does this codebase have? Propose a breakdown, don't move anything yet."
 - "Move the checkout code into its own feature folder."
 - "Document the `billing` feature and record why we use Stripe."
+- "Add a feature that lets customers download their invoices."
 - "Check that our features follow the guidelines."
 
 Or call a skill directly, e.g. `/organize-by-feature` (or `/features:organize-by-feature` with the plugin).
