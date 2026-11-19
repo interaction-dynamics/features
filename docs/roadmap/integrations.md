@@ -16,6 +16,8 @@ date: 2026-11-14
 
 Integrations should turn the dashboard from a map of the code into a decision tool.
 
+This roadmap covers **how** external data reaches a feature. What each feature record holds once it is there (lifecycle stage, activation, experiments, versions, analytics, monitoring) is in the [feature lifecycle roadmap](feature-lifecycle.md).
+
 ## Principles
 
 1. **Offline by default.** Scanning never calls the network. Fetching external data is opt-in, per command or config.
