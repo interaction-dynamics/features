@@ -1,6 +1,6 @@
 import sitemap from '@astrojs/sitemap'
 import tailwindcss from '@tailwindcss/vite'
-import { defineConfig } from 'astro/config'
+import { defineConfig, envField } from 'astro/config'
 import llms from './integrations/llms'
 
 // Canonical URLs, the sitemap and Open Graph tags need an absolute site URL.
@@ -11,6 +11,21 @@ const site =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : 'http://localhost:4321')
 
+// PostHog EU ingestion. Production proxies /ingest with the rewrites in vercel.json;
+// the dev server mirrors them so analytics can be tested locally.
+const posthogProxy = {
+  '/ingest/static': {
+    target: 'https://eu-assets.i.posthog.com',
+    changeOrigin: true,
+    rewrite: (path) => path.replace(/^\/ingest/, ''),
+  },
+  '/ingest': {
+    target: 'https://eu.i.posthog.com',
+    changeOrigin: true,
+    rewrite: (path) => path.replace(/^\/ingest/, ''),
+  },
+}
+
 export default defineConfig({
   site,
   trailingSlash: 'never',
@@ -19,6 +34,16 @@ export default defineConfig({
   build: {
     format: 'file',
   },
+  env: {
+    schema: {
+      // PostHog project API key (phc_...). Public by design; analytics are off when unset.
+      PUBLIC_POSTHOG_KEY: envField.string({
+        context: 'client',
+        access: 'public',
+        optional: true,
+      }),
+    },
+  },
   integrations: [sitemap(), llms()],
   // Same theme as the <Code> blocks of the other pages, for the Markdown docs.
   markdown: {
@@ -26,5 +51,8 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      proxy: posthogProxy,
+    },
   },
 })

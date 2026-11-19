@@ -65,6 +65,15 @@ Create a Vercel project from this repository with **Root Directory** set to `pro
 
 Canonical URLs, the sitemap and Open Graph tags need the absolute site URL. On Vercel the production domain (`VERCEL_PROJECT_PRODUCTION_URL`) is used by default. Set the `SITE_URL` environment variable (e.g. `https://features.example.com`) to force another one.
 
+## Analytics
+
+The site uses [PostHog](https://posthog.com) (EU cloud) for page views and autocaptured clicks. It is off unless the `PUBLIC_POSTHOG_KEY` environment variable is set to the project API key (`phc_...`), so local builds and forks send nothing.
+
+- Events go through `/ingest`, proxied to PostHog by the rewrites in [`vercel.json`](./vercel.json) (and by the Vite proxy in `astro.config.mjs` during `bun run dev`), so ad blockers don't drop them.
+- It runs in cookieless mode: no cookies or local storage, so no consent banner. **Cookieless server hash mode** must be enabled in the PostHog project settings, otherwise PostHog ignores the events.
+
+To test locally, put the key in `.env` (`PUBLIC_POSTHOG_KEY=phc_...`) and run `bun run dev`.
+
 ## Dashboard screenshots
 
 `public/screenshots/*.webp` are real screenshots of the [live demo](https://interaction-dynamics.io/features/), at 1x (1280px) and 2x (2560px), shown with the `Screenshot` component. To refresh them after a dashboard change, install the dashboard dependencies (the script reuses its Playwright) and run:

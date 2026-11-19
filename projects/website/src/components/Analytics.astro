@@ -1,0 +1,21 @@
+---
+// PostHog product analytics. Does nothing unless PUBLIC_POSTHOG_KEY is set,
+// so local builds and forks send no events.
+---
+
+<script>
+  import { PUBLIC_POSTHOG_KEY } from 'astro:env/client'
+  import posthog from 'posthog-js'
+
+  if (PUBLIC_POSTHOG_KEY) {
+    posthog.init(PUBLIC_POSTHOG_KEY, {
+      // Proxied through Vercel (see vercel.json) so ad blockers don't drop events.
+      api_host: '/ingest',
+      ui_host: 'https://eu.posthog.com',
+      defaults: '2026-08-30',
+      // No cookies or local storage, so no consent banner is needed.
+      // Requires "Cookieless server hash mode" in the PostHog project settings.
+      cookieless_mode: 'always',
+    })
+  }
+</script>
