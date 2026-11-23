@@ -9,7 +9,7 @@ date: 2026-11-19
 
 Today a feature in `features-cli` is a folder with an owner, code, tests, debt, specs and decisions. That covers the build half of its life. The other half happens after the merge: the feature is turned on for some users, tested against a variant, shipped in a release, used (or not), and watched in production. Each of those facts lives in a different tool, keyed by a flag, an event, an error tag or a ticket, never by the feature.
 
-The [competitor audit](../../reports/Feature%20lifecycle%20dashboard%20SaaS%20audit.md) found that no product shows one feature end to end, and that the feature key is the asset nobody else has. This roadmap lists what to **attach** to each feature so the key carries the whole lifecycle:
+The [competitor audit](../research/feature-lifecycle-saas-audit/report.md) found that no product shows one feature end to end, and that the feature key is the asset nobody else has. This roadmap lists what to **attach** to each feature so the key carries the whole lifecycle:
 
 | Dimension | Question it answers per feature |
 | --------- | ------------------------------- |
