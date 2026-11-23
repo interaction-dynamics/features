@@ -135,3 +135,14 @@ Evidence that would move the recommendation **toward the full end-to-end build**
 The research changes the question. The issue is not whether an SDLC-by-feature platform is missing. It is. The gap persists because five camps each use "feature" for a unit with a different lifetime, because feature-level joins are hard to keep accurate, and because no single budget owns them. Platforms are filling the gap from both ends, one adjacent stage at a time, and each will lock its slice inside its own ecosystem. The scarce asset is therefore not another dashboard. It is the **shared feature ID** that every camp could reference, and developers hand-writing YAML registries for their agents are already asking for one. features-cli's claim to that role is narrow but real: a repository-native, automatically derived key that stays current because the code is the source of truth and outlives every story, flag and spec attached to it. Products built on that key can stay neutral across vendors in a way Linear, LaunchDarkly, PostHog, Reflag and Atono cannot.
 
 The deciding variable is adoption, not competition. A tool with 140 downloads a quarter cannot yet tell whether teams want feature-level health at all. The cheapest information available is a real launch and five design partners, not a hosted backend. If the CLI earns pull, the SaaS should sell trends, PR gates and cross-repo views of feature health to AI-heavy monorepo teams at Port-minus pricing. If it does not, building a dashboard on top would only make the gap more expensive to keep open.
+
+## Research notes
+
+The raw notes behind this report, one per research track:
+
+- [Feature-centric SDLC platforms](notes/feature-centric-sdlc-platforms.md)
+- [Product management tools](notes/product-management-tools.md)
+- [Release and monitoring tools](notes/release-monitoring-tools.md)
+- [Engineering intelligence and portals](notes/engineering-intelligence-portals.md)
+- [Traceability and spec-driven development](notes/traceability-spec-driven.md)
+- [Market signals and go-to-market](notes/market-signals-gtm.md)
