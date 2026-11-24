@@ -1,2 +1,4 @@
 .astro/
 .vercel/
+.env
+.env.*
