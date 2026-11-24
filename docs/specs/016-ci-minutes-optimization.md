@@ -19,6 +19,7 @@ The `features` repository used 55% of the account's GitHub Actions minutes in No
   - Cargo caches have one key per build profile (`cargo-validate-` for debug + clippy, `cargo-release-` for `--release`) and `restore-keys`, so a `Cargo.lock` change restores a warm cache and jobs no longer overwrite each other's cache under one key.
   - Playwright browsers are cached by Playwright version; on a cache hit only the system dependencies are installed.
   - Every job has a `timeout-minutes`.
+- `projects/web/playwright.config.ts`: the end-to-end suite runs with 4 workers in CI (GitHub-hosted Ubuntu runners have 4 vCPUs) instead of 1. The 69 tests went from 2.1 min to about 30 s locally with CI settings and no retries.
 - `release.yml`: `validate` and `build-dashboard` depend on `check` and run only for a release (`release…` commit message or manual run).
 - `deploy-demo.yml`: shares the `cargo-release-` cache with the end-to-end job.
 - Bun install cache (`~/.bun/install/cache`) stays as it was: already cached in every job.
